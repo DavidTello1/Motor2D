@@ -1,6 +1,8 @@
 #pragma once
 #include "Globals.h"
-#include "Console.h"
+//#include "Console.h"
+#include <windows.h>
+#include <stdio.h>
 
 #define GEOMETRY_LOG_STRING "[Geometry]"
 #define DEBUG_LOG_STRING "[Debug]"
@@ -40,19 +42,19 @@ void log(const char file[], int line, const char* format, ...)
 	else if (char_type == 'e')	sprintf_s(log_type, 4096, "%s ", ERROR_LOG_STRING);
 	else						sprintf_s(log_type, 4096, "%s ", VERBOSE_LOG_STRING);
 
-	if (Console::EnableFileName)
-	{
-		// 92 stands for '\' character
-		const char* short_file = strrchr(file, 92);
+	//if (Console::EnableFileName)
+	//{
+	//	// 92 stands for '\' character
+	//	const char* short_file = strrchr(file, 92);
 
-		sprintf_s(final_log, 4096, "%s%s(%d) : %s", log_type, short_file+1, line, tmp_string);
-	}
-	else
-	{
-		sprintf_s(final_log, 4096, "%s%s", log_type, tmp_string);
-	}
+	//	sprintf_s(final_log, 4096, "%s%s(%d) : %s", log_type, short_file+1, line, tmp_string);
+	//}
+	//else
+	//{
+	//	sprintf_s(final_log, 4096, "%s%s", log_type, tmp_string);
+	//}
 
-	Console::AddLog(final_log);
+	//Console::AddLog(final_log);
 }
 
 

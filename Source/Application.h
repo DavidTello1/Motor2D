@@ -1,22 +1,23 @@
 #pragma once
-
 #include "Globals.h"
 #include "Timer.h"
-#include "Module.h"
-#include "ModuleWindow.h"
-#include "ModuleInput.h"
-#include "ModuleSceneBase.h"
-#include "ModuleRenderer3D.h"
-#include "ModuleCamera3D.h"
-#include "ModuleEditor.h"
-#include "ModuleFileSystem.h"
-#include "ModuleResources.h"
-#include "ModuleScene.h"
-#include "Config.h"
 
-#include "MathGeoLib/include/Algorithm/Random/LCG.h"
-
+#include "MathGeoLib/include/MathGeoLibFwd.h"
 #include <list>
+#include <string>
+
+class Module;
+class ModuleWindow;
+class ModuleInput;
+//class ModuleSceneBase;
+//class ModuleScene;
+class ModuleRenderer;
+class ModuleEditor;
+class ModuleFileSystem;
+//class ModuleResources;
+
+class Config;
+class LCG;
 
 class Application
 {
@@ -28,39 +29,39 @@ public:
 	bool Update();
 	bool CleanUp();
 
-	const char* GetAppName() const;
-	void SetAppName(const char* name);
-	const char* GetOrganizationName() const;
-	void SetOrganizationName(const char* name);
+	const char* GetAppName() const { return app_name.c_str(); }
+	const char* GetOrganizationName() const { return organization_name.c_str(); }
 	uint GetFramerateLimit() const;
+
+	void SetAppName(const char* name);
+	void SetOrganizationName(const char* name);
 	void SetFramerateLimit(uint max_framerate);
 
-	void ReadConfiguration(const Config& config);
-	void SaveConfiguration(Config& config) const;
+	void ReadConfig(const Config& config);
+	void SaveConfig(Config& config) const;
 
-	std::string GetLog();
 	void LoadPrefs();
 	void SavePrefs() const;
 
-	LCG& Random() { return *random; }
+	std::string GetLog() { return log; }
+	math::LCG& Random() { return *random; }
 
 private:
 	void PrepareUpdate();
 	void FinishUpdate();
 
-
 public:
-	LCG* random = nullptr;
+	math::LCG* random = nullptr;
 
 	ModuleWindow* window;
 	ModuleInput* input;
-	ModuleSceneBase* scene_base;
-	ModuleScene* scene;
-	ModuleRenderer3D* renderer3D;
-	ModuleCamera3D* camera;
+	//ModuleSceneBase* scene_base;
+	//ModuleScene* scene;
+	ModuleRenderer* renderer;
+	//ModuleCamera3D* camera;
 	ModuleEditor* editor;
 	ModuleFileSystem* file_system;
-	ModuleResources* resources;
+	//ModuleResources* resources;
 
 private:
 	Timer	ms_timer;

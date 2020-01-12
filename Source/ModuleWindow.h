@@ -1,0 +1,70 @@
+#pragma once
+
+#include "Module.h"
+
+#include "SDL/include/SDL.h"
+#include <string>
+
+#define DEFAULT_SCREEN_WIDTH 1280
+#define DEFAULT_SCREEN_HEIGHT 1024
+
+#define MIN_SCREEN_WIDTH 480
+#define MIN_SCREEN_HEIGHT 320
+#define MAX_SCREEN_WIDTH 3000
+#define MAX_SCREEN_HEIGHT 2000
+
+
+struct SDL_Window;
+struct SDL_Surface;
+
+class ModuleWindow : public Module
+{
+public:
+
+	ModuleWindow(bool start_enabled = true);
+
+	// Destructor
+	virtual ~ModuleWindow();
+
+	bool Init(Config* config = nullptr);
+	bool Start(Config* config = nullptr);
+	bool CleanUp();
+
+	void Save(Config* config) const override;
+	void Load(Config* config) override;
+
+	SDL_Window* GetWindow() const { return window; }
+	uint GetWidth() const { return screen_width; }
+	uint GetHeight() const { return screen_height; }
+	void SetTitle(const char* title) { SDL_SetWindowTitle(window, title); }
+	void SetWidth(uint width) { SDL_SetWindowSize(window, width, GetHeight()); screen_width = width; }
+	void SetHeigth(uint height) { SDL_SetWindowSize(window, GetWidth(), height); screen_height = height; }
+	uint GetRefreshRate() const;
+	void GetMaxMinSize(uint& min_width, uint& min_height, uint& max_width, uint& max_height) const;
+
+	bool IsFullscreen() const { return fullscreen; }
+	bool IsResizable() const { return resizable; }
+	bool IsBorderless() const { return borderless; }
+	bool IsFullscreenDesktop() const { return fullscreen_desktop; }
+	float GetBrightness() const { return SDL_GetWindowBrightness(window); }
+	//const char* GetIcon() const { return icon_file.c_str(); }
+
+	void SetFullscreen(bool set);
+	void SetResizable(bool set);
+	void SetBorderless(bool set);
+	void SetFullScreenDesktop(bool set);
+	void SetBrightness(float set);
+	//void SetIcon(const char* file);
+
+private:
+	SDL_Window* window = nullptr; 	//The window we'll be rendering to
+	SDL_Surface* screen_surface = nullptr; 	//The surface contained by the window
+
+	uint screen_width = DEFAULT_SCREEN_WIDTH;
+	uint screen_height = DEFAULT_SCREEN_HEIGHT;
+	bool fullscreen = false;
+	bool resizable = false;
+	bool borderless = false;
+	bool fullscreen_desktop = false;
+	std::string icon_file;
+};

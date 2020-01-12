@@ -1,5 +1,18 @@
 #include "Application.h"
 
+#include "Module.h"
+#include "ModuleWindow.h"
+#include "ModuleInput.h"
+//#include "ModuleScene.h"
+//#include "ModuleSceneBase.h"
+#include "ModuleRenderer.h"
+#include "ModuleEditor.h"
+#include "ModuleFileSystem.h"
+//#include "ModuleResources.h"
+#include "Config.h"
+
+#include "MathGeoLib/include/Algorithm/Random/LCG.h"
+
 #include "mmgr/mmgr.h"
 
 using namespace std;
@@ -15,19 +28,19 @@ Application::Application()
 
 	modules.push_back(file_system = new ModuleFileSystem(ASSETS_FOLDER));
 	modules.push_back(window = new ModuleWindow());
-	modules.push_back(resources = new ModuleResources());
+	//modules.push_back(resources = new ModuleResources());
 	//modules.push_back(tex = new ModuleTextures());
-	modules.push_back(camera = new ModuleCamera3D());
-	modules.push_back(scene_base = new ModuleSceneBase());
-	modules.push_back(scene = new ModuleScene());
+	//modules.push_back(camera = new ModuleCamera3D());
+	//modules.push_back(scene_base = new ModuleSceneBase());
+	//modules.push_back(scene = new ModuleScene());
 	modules.push_back(editor = new ModuleEditor());
 	modules.push_back(input = new ModuleInput());
 	//modules.push_back(audio = new ModuleAudio(true));
 	//modules.push_back(ai = new ModuleAI());
 	//modules.push_back(level = new ModuleLevelManager());
 	//modules.push_back(programs = new ModulePrograms(true));
-	//modules.push_back(renderer = new ModuleRenderer());
-	modules.push_back(renderer3D = new ModuleRenderer3D());
+	modules.push_back(renderer = new ModuleRenderer());
+	//modules.push_back(renderer3D = new ModuleRenderer3D());
 }
 
 // ---------------------------------------------
@@ -48,7 +61,7 @@ bool Application::Init()
 	file_system->Load(SETTINGS_FOLDER "config.json", &buffer);
 
 	Config config((const char*)buffer);
-	ReadConfiguration(config.GetSection("App"));
+	ReadConfig(config.GetSection("App"));
 
 	// We init everything, even if not enabled
 	for (list<Module*>::iterator it = modules.begin(); it != modules.end() && ret; ++it)
@@ -134,9 +147,12 @@ bool Application::CleanUp()
 }
 
 // ---------------------------------------------
-const char* Application::GetAppName() const
+uint Application::GetFramerateLimit() const
 {
-	return app_name.c_str();
+	if (capped_ms > 0)
+		return (uint)((1.0f / (float)capped_ms) * 1000.0f);
+	else
+		return 0;
 }
 
 // ---------------------------------------------
@@ -151,11 +167,6 @@ void Application::SetAppName(const char * name)
 }
 
 // ---------------------------------------------
-const char* Application::GetOrganizationName() const
-{
-	return organization_name.c_str();
-}
-
 void Application::SetOrganizationName(const char * name)
 {
 	if (name != nullptr && name != organization_name)
@@ -163,16 +174,6 @@ void Application::SetOrganizationName(const char * name)
 		organization_name = name;
 		// TODO: Filesystem should adjust its writing folder
 	}
-}
-
-
-// ---------------------------------------------
-uint Application::GetFramerateLimit() const
-{
-	if (capped_ms > 0)
-		return (uint)((1.0f / (float)capped_ms) * 1000.0f);
-	else
-		return 0;
 }
 
 // ---------------------------------------------
@@ -184,25 +185,23 @@ void Application::SetFramerateLimit(uint max_framerate)
 		capped_ms = 0;
 }
 
-void Application::ReadConfiguration(const Config& config)
+// ---------------------------------------------
+void Application::ReadConfig(const Config& config)
 {
 	app_name = config.GetString("Name", "Davos Game Engine");
 	organization_name = config.GetString("Organization", "");
 	SetFramerateLimit(config.GetInt("MaxFramerate", 0));
 }
 
-void Application::SaveConfiguration(Config& config) const
+// ---------------------------------------------
+void Application::SaveConfig(Config& config) const
 {
 	config.AddString("Name", app_name.c_str());
 	config.AddString("Organization", organization_name.c_str());
 	config.AddInt("MaxFramerate", GetFramerateLimit());
 }
 
-string Application::GetLog()
-{
-	return log;
-}
-
+// ---------------------------------------------
 void Application::LoadPrefs()
 {
 	char* buffer = nullptr;
@@ -214,9 +213,7 @@ void Application::LoadPrefs()
 
 		if (config.IsValid() == true)
 		{
-			//LOG("Loading Engine Preferences")
-
-			ReadConfiguration(config.GetSection("App"));
+			ReadConfig(config.GetSection("App"));
 
 			Config section;
 			for (list<Module*>::iterator it = modules.begin(); it != modules.end(); ++it)
@@ -226,8 +223,6 @@ void Application::LoadPrefs()
 				(*it)->Load(&section);
 			}
 		}
-		//else
-		//	LOG("Cannot load Engine Preferences: Invalid format")
 
 		RELEASE_ARRAY(buffer);
 	}
@@ -238,14 +233,13 @@ void Application::SavePrefs() const
 {
 	Config config;
 
-	SaveConfiguration(config.AddSection("App"));
+	SaveConfig(config.AddSection("App"));
 
 	for (list<Module*>::const_iterator it = modules.begin(); it != modules.end(); ++it)
 		(*it)->Save(&config.AddSection((*it)->GetName()));
 
 	char *buf;
-	uint size = config.Save(&buf, "Saved preferences for Davos Game Engine");
+	uint size = config.Save(&buf, "Saved engine configuration");
 	if (App->file_system->Save(SETTINGS_FOLDER "config.json", buf, size) > 0) {}
-		//LOG("Saved Engine Preferences")
 	RELEASE_ARRAY(buf);
 }

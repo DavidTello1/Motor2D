@@ -10,9 +10,6 @@
 #endif
 #define _STATIC_CPPLIB
 
-#include <windows.h>
-#include <stdio.h>
-
 /* CHARS AT END INDICATES THE TYPE OF LOG TO ENABLE FILTERS
 * Characters must be written as string type %s
 * v - verbose
@@ -81,3 +78,5 @@ typedef unsigned long long UID;
 #define LIBRARY_ANIMATION_FOLDER "/Library/Animations/"
 #define LIBRARY_AUDIO_FOLDER "/Library/Audio/"
 #define LIBRARY_MATERIAL_FOLDER "/Library/Materials/"
+
+#define NAME_LENGTH 128
