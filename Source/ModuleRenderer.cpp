@@ -27,7 +27,7 @@ ModuleRenderer::~ModuleRenderer()
 // Called before render is available
 bool ModuleRenderer::Init(Config* config)
 {
-	LOG("Creating 3D Renderer context", 'd');
+	LOG("Creating 3D Renderer context");
 
 	//Create context
 	context = SDL_GL_CreateContext(App->window->GetWindow());
@@ -39,7 +39,7 @@ bool ModuleRenderer::Init(Config* config)
 
 	// Initialize glew
 	GLenum error = glewInit();
-	LOG("Loading glew", 'd');
+	LOG("Loading glew");
 
 	/*glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
@@ -72,7 +72,7 @@ bool ModuleRenderer::PostUpdate(float dt)
 // Called before quitting
 bool ModuleRenderer::CleanUp()
 {
-	LOG("Destroying 3D Renderer", 'd');
+	LOG("Destroying 3D Renderer");
 
 	SDL_GL_DeleteContext(context);
 

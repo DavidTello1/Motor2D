@@ -27,7 +27,7 @@ ModuleInput::~ModuleInput()
 // Called before render is available
 bool ModuleInput::Init(Config* config)
 {
-	LOG("Init SDL input event system", 'd');
+	LOG("Init SDL input event system");
 
 	SDL_Init(0);
 	if (SDL_InitSubSystem(SDL_INIT_EVENTS) < 0)
@@ -135,7 +135,7 @@ bool ModuleInput::PreUpdate(float dt)
 // Called before quitting
 bool ModuleInput::CleanUp()
 {
-	LOG("Quitting SDL input event subsystem", 'd');
+	LOG("Quitting SDL input event subsystem");
 	SDL_QuitSubSystem(SDL_INIT_EVENTS);
 	return true;
 }

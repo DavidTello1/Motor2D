@@ -6,7 +6,7 @@
 #include "ModuleRenderer.h"
 //#include "ModuleScene.h"
 
-//#include "Console.h"
+#include "Console.h"
 //#include "Hierarchy.h"
 //#include "Inspector.h"
 //#include "Configuration.h"
@@ -34,7 +34,7 @@ ModuleEditor::~ModuleEditor()
 // Called before render is available
 bool ModuleEditor::Init(Config* config)
 {
-	LOG("Init editor gui with imgui lib version %s", ImGui::GetVersion(), 'd');
+	LOG("Init editor gui with imgui lib version %s", ImGui::GetVersion());
 
 	// Setup Dear ImGui binding
 	IMGUI_CHECKVERSION();
@@ -46,7 +46,7 @@ bool ModuleEditor::Init(Config* config)
 
 
 	ImGui_ImplSDL2_InitForOpenGL(App->window->GetWindow(), App->renderer->context);
-	LOG("Loading ImGui", 'd');
+	LOG("Loading ImGui");
 	ImGui_ImplOpenGL3_Init();
 
 	// Set style
@@ -64,10 +64,10 @@ bool ModuleEditor::Init(Config* config)
 		ImGui::StyleColorsLight();
 
 	//// Create panels
+	panels.push_back(tab_console = new Console());
 	//panels.push_back(tab_hierarchy = new Hierarchy());
 	//panels.push_back(tab_inspector = new Inspector());
 	//panels.push_back(tab_configuration = new Configuration());
-	//panels.push_back(tab_console = new Console());
 	//panels.push_back(tab_assets = new Assets());
 	////panels.push_back(tab_viewport = new Viewport());
 
@@ -106,13 +106,13 @@ bool ModuleEditor::PostUpdate(float dt)
 // Called before quitting
 bool ModuleEditor::CleanUp()
 {
-	LOG("Freeing editor gui", 'd');
+	LOG("Freeing editor gui");
 
-	//for (vector<Panel*>::iterator it = panels.begin(); it != panels.end(); ++it)
-	//{
-	//	RELEASE(*it);
-	//}
-	//panels.clear();
+	for (std::vector<Panel*>::iterator it = panels.begin(); it != panels.end(); ++it)
+	{
+		RELEASE(*it);
+	}
+	panels.clear();
 
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplSDL2_Shutdown();
@@ -226,11 +226,11 @@ void ModuleEditor::DrawMenu()
 
 			ImGui::Separator();
 
-			if (ImGui::MenuItem("Import", NULL, false, false))
+			if (ImGui::MenuItem("Import", "Ctrl+I", false, false))
 			{
 			}
 
-			if (ImGui::MenuItem("Export", NULL, false, false))
+			if (ImGui::MenuItem("Export", "Ctrl+E", false, false))
 			{
 			}
 			ImGui::Separator();
@@ -246,19 +246,20 @@ void ModuleEditor::DrawMenu()
 			if (ImGui::MenuItem("Paste", "Ctrl+V", false, false))
 			{
 			}
+
 			ImGui::EndMenu();
 		}
 
-		if (ImGui::BeginMenu("View")) //view
-		{
-			//if (ImGui::MenuItem("Show Plane", NULL, &is_plane))
+		//if (ImGui::BeginMenu("View")) //view
+		//{
+			//if (ImGui::MenuItem("Show Grid", NULL, &is_plane))
 			//	is_show_plane = !is_show_plane;
 
 			//if (ImGui::MenuItem("Show Axis", NULL, &is_axis))
 			//	is_show_axis = !is_show_axis;
 
-			ImGui::EndMenu();
-		}
+		//	ImGui::EndMenu();
+		//}
 
 		if (ImGui::BeginMenu("Options")) //options
 		{
@@ -297,7 +298,7 @@ void ModuleEditor::DrawMenu()
 			//ImGui::MenuItem("Hierarchy", NULL, &GetPanel("Hierarchy")->active);
 			//ImGui::MenuItem("Configuration", NULL, &GetPanel("Configuration")->active);
 			//ImGui::MenuItem("Inspector", NULL, &GetPanel("Inspector")->active);
-			//ImGui::MenuItem("Console", NULL, &GetPanel("Console")->active);
+			ImGui::MenuItem("Console", NULL, &GetPanel("Console")->active);
 			//ImGui::MenuItem("Assets", NULL, &GetPanel("Assets")->active);
 
 			ImGui::EndMenu();
@@ -309,16 +310,16 @@ void ModuleEditor::DrawMenu()
 			ImGui::Separator();
 
 			if (ImGui::MenuItem("Github"))
-				ShellExecuteA(NULL, "open", "https://github.com/ponspack9/GameEngine", NULL, NULL, SW_SHOWNORMAL);
+				ShellExecuteA(NULL, "open", "https://github.com/DavidTello1/Motor2D", NULL, NULL, SW_SHOWNORMAL);
 
 			if (ImGui::MenuItem("Documentation"))
-				ShellExecuteA(NULL, "open", "https://github.com/ponspack9/GameEngine/wiki", NULL, NULL, SW_SHOWNORMAL);
+				ShellExecuteA(NULL, "open", "https://github.com/DavidTello1/Motor2D/wiki", NULL, NULL, SW_SHOWNORMAL);
 
 			if (ImGui::MenuItem("Latest Version"))
-				ShellExecuteA(NULL, "open", "https://github.com/ponspack9/GameEngine/releases", NULL, NULL, SW_SHOWNORMAL);
+				ShellExecuteA(NULL, "open", "https://github.com/DavidTello1/Motor2D/releases", NULL, NULL, SW_SHOWNORMAL);
 
 			if (ImGui::MenuItem("Report a bug"))
-				ShellExecuteA(NULL, "open", "https://github.com/ponspack9/GameEngine/issues", NULL, NULL, SW_SHOWNORMAL);
+				ShellExecuteA(NULL, "open", "https://github.com/DavidTello1/Motor2D/issues", NULL, NULL, SW_SHOWNORMAL);
 
 			ImGui::Separator();
 			if (ImGui::MenuItem("About"))
@@ -327,6 +328,59 @@ void ModuleEditor::DrawMenu()
 			ImGui::EndMenu();
 		}
 		ImGui::EndMainMenuBar();
+	}
+}
+
+void ModuleEditor::DrawPanels()
+{
+	for (std::vector<Panel*>::const_iterator it = panels.begin(); it != panels.end(); ++it)
+	{
+		if ((*it)->IsActive())
+		{
+			ImGui::SetNextWindowPos(ImVec2((float)(*it)->pos_x, (float)(*it)->pos_y), ImGuiCond_FirstUseEver);
+			ImGui::SetNextWindowSize(ImVec2((float)(*it)->width, (float)(*it)->height), ImGuiCond_FirstUseEver);
+			ImVec2 p;
+
+			if ((*it)->has_menubar) //panel has a menu bar
+			{
+				if (ImGui::Begin((*it)->GetName(), &(*it)->active, ImGuiWindowFlags_MenuBar))
+				{
+					(*it)->Draw();
+					p = ImGui::GetWindowPos();
+					(*it)->pos_x = (int)p.x;
+					(*it)->pos_y = (int)p.y;
+
+					if (ImGui::IsWindowHovered())
+						focused_panel = *it;
+				}
+			}
+			else
+			{
+				if (ImGui::Begin((*it)->GetName(), &(*it)->active))
+				{
+					(*it)->Draw();
+					p = ImGui::GetWindowPos();
+					(*it)->pos_x = (int)p.x;
+					(*it)->pos_y = (int)p.y;
+
+					if (ImGui::IsWindowHovered())
+						focused_panel = *it;
+				}
+			}
+
+			//if ((*it)->GetName() == "Inspector" && (App->scene->is_creating || App->scene->is_selecting)) //show inspector when a gameobject is created/selected
+			//{
+			//	ImGui::SetWindowFocus();
+			//	p = ImGui::GetWindowPos();
+			//	(*it)->pos_x = p.x;
+			//	(*it)->pos_y = p.y;
+
+			//	App->scene->is_creating = false;
+			//	App->scene->is_selecting = false;
+			//	focused_panel = *it;
+			//}
+			ImGui::End();
+		}
 	}
 }
 
@@ -344,7 +398,7 @@ void ModuleEditor::DrawAbout()
 	if (is_about) //about
 	{
 		ImGui::OpenPopup("About");
-		if (ImGui::BeginPopupModal("About", 0, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove))
+		if (ImGui::BeginPopupModal("About", &is_about, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove))
 		{
 			//CreateLink("Davos Game Engine", "https://github.com/ponspack9/GameEngine");
 			//ImGui::Text("Davos is a game engine developed by two students of CITM:");
@@ -371,67 +425,9 @@ void ModuleEditor::DrawAbout()
 			//ImGui::Text("THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.");
 			//ImGui::NewLine();
 
-			if (ImGui::Button("Close"))
-			{
-				ImGui::CloseCurrentPopup();
-				is_about = false;
-			}
 			ImGui::EndPopup();
 		}
 	}
-}
-
-void ModuleEditor::DrawPanels()
-{
-	//for (vector<Panel*>::const_iterator it = panels.begin(); it != panels.end(); ++it)
-	//{
-	//	if ((*it)->IsActive())
-	//	{
-	//		ImGui::SetNextWindowPos(ImVec2((float)(*it)->pos_x, (float)(*it)->pos_y), ImGuiCond_FirstUseEver);
-	//		ImGui::SetNextWindowSize(ImVec2((float)(*it)->width, (float)(*it)->height), ImGuiCond_FirstUseEver);
-	//		ImVec2 p;
-
-	//		if ((*it)->has_menubar) //panel has a menu bar
-	//		{
-	//			if (ImGui::Begin((*it)->GetName(), &(*it)->active, ImGuiWindowFlags_MenuBar))
-	//			{
-	//				(*it)->Draw();
-	//				p = ImGui::GetWindowPos();
-	//				(*it)->pos_x = p.x;
-	//				(*it)->pos_y = p.y;
-
-	//				if (ImGui::IsWindowHovered())
-	//					focused_panel = *it;
-	//			}
-	//		}
-	//		else
-	//		{
-	//			if (ImGui::Begin((*it)->GetName(), &(*it)->active))
-	//			{
-	//				(*it)->Draw();
-	//				p = ImGui::GetWindowPos();
-	//				(*it)->pos_x = p.x;
-	//				(*it)->pos_y = p.y;
-
-	//				if (ImGui::IsWindowHovered())
-	//					focused_panel = *it;
-	//			}
-	//		}
-
-	//		if ((*it)->GetName() == "Inspector" && (App->scene->is_creating || App->scene->is_selecting)) //show inspector when a gameobject is created/selected
-	//		{
-	//			ImGui::SetWindowFocus();
-	//			p = ImGui::GetWindowPos();
-	//			(*it)->pos_x = p.x;
-	//			(*it)->pos_y = p.y;
-
-	//			App->scene->is_creating = false;
-	//			App->scene->is_selecting = false;
-	//			focused_panel = *it;
-	//		}
-	//		ImGui::End();
-	//	}
-	//}
 }
 
 void ModuleEditor::ConfirmExit()
@@ -450,32 +446,32 @@ void ModuleEditor::ConfirmExit()
 		ImGui::Text("Are you sure you want to Quit?");
 		ImGui::NewLine();
 
-		//pos = ImGui::GetCursorPosX();
-		//if (ImGui::Button("Save", ImVec2(size.x / 3, 20)))
-		//{
-		//	//Save
-		//	ImGui::CloseCurrentPopup();
-
-		//	LOG("SAVING APPLICATION AND EXITING", 'd');
-		//	close = true;
-		//}
-		//ImGui::SameLine();
-
-		//ImGui::SetCursorPosX(pos + ImGui::GetItemRectSize().x + 1);
 		pos = ImGui::GetCursorPosX();
-		if (ImGui::Button("Close", ImVec2(size.x / 2, 20)))
+		if (ImGui::Button("Save", ImVec2(size.x / 3, 22)))
 		{
+			// TODO: Save
 			ImGui::CloseCurrentPopup();
 
-			LOG("EXITING APPLICATION", 'd');
+			LOG("Saving Application and Exiting",);
 			close = true;
 		}
 		ImGui::SameLine();
+
 		ImGui::SetCursorPosX(pos + ImGui::GetItemRectSize().x + 1);
-		if (ImGui::Button("Cancel", ImVec2(size.x / 2, 20)))
+		pos = ImGui::GetCursorPosX();
+		if (ImGui::Button("Close", ImVec2(size.x / 3, 22)))
 		{
 			ImGui::CloseCurrentPopup();
-			LOG("CANCEL EXIT", 'd');
+
+			LOG("Exiting Application");
+			close = true;
+		}
+		ImGui::SameLine();
+
+		ImGui::SetCursorPosX(pos + ImGui::GetItemRectSize().x + 1);
+		if (ImGui::Button("Cancel", ImVec2(size.x / 3, 22)))
+		{
+			ImGui::CloseCurrentPopup();
 			close = false;
 			App->input->quit = false;
 		}
@@ -544,15 +540,15 @@ void ModuleEditor::CreateLink(const char* text, const char* url, bool bullet)
 	}
 }
 
-//Panel* ModuleEditor::GetPanel(const char* name)
-//{
-//	for (vector<Panel*>::iterator it = panels.begin(); it != panels.end(); ++it)
-//	{
-//		if ((*it)->GetName() == name)
-//			return (*it);
-//	}
-//	return nullptr;
-//}
+Panel* ModuleEditor::GetPanel(const char* name)
+{
+	for (std::vector<Panel*>::iterator it = panels.begin(); it != panels.end(); ++it)
+	{
+		if ((*it)->GetName() == name)
+			return (*it);
+	}
+	return nullptr;
+}
 
 void ModuleEditor::LogFPS(float fps, float ms)
 {

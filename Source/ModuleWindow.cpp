@@ -16,7 +16,7 @@ ModuleWindow::~ModuleWindow()
 // Called before render is available
 bool ModuleWindow::Init(Config* config)
 {
-	LOG("Init SDL window & surface", 'd');
+	LOG("Init SDL window & surface");
 
 	if (SDL_Init(SDL_INIT_VIDEO) < 0)
 	{
@@ -89,7 +89,7 @@ bool ModuleWindow::Start(Config* config)
 // Called before quitting
 bool ModuleWindow::CleanUp()
 {
-	LOG("Destroying SDL window and quitting all SDL systems", 'd');
+	LOG("Destroying SDL window and quitting all SDL systems");
 
 	//Destroy window
 	if (window != nullptr)

@@ -1,14 +1,14 @@
 #pragma once
 
 #include "Module.h"
-//#include "Panel.h"
+#include "Panel.h"
 #include <vector>
 
 #define FILE_MAX 250
 
+class Console;
 //class Configuration;
 //class Hierarchy;
-//class Console;
 //class Inspector;
 //class Assets;
 //class Viewport;
@@ -41,14 +41,14 @@ public:
 	void CreateLink(const char* text, const char* url, bool bullet = false);
 	void LogFPS(float fps, float ms);
 
-	//// Panels
-	//Panel* GetPanel(const char* name);
-	//int GetPanelWidth(Panel* panel) const { return panel->width; }
-	//int GetPanelHeight(Panel* panel) const { return panel->height; }
-	//int GetPanelPosX(Panel* panel) const { return panel->pos_x; }
-	//int GetPanelPosY(Panel* panel) const { return panel->pos_y; }
-	//bool GetPanelActive(Panel* panel) const { return panel->active; }
-	//Panel* GetPanelFocused() { return focused_panel; }
+	// Panels
+	Panel* GetPanel(const char* name);
+	int GetPanelWidth(Panel* panel) const { return panel->width; }
+	int GetPanelHeight(Panel* panel) const { return panel->height; }
+	int GetPanelPosX(Panel* panel) const { return panel->pos_x; }
+	int GetPanelPosY(Panel* panel) const { return panel->pos_y; }
+	bool GetPanelActive(Panel* panel) const { return panel->active; }
+	Panel* GetPanelFocused() { return focused_panel; }
 
 private:
 	void DrawMenu();
@@ -61,32 +61,29 @@ private:
 	void DockSpace();
 
 public:
-	//Panel* focused_panel = nullptr;
+	Panel* focused_panel = nullptr;
 
 	//Configuration* tab_configuration = nullptr;
 	//Hierarchy* tab_hierarchy = nullptr;
-	//Console* tab_console = nullptr;
+	Console* tab_console = nullptr;
 	//Inspector* tab_inspector = nullptr;
 	//Viewport* tab_viewport = nullptr;
 	//Assets* tab_assets = nullptr;
 
 	//Bools
-	bool is_show_demo = false;
-	bool is_auto_select = false;
-	bool is_about = false;
 	bool is_new = false;
 	bool is_open = false;
 	bool is_save = false;
 	bool is_import = false;
-	bool is_plane = true;
-	bool is_axis = true;
-	bool is_wireframe = false;
-	bool is_show_plane = true;
-	bool is_show_axis = true;
+
+	bool is_auto_select = false;
+
+	bool is_show_demo = false;
+	bool is_about = false;
 
 private:
 	bool close = false;
 	uint style = 0;
 
-	//std::vector<Panel*> panels;
+	std::vector<Panel*> panels;
 };

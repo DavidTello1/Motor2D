@@ -22,7 +22,7 @@ ModuleFileSystem::ModuleFileSystem(const char* game_path) : Module("FileSystem",
 		AddPath(game_path);
 
 	// Dump list of paths
-	LOG("FileSystem Operations base is [%s] plus:", GetBasePath(), 'd');
+	LOG("FileSystem Operations base is [%s] plus:", GetBasePath());
 	LOG("Read Paths: [%s]", GetReadPaths(), 'd');
 
 	// enable us to write in the game's dir area
@@ -54,7 +54,7 @@ ModuleFileSystem::~ModuleFileSystem()
 // Called before render is available
 bool ModuleFileSystem::Init(Config* config)
 {
-	LOG("Init File System", 'd');
+	LOG("Init File System");
 	bool ret = true;
 
 	// Ask SDL for a write dir
@@ -72,7 +72,7 @@ bool ModuleFileSystem::Init(Config* config)
 // Called before quitting
 bool ModuleFileSystem::CleanUp()
 {
-	LOG("Quitting File System", 'd');
+	LOG("Quitting File System");
 	return true;
 }
 
@@ -123,7 +123,7 @@ bool ModuleFileSystem::CopyFromOutsideFS(const char * full_path, const char * de
 		fclose(source); //close source file
 		PHYSFS_close(dest); //close destination file
 
-		LOG("File System copied file [%s] to [%s]", full_path, destination, 'd');
+		LOG("File System copied file [%s] to [%s]", full_path, destination);
 		return true;
 	}
 	else
@@ -148,7 +148,7 @@ bool ModuleFileSystem::Copy(const char * source, const char * destination)
 		PHYSFS_close(src); //close source file
 		PHYSFS_close(dst); //close destination file
 
-		LOG("File System copied file [%s] to [%s]", source, destination, 'd');
+		LOG("File System copied file [%s] to [%s]", source, destination);
 		return true;
 	}
 	else
@@ -251,10 +251,10 @@ uint ModuleFileSystem::Save(const char* file, const void* buffer, unsigned int s
 		{
 			if (append == true) //if append
 			{
-				LOG("Added %u data to [%s%s]", size, PHYSFS_getWriteDir(), file, 'd');
+				LOG("Added %u data to [%s%s]", size, PHYSFS_getWriteDir(), file);
 			}
 			else if (overwrite == false) //if is new file
-				LOG("New file created [%s%s] of %u bytes", PHYSFS_getWriteDir(), file, size, 'd');
+				LOG("New file created [%s%s] of %u bytes", PHYSFS_getWriteDir(), file, size);
 
 			ret = written;
 		}
