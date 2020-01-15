@@ -40,7 +40,7 @@ public:
 	void ReadConfig(const Config& config);
 	void SaveConfig(Config& config) const;
 
-	void LoadPrefs();
+	void LoadPrefs(bool default = false);
 	void SavePrefs() const;
 
 	std::string GetLog() { return log; }

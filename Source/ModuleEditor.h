@@ -7,17 +7,17 @@
 #define FILE_MAX 250
 
 class Console;
-//class Configuration;
+class Configuration;
 //class Hierarchy;
 //class Inspector;
 //class Assets;
 //class Viewport;
 
 enum Style {
-	NEW = 0,
+	BLACK = 0,
 	CLASSIC,
 	DARK,
-	LIGHT
+	NUM_STYLES //used for getting size
 };
 
 class ModuleEditor : public Module
@@ -38,6 +38,8 @@ public:
 
 	void Draw();
 
+	void ChangeStyle(uint new_style);
+	uint GetStyle() { return style; }
 	void CreateLink(const char* text, const char* url, bool bullet = false);
 	void LogFPS(float fps, float ms);
 
@@ -61,9 +63,10 @@ private:
 	void DockSpace();
 
 public:
+	uint style = 0;
 	Panel* focused_panel = nullptr;
 
-	//Configuration* tab_configuration = nullptr;
+	Configuration* tab_configuration = nullptr;
 	//Hierarchy* tab_hierarchy = nullptr;
 	Console* tab_console = nullptr;
 	//Inspector* tab_inspector = nullptr;
@@ -83,7 +86,6 @@ public:
 
 private:
 	bool close = false;
-	uint style = 0;
 
 	std::vector<Panel*> panels;
 };

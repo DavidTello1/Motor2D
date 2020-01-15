@@ -202,10 +202,13 @@ void Application::SaveConfig(Config& config) const
 }
 
 // ---------------------------------------------
-void Application::LoadPrefs()
+void Application::LoadPrefs(bool default)
 {
 	char* buffer = nullptr;
-	file_system->Load(SETTINGS_FOLDER "config.json", &buffer);
+	if (default)
+		file_system->Load(SETTINGS_FOLDER "default_config.json", &buffer);
+	else
+		file_system->Load(SETTINGS_FOLDER "config.json", &buffer);
 
 	if (buffer != nullptr)
 	{

@@ -45,10 +45,10 @@ public:
 	}
 
 public:
-	static const uint default_width = 1280;
-	static const uint default_height = 323;
+	static const uint default_width = 1400;
+	static const uint default_height = 220;
 	static const uint default_pos_x = 0;
-	static const uint default_pos_y = 701;
+	static const uint default_pos_y = 560;
 
 	static char InputBuf[256];
 	static ImVector<char*> Items;

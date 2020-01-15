@@ -6,10 +6,10 @@
 #include "ModuleRenderer.h"
 //#include "ModuleScene.h"
 
+#include "Configuration.h"
 #include "Console.h"
 //#include "Hierarchy.h"
 //#include "Inspector.h"
-//#include "Configuration.h"
 //#include "Assets.h"
 //#include "Viewport.h"
 
@@ -51,23 +51,12 @@ bool ModuleEditor::Init(Config* config)
 
 	// Set style
 	Load(config);
-	if (style == Style::NEW)
-		ImGui::StyleColorsNew();
 
-	else if (style == Style::DARK)
-		ImGui::StyleColorsDark();
-
-	else if (style == Style::CLASSIC)
-		ImGui::StyleColorsClassic();
-
-	else if (style == Style::LIGHT)
-		ImGui::StyleColorsLight();
-
-	//// Create panels
+	// Create panels
+	panels.push_back(tab_configuration = new Configuration());
 	panels.push_back(tab_console = new Console());
 	//panels.push_back(tab_hierarchy = new Hierarchy());
 	//panels.push_back(tab_inspector = new Inspector());
-	//panels.push_back(tab_configuration = new Configuration());
 	//panels.push_back(tab_assets = new Assets());
 	////panels.push_back(tab_viewport = new Viewport());
 
@@ -128,7 +117,8 @@ void ModuleEditor::Save(Config* config) const
 
 void ModuleEditor::Load(Config* config)
 {
-	style = config->GetUInt("Style", Style::NEW);
+	style = config->GetUInt("Style", Style::DARK);
+	ChangeStyle(style);
 }
 
 // Drawing of the FULL gui (first gets drawn the Menus, then panels)
@@ -250,53 +240,34 @@ void ModuleEditor::DrawMenu()
 			ImGui::EndMenu();
 		}
 
-		//if (ImGui::BeginMenu("View")) //view
-		//{
-			//if (ImGui::MenuItem("Show Grid", NULL, &is_plane))
-			//	is_show_plane = !is_show_plane;
-
-			//if (ImGui::MenuItem("Show Axis", NULL, &is_axis))
-			//	is_show_axis = !is_show_axis;
-
-		//	ImGui::EndMenu();
-		//}
-
-		if (ImGui::BeginMenu("Options")) //options
+		if (ImGui::BeginMenu("Tools")) //tools
 		{
-			if (ImGui::BeginMenu("Style"))
+			if (ImGui::MenuItem("Map Editor", NULL, false, false))
 			{
-				if (ImGui::MenuItem("New", NULL, style == Style::NEW))
-				{
-					ImGui::StyleColorsNew();
-					style = Style::NEW;
-				}
-
-				if (ImGui::MenuItem("Classic", NULL, style == Style::CLASSIC))
-				{
-					ImGui::StyleColorsClassic();
-					style = Style::CLASSIC;
-				}
-
-				if (ImGui::MenuItem("Dark", NULL, style == Style::DARK))
-				{
-					ImGui::StyleColorsDark();
-					style = Style::DARK;
-				}
-
-				if (ImGui::MenuItem("Light", NULL, style == Style::LIGHT))
-				{
-					ImGui::StyleColorsLight();
-					style = Style::LIGHT;
-				}
-				ImGui::EndMenu();
+			}
+			if (ImGui::MenuItem("Audio Editor", NULL, false, false))
+			{
+			}
+			if (ImGui::MenuItem("Animations", NULL, false, false))
+			{
+			}
+			if (ImGui::MenuItem("Particles", NULL, false, false))
+			{
+			}
+			if (ImGui::MenuItem("Lights", NULL, false, false))
+			{
+			}
+			if (ImGui::MenuItem("Shaders", NULL, false, false))
+			{
 			}
 			ImGui::EndMenu();
 		}
 
 		if (ImGui::BeginMenu("Windows")) //windows
 		{
+			ImGui::MenuItem("Configuration", NULL, &GetPanel("Configuration")->active);
+			ImGui::Separator();
 			//ImGui::MenuItem("Hierarchy", NULL, &GetPanel("Hierarchy")->active);
-			//ImGui::MenuItem("Configuration", NULL, &GetPanel("Configuration")->active);
 			//ImGui::MenuItem("Inspector", NULL, &GetPanel("Inspector")->active);
 			ImGui::MenuItem("Console", NULL, &GetPanel("Console")->active);
 			//ImGui::MenuItem("Assets", NULL, &GetPanel("Assets")->active);
@@ -337,18 +308,27 @@ void ModuleEditor::DrawPanels()
 	{
 		if ((*it)->IsActive())
 		{
+			ImVec2 pos;
+			ImGuiWindowFlags flags;
+			bool open = false;
 			ImGui::SetNextWindowPos(ImVec2((float)(*it)->pos_x, (float)(*it)->pos_y), ImGuiCond_FirstUseEver);
 			ImGui::SetNextWindowSize(ImVec2((float)(*it)->width, (float)(*it)->height), ImGuiCond_FirstUseEver);
-			ImVec2 p;
 
-			if ((*it)->has_menubar) //panel has a menu bar
+			// Panel has Menu Bar
+			if ((*it)->has_menubar)
+				flags = ImGuiWindowFlags_MenuBar;
+			else
+				flags = ImGuiWindowFlags_None;
+
+			// Draw Panel
+			if ((*it)->GetName() == "Configuration")
 			{
-				if (ImGui::Begin((*it)->GetName(), &(*it)->active, ImGuiWindowFlags_MenuBar))
+				if (ImGui::Begin((*it)->GetName(), NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDocking))
 				{
 					(*it)->Draw();
-					p = ImGui::GetWindowPos();
-					(*it)->pos_x = (int)p.x;
-					(*it)->pos_y = (int)p.y;
+					pos = ImGui::GetWindowPos();
+					(*it)->pos_x = (int)pos.x;
+					(*it)->pos_y = (int)pos.y;
 
 					if (ImGui::IsWindowHovered())
 						focused_panel = *it;
@@ -356,12 +336,12 @@ void ModuleEditor::DrawPanels()
 			}
 			else
 			{
-				if (ImGui::Begin((*it)->GetName(), &(*it)->active))
+				if (ImGui::Begin((*it)->GetName(), &(*it)->active, flags))
 				{
 					(*it)->Draw();
-					p = ImGui::GetWindowPos();
-					(*it)->pos_x = (int)p.x;
-					(*it)->pos_y = (int)p.y;
+					pos = ImGui::GetWindowPos();
+					(*it)->pos_x = (int)pos.x;
+					(*it)->pos_y = (int)pos.y;
 
 					if (ImGui::IsWindowHovered())
 						focused_panel = *it;
@@ -374,11 +354,12 @@ void ModuleEditor::DrawPanels()
 			//	p = ImGui::GetWindowPos();
 			//	(*it)->pos_x = p.x;
 			//	(*it)->pos_y = p.y;
-
+			
 			//	App->scene->is_creating = false;
 			//	App->scene->is_selecting = false;
 			//	focused_panel = *it;
 			//}
+			
 			ImGui::End();
 		}
 	}
@@ -505,6 +486,20 @@ void ModuleEditor::Shortcuts()
 	}
 }
 
+void ModuleEditor::ChangeStyle(uint new_style)
+{
+	style = new_style;
+
+	if (style == Style::BLACK)
+		ImGui::StyleColorsNew();
+
+	else if (style == Style::CLASSIC)
+		ImGui::StyleColorsClassic();
+
+	else if (style == Style::DARK)
+		ImGui::StyleColorsDark();
+}
+
 void ModuleEditor::CreateLink(const char* text, const char* url, bool bullet)
 {
 	ImVec2 size = ImGui::CalcTextSize(text);
@@ -552,8 +547,8 @@ Panel* ModuleEditor::GetPanel(const char* name)
 
 void ModuleEditor::LogFPS(float fps, float ms)
 {
-	//if (tab_configuration != nullptr)
-	//	tab_configuration->AddFPS(fps, ms);
+	if (tab_configuration != nullptr)
+		tab_configuration->AddFPS(fps, ms);
 }
 
 void ModuleEditor::DockSpace()

@@ -315,6 +315,12 @@
     <ClInclude Include="Console.h">
       <Filter>Sources\Panels</Filter>
     </ClInclude>
+    <ClInclude Include="Hierarchy.h">
+      <Filter>Sources\Panels</Filter>
+    </ClInclude>
+    <ClInclude Include="Configuration.h">
+      <Filter>Sources\Panels</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Timer.cpp">
@@ -471,6 +477,12 @@
       <Filter>Sources\Modules</Filter>
     </ClCompile>
     <ClCompile Include="Console.cpp">
+      <Filter>Sources\Panels</Filter>
+    </ClCompile>
+    <ClCompile Include="Configuration.cpp">
+      <Filter>Sources\Panels</Filter>
+    </ClCompile>
+    <ClCompile Include="Hierarchy.cpp">
       <Filter>Sources\Panels</Filter>
     </ClCompile>
   </ItemGroup>
