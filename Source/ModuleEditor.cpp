@@ -6,21 +6,18 @@
 #include "ModuleRenderer.h"
 //#include "ModuleScene.h"
 
+#include "Panel.h"
 #include "Configuration.h"
 #include "Console.h"
-//#include "Hierarchy.h"
+#include "Hierarchy.h"
 //#include "Inspector.h"
 //#include "Assets.h"
 //#include "Viewport.h"
 
-#define IMGUI_IMPL_OPENGL_LOADER_GLEW
-#include "imgui/imgui.h"
 #include "imgui/imgui_impl_sdl.h"
 #include "imgui/imgui_impl_opengl3.h"
-
 #include <windows.h>
-#include <string.h>
-#include <algorithm>
+
 #include "mmgr/mmgr.h"
 
 ModuleEditor::ModuleEditor(bool start_enabled) : Module("ModuleEditor", start_enabled)
@@ -53,26 +50,26 @@ bool ModuleEditor::Init(Config* config)
 	Load(config);
 
 	// Create panels
-	panels.push_back(tab_configuration = new Configuration());
-	panels.push_back(tab_console = new Console());
-	//panels.push_back(tab_hierarchy = new Hierarchy());
-	//panels.push_back(tab_inspector = new Inspector());
-	//panels.push_back(tab_assets = new Assets());
-	////panels.push_back(tab_viewport = new Viewport());
+	panels.push_back(panel_configuration = new Configuration());
+	panels.push_back(panel_console = new Console());
+	panels.push_back(panel_hierarchy = new Hierarchy());
+	//panels.push_back(panel_inspector = new Inspector());
+	//panels.push_back(panel_assets = new Assets());
+	//panels.push_back(panel_viewport = new Viewport());
 
 	return true;
 }
 
 bool ModuleEditor::Start(Config* config)
 {
-	//tab_viewport->GenerateFBO();
+	//panel_viewport->GenerateFBO();
 	return true;
 }
 
 bool ModuleEditor::PreUpdate(float dt)
 {
 	//// Start the frame
-	//tab_viewport->PreUpdate();
+	//panel_viewport->PreUpdate();
 	return true;
 }
 
@@ -84,7 +81,7 @@ bool ModuleEditor::Update(float dt)
 bool ModuleEditor::PostUpdate(float dt)
 {
 	//// End the frame
-	//tab_viewport->PostUpdate();
+	//panel_viewport->PostUpdate();
 
 	if (close)
 		return false;
@@ -130,7 +127,7 @@ void ModuleEditor::Draw()
 
 	// Draw functions
 	DockSpace();
-	DrawMenu();
+	DrawMenuBar();
 	DrawDemo();
 	DrawAbout();
 	DrawPanels();
@@ -180,13 +177,12 @@ void ModuleEditor::Draw()
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
-void ModuleEditor::DrawMenu()
+void ModuleEditor::DrawMenuBar()
 {
-	bool ret = true;
-
 	if (ImGui::BeginMainMenuBar())
 	{
-		if (ImGui::BeginMenu("File")) //file
+		// File
+		if (ImGui::BeginMenu("File"))
 		{
 			if (ImGui::MenuItem("New", "Ctrl+N", false, false))
 				is_new = true;
@@ -204,22 +200,20 @@ void ModuleEditor::DrawMenu()
 			ImGui::EndMenu();
 		}
 
-		if (ImGui::BeginMenu("Edit")) //edit
+		// Edit
+		if (ImGui::BeginMenu("Edit"))
 		{
 			if (ImGui::MenuItem("Undo", "Ctrl+Z", false, false))
 			{
 			}
-
 			if (ImGui::MenuItem("Redo", "Ctrl+Y", false, false))
 			{
 			}
-
 			ImGui::Separator();
 
 			if (ImGui::MenuItem("Import", "Ctrl+I", false, false))
 			{
 			}
-
 			if (ImGui::MenuItem("Export", "Ctrl+E", false, false))
 			{
 			}
@@ -232,7 +226,6 @@ void ModuleEditor::DrawMenu()
 			if (ImGui::MenuItem("Copy", "Ctrl+C", false, false))
 			{
 			}
-
 			if (ImGui::MenuItem("Paste", "Ctrl+V", false, false))
 			{
 			}
@@ -240,7 +233,15 @@ void ModuleEditor::DrawMenu()
 			ImGui::EndMenu();
 		}
 
-		if (ImGui::BeginMenu("Tools")) //tools
+		// GameObjects
+		if (ImGui::BeginMenu("GameObjects"))
+		{
+
+			ImGui::EndMenu();
+		}
+
+		// Tools
+		if (ImGui::BeginMenu("Tools"))
 		{
 			if (ImGui::MenuItem("Map Editor", NULL, false, false))
 			{
@@ -260,22 +261,25 @@ void ModuleEditor::DrawMenu()
 			if (ImGui::MenuItem("Shaders", NULL, false, false))
 			{
 			}
+
 			ImGui::EndMenu();
 		}
 
-		if (ImGui::BeginMenu("Windows")) //windows
+		// Windows
+		if (ImGui::BeginMenu("Windows"))
 		{
 			ImGui::MenuItem("Configuration", NULL, &GetPanel("Configuration")->active);
 			ImGui::Separator();
-			//ImGui::MenuItem("Hierarchy", NULL, &GetPanel("Hierarchy")->active);
-			//ImGui::MenuItem("Inspector", NULL, &GetPanel("Inspector")->active);
 			ImGui::MenuItem("Console", NULL, &GetPanel("Console")->active);
+			ImGui::MenuItem("Hierarchy", NULL, &GetPanel("Hierarchy")->active);
+			//ImGui::MenuItem("Inspector", NULL, &GetPanel("Inspector")->active);
 			//ImGui::MenuItem("Assets", NULL, &GetPanel("Assets")->active);
 
 			ImGui::EndMenu();
 		}
 
-		if (ImGui::BeginMenu("Help")) //help
+		// Help
+		if (ImGui::BeginMenu("Help"))
 		{
 			ImGui::MenuItem("ImGui Demo", NULL, &is_show_demo);
 			ImGui::Separator();
@@ -308,44 +312,31 @@ void ModuleEditor::DrawPanels()
 	{
 		if ((*it)->IsActive())
 		{
-			ImVec2 pos;
 			ImGuiWindowFlags flags;
 			bool open = false;
 			ImGui::SetNextWindowPos(ImVec2((float)(*it)->pos_x, (float)(*it)->pos_y), ImGuiCond_FirstUseEver);
 			ImGui::SetNextWindowSize(ImVec2((float)(*it)->width, (float)(*it)->height), ImGuiCond_FirstUseEver);
 
-			// Panel has Menu Bar
-			if ((*it)->has_menubar)
-				flags = ImGuiWindowFlags_MenuBar;
-			else
-				flags = ImGuiWindowFlags_None;
-
-			// Draw Panel
+			// Flags
 			if ((*it)->GetName() == "Configuration")
 			{
-				if (ImGui::Begin((*it)->GetName(), NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDocking))
-				{
-					(*it)->Draw();
-					pos = ImGui::GetWindowPos();
-					(*it)->pos_x = (int)pos.x;
-					(*it)->pos_y = (int)pos.y;
-
-					if (ImGui::IsWindowHovered())
-						focused_panel = *it;
-				}
+				open = NULL;
+				flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDocking;
 			}
 			else
 			{
-				if (ImGui::Begin((*it)->GetName(), &(*it)->active, flags))
-				{
-					(*it)->Draw();
-					pos = ImGui::GetWindowPos();
-					(*it)->pos_x = (int)pos.x;
-					(*it)->pos_y = (int)pos.y;
+				open = (*it)->IsActive();
+				if ((*it)->has_menubar)
+					flags = ImGuiWindowFlags_MenuBar;
+				else
+					flags = ImGuiWindowFlags_None;
+			}
 
-					if (ImGui::IsWindowHovered())
-						focused_panel = *it;
-				}
+			// Draw Panel
+			if (ImGui::Begin((*it)->GetName(), &open, flags))
+			{
+				(*it)->Draw();
+				ImGui::End();
 			}
 
 			//if ((*it)->GetName() == "Inspector" && (App->scene->is_creating || App->scene->is_selecting)) //show inspector when a gameobject is created/selected
@@ -359,8 +350,6 @@ void ModuleEditor::DrawPanels()
 			//	App->scene->is_selecting = false;
 			//	focused_panel = *it;
 			//}
-			
-			ImGui::End();
 		}
 	}
 }
@@ -486,6 +475,16 @@ void ModuleEditor::Shortcuts()
 	}
 }
 
+Panel* ModuleEditor::GetPanel(const char* name)
+{
+	for (std::vector<Panel*>::iterator it = panels.begin(); it != panels.end(); ++it)
+	{
+		if ((*it)->GetName() == name)
+			return (*it);
+	}
+	return nullptr;
+}
+
 void ModuleEditor::ChangeStyle(uint new_style)
 {
 	style = new_style;
@@ -535,20 +534,10 @@ void ModuleEditor::CreateLink(const char* text, const char* url, bool bullet)
 	}
 }
 
-Panel* ModuleEditor::GetPanel(const char* name)
-{
-	for (std::vector<Panel*>::iterator it = panels.begin(); it != panels.end(); ++it)
-	{
-		if ((*it)->GetName() == name)
-			return (*it);
-	}
-	return nullptr;
-}
-
 void ModuleEditor::LogFPS(float fps, float ms)
 {
-	if (tab_configuration != nullptr)
-		tab_configuration->AddFPS(fps, ms);
+	if (panel_configuration != nullptr)
+		panel_configuration->AddFPS(fps, ms);
 }
 
 void ModuleEditor::DockSpace()

@@ -1,9 +1,8 @@
 #pragma once
-
 #include "Globals.h"
 
+#include "Imgui/imgui.h"
 #include "SDL/include/SDL_scancode.h"
-#include <string>
 
 class Panel
 {

@@ -4,13 +4,12 @@
 
 #include "MathGeoLib/include/MathGeoLibFwd.h"
 #include <list>
-#include <string>
 
 class Module;
 class ModuleWindow;
 class ModuleInput;
 //class ModuleSceneBase;
-//class ModuleScene;
+class ModuleScene;
 class ModuleRenderer;
 class ModuleEditor;
 class ModuleFileSystem;
@@ -56,7 +55,7 @@ public:
 	ModuleWindow* window;
 	ModuleInput* input;
 	//ModuleSceneBase* scene_base;
-	//ModuleScene* scene;
+	ModuleScene* scene;
 	ModuleRenderer* renderer;
 	//ModuleCamera3D* camera;
 	ModuleEditor* editor;

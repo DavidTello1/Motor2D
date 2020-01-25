@@ -1,8 +1,9 @@
 #pragma once
-
 #include "Panel.h"
 
-#include "imgui/imgui.h"
+#include <ctype.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #define DEBUG_LOG_STRING "[Debug]" //used for engine/editor logs
 #define GEOMETRY_LOG_STRING "[Geometry]" //used for loading/unloading assets

@@ -1,17 +1,15 @@
 #pragma once
-
 #include "Module.h"
 
 #include "SDL/include/SDL.h"
-#include <string>
 
 #define DEFAULT_SCREEN_WIDTH 1280
 #define DEFAULT_SCREEN_HEIGHT 1024
 
 #define MIN_SCREEN_WIDTH 480
 #define MIN_SCREEN_HEIGHT 320
-#define MAX_SCREEN_WIDTH 3000
-#define MAX_SCREEN_HEIGHT 2000
+#define MAX_SCREEN_WIDTH 4800
+#define MAX_SCREEN_HEIGHT 3200
 
 
 struct SDL_Window;

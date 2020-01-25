@@ -122,8 +122,8 @@ void Console::Draw()
 	// Right Click Options
 	if (ImGui::BeginPopupContextWindow())
 	{
-		if (ImGui::Selectable("Clear")) ClearLog();
 		copy_to_clipboard = ImGui::Selectable("Copy");
+		if (ImGui::Selectable("Clear")) ClearLog();
 		ImGui::EndPopup();
 	}
 

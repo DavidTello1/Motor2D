@@ -1,9 +1,9 @@
 #include "Application.h"
 #include "ModuleRenderer.h"
-//#include "Viewport.h"
 #include "ModuleWindow.h"
 #include "ModuleEditor.h"
 #include "Config.h"
+//#include "Viewport.h"
 
 #include "glew/include/GL/glew.h"
 #include "SDL/include/SDL_opengl.h"

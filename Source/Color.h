@@ -1,4 +1,3 @@
-
 #pragma once
 
 struct Color
@@ -552,6 +551,4 @@ struct Color
 	static Color yellow3;
 	static Color yellow4;
 	static Color YellowGreen;
-
-
 };

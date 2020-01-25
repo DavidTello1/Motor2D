@@ -78,5 +78,3 @@ typedef unsigned long long UID;
 #define LIBRARY_ANIMATION_FOLDER "/Library/Animations/"
 #define LIBRARY_AUDIO_FOLDER "/Library/Audio/"
 #define LIBRARY_MATERIAL_FOLDER "/Library/Materials/"
-
-#define NAME_LENGTH 128

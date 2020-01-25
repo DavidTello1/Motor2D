@@ -1,6 +1,4 @@
-#ifndef __CONFIG_H__
-#define __CONFIG_H__
-
+#pragma once
 #include "Globals.h"
 
 // C++ wrapper for JSON parser library "Parson"
@@ -68,5 +66,3 @@ private:
 	JSON_Array* array = nullptr;
 	bool needs_removal = false;
 };
-
-#endif // __CONFIG_H__

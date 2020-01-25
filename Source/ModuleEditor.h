@@ -1,14 +1,12 @@
 #pragma once
-
 #include "Module.h"
-#include "Panel.h"
+
 #include <vector>
 
-#define FILE_MAX 250
-
-class Console;
+class Panel;
 class Configuration;
-//class Hierarchy;
+class Console;
+class Hierarchy;
 //class Inspector;
 //class Assets;
 //class Viewport;
@@ -38,24 +36,22 @@ public:
 
 	void Draw();
 
+	// Panels
+	Panel* GetPanel(const char* name);
+
+	// Style
 	void ChangeStyle(uint new_style);
 	uint GetStyle() { return style; }
+
+	// Utilities
 	void CreateLink(const char* text, const char* url, bool bullet = false);
 	void LogFPS(float fps, float ms);
 
-	// Panels
-	Panel* GetPanel(const char* name);
-	int GetPanelWidth(Panel* panel) const { return panel->width; }
-	int GetPanelHeight(Panel* panel) const { return panel->height; }
-	int GetPanelPosX(Panel* panel) const { return panel->pos_x; }
-	int GetPanelPosY(Panel* panel) const { return panel->pos_y; }
-	bool GetPanelActive(Panel* panel) const { return panel->active; }
-	Panel* GetPanelFocused() { return focused_panel; }
-
 private:
-	void DrawMenu();
+	void DrawMenuBar();
 	void DrawDemo();
 	void DrawAbout();
+
 	void DrawPanels();
 	void ConfirmExit();
 	void Shortcuts();
@@ -64,23 +60,19 @@ private:
 
 public:
 	uint style = 0;
-	Panel* focused_panel = nullptr;
 
-	Configuration* tab_configuration = nullptr;
-	//Hierarchy* tab_hierarchy = nullptr;
-	Console* tab_console = nullptr;
-	//Inspector* tab_inspector = nullptr;
-	//Viewport* tab_viewport = nullptr;
-	//Assets* tab_assets = nullptr;
+	Configuration* panel_configuration = nullptr;
+	Console* panel_console = nullptr;
+	Hierarchy* panel_hierarchy = nullptr;
+	//Inspector* panel_inspector = nullptr;
+	//Viewport* panel_viewport = nullptr;
+	//Assets* panel_assets = nullptr;
 
-	//Bools
 	bool is_new = false;
 	bool is_open = false;
 	bool is_save = false;
 	bool is_import = false;
-
 	bool is_auto_select = false;
-
 	bool is_show_demo = false;
 	bool is_about = false;
 

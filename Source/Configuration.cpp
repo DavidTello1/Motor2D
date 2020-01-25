@@ -9,6 +9,7 @@
 #include "ModuleFileSystem.h"
 
 #include "gpudetect/DeviceId.h"
+#include "glew/include/GL/glew.h"
 //#include "Devil/include/IL/il.h"
 
 #include "mmgr/mmgr.h"
@@ -112,7 +113,7 @@ void Configuration::Draw()
 	ImGui::SetCursorPosY(float(height - 60));
 	if (ImGui::Button("Apply", ImVec2(size.x / 3, 22)))
 	{
-		LOG("Saved Configuration");
+		LOG("Saved Configuration", 'd');
 		App->SavePrefs();
 		ImGui::CloseCurrentPopup();
 	}
@@ -122,7 +123,7 @@ void Configuration::Draw()
 	pos = ImGui::GetCursorPosX();
 	if (ImGui::Button("Reset", ImVec2(size.x / 3, 22)))
 	{
-		LOG("Setting Default Configuration");
+		LOG("Setting Default Configuration", 'd');
 		App->LoadPrefs(true);
 		ImGui::CloseCurrentPopup();
 	}
@@ -308,15 +309,15 @@ void Configuration::DrawSoftware()
 	ImGui::SameLine();
 	ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "%d.%d.%d", compiled.major, compiled.minor, compiled.patch);
 
-	//// OpenGL
-	//ImGui::BulletText("OpenGL Version:");
-	//ImGui::SameLine();
-	//ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "%s", glGetString(GL_VERSION));
+	// OpenGL
+	ImGui::BulletText("OpenGL Version:");
+	ImGui::SameLine();
+	ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "%s", glGetString(GL_VERSION));
 
-	//// Glew
-	//ImGui::BulletText("Glew Version:");
-	//ImGui::SameLine();
-	//ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "%s", glewGetString(GLEW_VERSION));
+	// Glew
+	ImGui::BulletText("Glew Version:");
+	ImGui::SameLine();
+	ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "%s", glewGetString(GLEW_VERSION));
 
 	//ImGui
 	ImGui::BulletText("ImGui Version:");
@@ -436,21 +437,21 @@ void Configuration::DrawInput()
 	ImGui::Text("y");
 	ImGui::NewLine();
 
-	if (App->editor->focused_panel)
-	{
-		ImGui::Text("Mouse relative to %s:", App->editor->focused_panel->GetName());
-		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 10);
-		ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "%i", mouse_x - App->editor->focused_panel->pos_x);
-		ImGui::SameLine();
-		ImGui::SetCursorPosX(ImGui::GetCursorPosX() - 5);
-		ImGui::Text("x");
-		ImGui::SameLine();
-		ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "%i", mouse_y - App->editor->focused_panel->pos_y);
-		ImGui::SameLine();
-		ImGui::SetCursorPosX(ImGui::GetCursorPosX() - 5);
-		ImGui::Text("y");
-	}
-	ImGui::NewLine();
+	//if (App->editor->focused_panel)
+	//{
+	//	ImGui::Text("Mouse relative to %s:", App->editor->focused_panel->GetName());
+	//	ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 10);
+	//	ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "%i", mouse_x - App->editor->focused_panel->pos_x);
+	//	ImGui::SameLine();
+	//	ImGui::SetCursorPosX(ImGui::GetCursorPosX() - 5);
+	//	ImGui::Text("x");
+	//	ImGui::SameLine();
+	//	ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "%i", mouse_y - App->editor->focused_panel->pos_y);
+	//	ImGui::SameLine();
+	//	ImGui::SetCursorPosX(ImGui::GetCursorPosX() - 5);
+	//	ImGui::Text("y");
+	//}
+	//ImGui::NewLine();
 
 	// Mouse Motion
 	App->input->GetMouseMotion(mouse_x, mouse_y);

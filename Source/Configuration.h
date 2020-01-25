@@ -1,9 +1,6 @@
 #pragma once
-
 #include "Panel.h"
 
-#include "Imgui/imgui.h"
-#include "MathGeoLib/include/Math/float3.h"
 #include <vector>
 
 #define FPS_LOG_SIZE 100
@@ -20,8 +17,7 @@ class ModuleInput;
 class ModuleRenderer;
 class ModuleFileSystem;
 
-struct hardware_info
-{
+struct hardware_info {
 	float ram_gb = 0.f;
 	uint cpu_count = 0;
 	uint l1_cachekb = 0;
@@ -59,12 +55,6 @@ enum Index {
 class Configuration : public Panel
 {
 public:
-	static const uint default_width = 650;
-	static const uint default_height = 500;
-	static const uint default_pos_x = 360;
-	static const uint default_pos_y = 100;
-
-public:
 	Configuration();
 	virtual ~Configuration();
 
@@ -82,6 +72,12 @@ public:
 
 	void GetHardware();
 	const hardware_info& GetHardwareInfo() const;
+
+public:
+	static const uint default_width = 650;
+	static const uint default_height = 500;
+	static const uint default_pos_x = 360;
+	static const uint default_pos_y = 100;
 
 private:
 	ImGuiTextBuffer input_buf;

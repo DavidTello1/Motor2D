@@ -1,9 +1,8 @@
 #include "Application.h"
-
 #include "Module.h"
 #include "ModuleWindow.h"
 #include "ModuleInput.h"
-//#include "ModuleScene.h"
+#include "ModuleScene.h"
 //#include "ModuleSceneBase.h"
 #include "ModuleRenderer.h"
 #include "ModuleEditor.h"
@@ -32,7 +31,7 @@ Application::Application()
 	//modules.push_back(tex = new ModuleTextures());
 	//modules.push_back(camera = new ModuleCamera3D());
 	//modules.push_back(scene_base = new ModuleSceneBase());
-	//modules.push_back(scene = new ModuleScene());
+	modules.push_back(scene = new ModuleScene());
 	modules.push_back(editor = new ModuleEditor());
 	modules.push_back(input = new ModuleInput());
 	//modules.push_back(audio = new ModuleAudio(true));
