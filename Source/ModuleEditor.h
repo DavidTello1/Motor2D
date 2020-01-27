@@ -49,7 +49,6 @@ public:
 
 private:
 	void DrawMenuBar();
-	void DrawDemo();
 	void DrawAbout();
 
 	void DrawPanels();
@@ -71,9 +70,9 @@ public:
 	bool is_new = false;
 	bool is_open = false;
 	bool is_save = false;
+	bool is_build = false;
 	bool is_import = false;
 	bool is_auto_select = false;
-	bool is_show_demo = false;
 	bool is_about = false;
 
 private:

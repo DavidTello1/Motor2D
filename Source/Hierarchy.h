@@ -5,24 +5,21 @@
 
 class GameObject;
 
-enum NodeType {
-	UNKNOWN = 0,
-	OBJECT,
-	SCENE,
-	FOLDER
-};
-
 struct HierarchyNode {
-	NodeType type = UNKNOWN;
-
-	bool rename = false;
-	bool leaf = true;
-	bool selected = false;
-
-	const char* name;
+	std::string name = "node";
 	int pos = 0;
 
-	GameObject* obj = nullptr;
+	HierarchyNode* parent = nullptr;
+	std::vector<HierarchyNode*> childs;
+
+	bool rename = false;
+	bool selected = false;
+	bool is_folder = false;
+	bool first_scene = false;
+
+	ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_None;
+
+	GameObject* object = nullptr;
 	//ResourceScene* scene = nullptr;
 };
 
@@ -33,21 +30,20 @@ public:
 	virtual ~Hierarchy();
 
 	void Draw();
-	void DrawNode(GameObject* object);
+	void DrawNode(HierarchyNode* node);
 
-	void Select(GameObject* object);
-	void UnSelect(GameObject* object);
-	bool ToggleSelection(GameObject* object);
+	HierarchyNode* CreateNode(const char* name, bool is_folder = false, HierarchyNode* parent = nullptr, bool selected = false, GameObject* object = nullptr/*, ResourceScene*scene = nullptr*/);
+	void DeleteNodes(std::vector<HierarchyNode*> node);
+	void DuplicateNodes(std::vector<HierarchyNode*> node);
+	void UnSelectAll();
 
 public:
-	static const uint default_width = 260;
+	static const uint default_width = 265;
 	static const uint default_height = 540;
 	static const uint default_pos_x = 0;
 	static const uint default_pos_y = 20;
 
 private:
-	ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
-
 	std::vector<HierarchyNode*> nodes;
-	HierarchyNode* selected_node = nullptr;
+	std::vector<HierarchyNode*> selected_nodes;
 };

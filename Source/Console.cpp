@@ -29,8 +29,9 @@ Console::Console() : Panel("Console")
 	memset(InputBuf, 0, sizeof(InputBuf));
 	HistoryPos = -1;
 
+	flags = ImGuiWindowFlags_MenuBar;
+
 	//Booleans
-	has_menubar = true;
 	AutoScroll = true;
 	ShowDebugLog = true;
 	ShowGeometryLog = true;

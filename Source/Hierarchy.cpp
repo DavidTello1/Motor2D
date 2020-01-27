@@ -14,11 +14,19 @@ Hierarchy::Hierarchy() : Panel("Hierarchy")
 	pos_x = default_pos_x;
 	pos_y = default_pos_y;
 
-	has_menubar = true;
+	flags = ImGuiWindowFlags_HorizontalScrollbar;
 }
 
 Hierarchy::~Hierarchy()
-{}
+{
+	for (std::vector<HierarchyNode*>::iterator it = nodes.begin(); it != nodes.end(); ++it)
+		delete *it;
+	nodes.clear();
+
+	for (std::vector<HierarchyNode*>::iterator it = selected_nodes.begin(); it != selected_nodes.end(); ++it)
+		delete *it;
+	selected_nodes.clear();
+}
 
 void Hierarchy::Draw()
 {
@@ -28,112 +36,167 @@ void Hierarchy::Draw()
 		if (ImGui::BeginMenu("Create"))
 		{
 			if (ImGui::MenuItem("Folder"))
-			{
-			}
+				CreateNode("Folder", true);
+
 			if (ImGui::MenuItem("Scene"))
-			{
-			}
+				CreateNode("Scene");
+
 			if (ImGui::MenuItem("GameObject"))
-			{
-			}
+				CreateNode("GameObject");
+
 			ImGui::EndMenu();
 		}
-		if (ImGui::MenuItem("Duplicate", "Ctrl+D", false, true))
+		if (ImGui::MenuItem("Duplicate", "Ctrl+D", false, !selected_nodes.empty()))	{}
+			//DuplicateNodes(selected_nodes);
+
+		ImGui::Separator();
+
+		if (ImGui::MenuItem("Cut", "Ctrl+X", false, !selected_nodes.empty()))
+		{
+		}
+		if (ImGui::MenuItem("Copy", "Ctrl+C", false, !selected_nodes.empty()))
+		{
+		}
+		if (ImGui::MenuItem("Paste", "Ctrl+V", false, false))
 		{
 		}
 		ImGui::Separator();
 
-		if (ImGui::MenuItem("Cut", "Ctrl+X", false, true))
+		if (ImGui::MenuItem("Rename", NULL, false, selected_nodes.size() == 1))
 		{
 		}
-		if (ImGui::MenuItem("Copy", "Ctrl+C", false, true))
-		{
-		}
-		if (ImGui::MenuItem("Paste", "Ctrl+V", false, true))
-		{
-		}
-		ImGui::Separator();
-
-		if (ImGui::MenuItem("Rename", NULL, false, selected_node != nullptr))
-		{
-		}
-		if (ImGui::MenuItem("Delete", "Supr", false, selected_node != nullptr))
+		if (ImGui::MenuItem("Delete", "Supr", false, !selected_nodes.empty()))
 		{
 		}
 		ImGui::EndPopup();
 	}
 
-	// Scenes and GameObjects
-	ImGui::Text(App->scene->GetName());
-	ImGui::Separator();
-
-	//// Drawing scene gameobjects as nodes
-	//for (GameObject* obj : ModuleScene::root_object->GetChilds())
-	//	DrawNode(obj);
-
-	//ImGui::Separator();
+	// Draw Nodes
+	for (HierarchyNode* node : nodes)
+		DrawNode(node);
 }
 
-void Hierarchy::DrawNode(GameObject* obj)
+void Hierarchy::DrawNode(HierarchyNode* node)
 {
-	//// Flags
-	//flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_Leaf;
+	// Flags
+	if (node->childs.empty()) // leaf
+		node->flags |= ImGuiTreeNodeFlags_Leaf;
+	else
+		node->flags &= ~ImGuiTreeNodeFlags_Leaf;
 
-	//if (obj->HasChilds()) // leaf
-	//	flags &= ~ImGuiTreeNodeFlags_Leaf;
-	//else
-	//	flags |= ImGuiTreeNodeFlags_Leaf;
+	if (node->selected) // selected
+		node->flags |= ImGuiTreeNodeFlags_Selected;
+	else
+		node->flags &= ~ImGuiTreeNodeFlags_Selected;
 
-	//if (obj->is_selected) // selected
-	//	flags |= ImGuiTreeNodeFlags_Selected;
-	//else
-	//	flags &= ~ImGuiTreeNodeFlags_Selected;
+	// Folder Params
+	if (node->is_folder)
+	{
+		if (node->childs.empty()) // if leaf, hide arrow
+			node->flags &= ~ImGuiTreeNodeFlags_Bullet;
+		else
+			node->flags |= ImGuiTreeNodeFlags_Bullet;
 
-	//// Draw Node
-	//bool is_open = ImGui::TreeNodeEx(obj->GetName(), flags);
+		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.9f, 0.6f, 0.0f, 1.0f));
+	}
 
-	//if (ImGui::IsItemClicked()) // if treenode is clicked, check whether it is a single or multi selection
+	//// Scene Params
+	//if (node->scene != nullptr && !node->is_folder)
 	//{
-	//	if (ImGui::IsMouseDoubleClicked(0)) // Double Click
+	//	ImDrawList* draw_list = ImGui::GetWindowDrawList();
+	//	static ImVec4 colorf = ImVec4(0.2f, 0.2f, 0.2f, 1.0f);
+	//	const ImU32 color = ImColor(colorf);
+	//	static float pos = ImGui::GetCursorPosY();
+	//	static bool first = false;
+
+	//	// Draw Scene Background
+	//	if (pos < 10)
 	//	{
-	//		obj->is_rename = true;
+	//		first = true;
+	//		pos += 16;
 	//	}
 	//	else
 	//	{
-	//		if (!ImGui::GetIO().KeyCtrl) // Single selection, clear selected nodes
-	//		{
-	//			App->scene->UnSelectAll(obj);
-	//		}
+	//		first = false;
+	//		pos += 18;
+	//	}
 
-	//	ToggleSelection(obj); // Always need to toggle the state of selection of the node, getting its current state
-	//}
+	//	draw_list->AddRectFilled(ImVec2(0, pos_y), ImVec2(ImGui::GetWindowWidth(), pos_y + 15), color); //actual draw of background
+
+	//	if (first)
+	//		ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 2);
 	//}
 
-	//// If node is open, draw childs if it has
-	//if (is_open && obj->HasChilds())
-	//{
-	//	for (GameObject* child : obj->GetChilds())
-	//		DrawNode(child);
-	//	ImGui::TreePop();
-	//}
+	// Draw Node
+	bool is_open = ImGui::TreeNodeEx(node->name.c_str(), node->flags);
+
+	if (node->is_folder)
+		ImGui::PopStyleColor();
+
+	if (ImGui::IsItemClicked()) // if treenode is clicked, check whether it is a single or multi selection
+	{
+		if (ImGui::IsMouseDoubleClicked(0)) // Double Click
+		{
+			node->rename = true;
+		}
+		else
+		{
+			//if (!ImGui::GetIO().KeyCtrl) // Single selection, clear selected nodes
+			//	UnSelectAll();
+
+			node->selected = !node->selected;
+		}
+	}
+
+	// Open Node
+	if (is_open)
+	{
+		if (!node->childs.empty())
+		{
+			for (HierarchyNode* child : node->childs)
+				DrawNode(child);
+		}
+		ImGui::TreePop();
+	}
 }
 
-void Hierarchy::Select(GameObject* object) 
-{ 
-	object->is_selected = true; 
-}
-
-void Hierarchy::UnSelect(GameObject* object) 
-{ 
-	object->is_selected = false; 
-}
-
-bool Hierarchy::ToggleSelection(GameObject* obj) // Toggles the state of the node, returns current state after toggled
+HierarchyNode* Hierarchy::CreateNode(const char* name, bool is_folder, HierarchyNode* parent, bool selected, GameObject* object/*, ResourceScene* scene*/)
 {
-	if (obj->is_selected)
-		UnSelect(obj);
-	else
-		Select(obj);
+	HierarchyNode* node = new HierarchyNode();
 
-	return obj->is_selected;
+	node->name = name + std::string("##") + std::to_string(int(nodes.size()));
+	node->parent = parent;
+	node->is_folder = is_folder;
+	node->selected = selected;
+
+	if (is_folder) // if folder = true, GameObject and ResourceScene are not read
+	{
+		node->flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_Bullet;
+	}
+	else if (object != nullptr) // if object != nullptr, ResourceScene is not read
+	{
+		node->object = object;
+		node->flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_Leaf;
+	}
+	//else if (scene != nullptr)
+	//{
+	//	node->scene = scene;
+	//	node->flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanFullWidth | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+	//}
+
+	if (node->parent != nullptr)
+	{
+		node->parent = parent;
+		node->parent->childs.push_back(node);
+	}
+
+	if (node != nullptr)
+	{
+		nodes.push_back(node);
+
+		if (node->selected)
+			selected_nodes.push_back(node);
+	}
+
+	return node;
 }

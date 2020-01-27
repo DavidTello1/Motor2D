@@ -20,7 +20,7 @@ public:
 
 public:
 	bool active = true;
-	bool has_menubar = false;
+	ImGuiWindowFlags flags = ImGuiWindowFlags_None;
 	int width, height, pos_x, pos_y;
 
 private:

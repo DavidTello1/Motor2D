@@ -48,11 +48,6 @@ public:
 	//static SceneState state;
 	//static const char* state_to_string[STOP + 1];
 
-	//static GameObject* root_object;
-
-	//std::vector<GameObject*> gameObjects;
-	//std::vector<GameObject*> selected_gameobj;
-
 	//std::vector<ResourceScene*> scenes;
 	//ResourceScene* current_scene;
 };

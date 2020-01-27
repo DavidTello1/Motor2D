@@ -128,7 +128,6 @@ void ModuleEditor::Draw()
 	// Draw functions
 	DockSpace();
 	DrawMenuBar();
-	DrawDemo();
 	DrawAbout();
 	DrawPanels();
 
@@ -192,6 +191,10 @@ void ModuleEditor::DrawMenuBar()
 
 			if (ImGui::MenuItem("Save", "Ctrl+S"))
 				is_save = true;
+			ImGui::Separator();
+
+			if (ImGui::MenuItem("Build", "Ctrl+S"))
+				is_build = true;
 
 			ImGui::Separator();
 			if (ImGui::MenuItem("Quit", "ESC"))
@@ -229,7 +232,14 @@ void ModuleEditor::DrawMenuBar()
 			if (ImGui::MenuItem("Paste", "Ctrl+V", false, false))
 			{
 			}
+			ImGui::Separator();
 
+			if (ImGui::MenuItem("Duplicate", "Ctrl+D", false, false))
+			{
+			}
+			if (ImGui::MenuItem("Delete", "Supr", false, false))
+			{
+			}
 			ImGui::EndMenu();
 		}
 
@@ -281,9 +291,6 @@ void ModuleEditor::DrawMenuBar()
 		// Help
 		if (ImGui::BeginMenu("Help"))
 		{
-			ImGui::MenuItem("ImGui Demo", NULL, &is_show_demo);
-			ImGui::Separator();
-
 			if (ImGui::MenuItem("Github"))
 				ShellExecuteA(NULL, "open", "https://github.com/DavidTello1/Motor2D", NULL, NULL, SW_SHOWNORMAL);
 
@@ -312,31 +319,26 @@ void ModuleEditor::DrawPanels()
 	{
 		if ((*it)->IsActive())
 		{
-			ImGuiWindowFlags flags;
-			bool open = false;
 			ImGui::SetNextWindowPos(ImVec2((float)(*it)->pos_x, (float)(*it)->pos_y), ImGuiCond_FirstUseEver);
 			ImGui::SetNextWindowSize(ImVec2((float)(*it)->width, (float)(*it)->height), ImGuiCond_FirstUseEver);
 
-			// Flags
+			// Configuration
 			if ((*it)->GetName() == "Configuration")
 			{
-				open = NULL;
-				flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDocking;
+				if (ImGui::Begin((*it)->GetName(), NULL, (*it)->flags))
+				{
+					(*it)->Draw();
+					ImGui::End();
+				}
 			}
-			else
+			else // Other Panels
 			{
-				open = (*it)->IsActive();
-				if ((*it)->has_menubar)
-					flags = ImGuiWindowFlags_MenuBar;
-				else
-					flags = ImGuiWindowFlags_None;
-			}
-
-			// Draw Panel
-			if (ImGui::Begin((*it)->GetName(), &open, flags))
-			{
-				(*it)->Draw();
-				ImGui::End();
+				// Draw Panel
+				if (ImGui::Begin((*it)->GetName(), &(*it)->active, (*it)->flags))
+				{
+					(*it)->Draw();
+					ImGui::End();
+				}
 			}
 
 			//if ((*it)->GetName() == "Inspector" && (App->scene->is_creating || App->scene->is_selecting)) //show inspector when a gameobject is created/selected
@@ -351,15 +353,6 @@ void ModuleEditor::DrawPanels()
 			//	focused_panel = *it;
 			//}
 		}
-	}
-}
-
-void ModuleEditor::DrawDemo()
-{
-	if (is_show_demo) //show demo
-	{
-		ImGui::ShowDemoWindow(&is_show_demo);
-		ImGui::ShowMetricsWindow();
 	}
 }
 

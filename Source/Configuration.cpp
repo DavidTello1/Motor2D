@@ -22,6 +22,7 @@ Configuration::Configuration() : Panel("Configuration"), fps_log(FPS_LOG_SIZE), 
 	pos_y = default_pos_y;
 
 	active = false;
+	flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDocking;
 
 	GetHardware(); //init hardware detection
 	info_hw = GetHardwareInfo();
