@@ -33,9 +33,11 @@ public:
 	void DrawNode(HierarchyNode* node);
 
 	HierarchyNode* CreateNode(const char* name, bool is_folder = false, HierarchyNode* parent = nullptr, bool selected = false, GameObject* object = nullptr/*, ResourceScene*scene = nullptr*/);
-	void DeleteNodes(std::vector<HierarchyNode*> node);
-	void DuplicateNodes(std::vector<HierarchyNode*> node);
-	void UnSelectAll();
+	void DeleteNodes(std::vector<HierarchyNode*> nodes);
+	void DuplicateNodes(std::vector<HierarchyNode*> nodes);
+	void UnSelectAll(HierarchyNode* exception = nullptr);
+
+	int FindNode(HierarchyNode* node, std::vector<HierarchyNode*> list); //returns -1 if not found
 
 public:
 	static const uint default_width = 265;

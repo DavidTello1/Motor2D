@@ -22,9 +22,6 @@ Hierarchy::~Hierarchy()
 	for (std::vector<HierarchyNode*>::iterator it = nodes.begin(); it != nodes.end(); ++it)
 		delete *it;
 	nodes.clear();
-
-	for (std::vector<HierarchyNode*>::iterator it = selected_nodes.begin(); it != selected_nodes.end(); ++it)
-		delete *it;
 	selected_nodes.clear();
 }
 
@@ -66,8 +63,8 @@ void Hierarchy::Draw()
 		{
 		}
 		if (ImGui::MenuItem("Delete", "Supr", false, !selected_nodes.empty()))
-		{
-		}
+			DeleteNodes(selected_nodes);
+
 		ImGui::EndPopup();
 	}
 
@@ -141,10 +138,22 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 		}
 		else
 		{
-			//if (!ImGui::GetIO().KeyCtrl) // Single selection, clear selected nodes
-			//	UnSelectAll();
+			if (!ImGui::GetIO().KeyCtrl) // Single selection, clear selected nodes
+			{
+				if (selected_nodes.size() > 1) // if selecting node inside a multi-selection (clear all except node)
+					UnSelectAll();
+				else
+					UnSelectAll(node);
+			}
 
-			node->selected = !node->selected;
+			node->selected = !node->selected; //change selection state
+			
+			// Add/Remove from selected_nodes list
+			int pos = FindNode(node, selected_nodes);
+			if (node->selected && pos == -1)
+				selected_nodes.push_back(node);
+			else if (!node->selected && pos > -1)
+				selected_nodes.erase(selected_nodes.begin() + pos);
 		}
 	}
 
@@ -199,4 +208,41 @@ HierarchyNode* Hierarchy::CreateNode(const char* name, bool is_folder, Hierarchy
 	}
 
 	return node;
+}
+
+void Hierarchy::DeleteNodes(std::vector<HierarchyNode*> nodes_list)
+{
+	for (int i = 0; i < nodes_list.size(); ++i)
+	{
+		int pos = FindNode(nodes_list[i], nodes);
+		delete nodes[pos];
+
+		nodes.erase(nodes.begin() + pos);
+		selected_nodes.clear();
+	}
+}
+
+void Hierarchy::UnSelectAll(HierarchyNode* exception)
+{
+	for (std::vector<HierarchyNode*>::iterator it = selected_nodes.begin(); it != selected_nodes.end(); ++it)
+	{
+		if ((*it)->selected == true)
+		{
+			if (exception != nullptr && *it == exception)
+				continue;
+			else
+				(*it)->selected = false;
+		}
+	}
+	selected_nodes.clear();
+}
+
+int Hierarchy::FindNode(HierarchyNode* node, std::vector<HierarchyNode*> list)
+{
+	for (int i = 0; i <list.size(); ++i)
+	{
+		if (list[i] == node)
+			return i;
+	}
+	return -1;
 }
