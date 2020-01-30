@@ -17,10 +17,20 @@ struct HierarchyNode {
 	bool is_folder = false;
 	bool first_scene = false;
 
-	ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_None;
+	ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_Leaf;
 
 	GameObject* object = nullptr;
 	//ResourceScene* scene = nullptr;
+};
+
+struct Sort
+{
+	bool operator()(HierarchyNode* const & node1, HierarchyNode* const & node2) //true if pos1 > pos2
+	{
+		if (node1->pos > node2->pos)
+			return true;
+		return false;
+	}
 };
 
 class Hierarchy : public Panel
@@ -32,12 +42,17 @@ public:
 	void Draw();
 	void DrawNode(HierarchyNode* node);
 
-	HierarchyNode* CreateNode(const char* name, bool is_folder = false, HierarchyNode* parent = nullptr, bool selected = false, GameObject* object = nullptr/*, ResourceScene*scene = nullptr*/);
+	HierarchyNode* CreateNode(const char* name, bool is_folder = false, HierarchyNode* parent = nullptr, bool selected = true, GameObject* object = nullptr/*, ResourceScene*scene = nullptr*/);
 	void DeleteNodes(std::vector<HierarchyNode*> nodes);
 	void DuplicateNodes(std::vector<HierarchyNode*> nodes);
 	void UnSelectAll(HierarchyNode* exception = nullptr);
 
 	int FindNode(HierarchyNode* node, std::vector<HierarchyNode*> list); //returns -1 if not found
+	void MoveNode(HierarchyNode* node, int pos);
+
+private:
+	void DrawRightClick(); //only draws if right click is pressed
+	void OrderHierarchy();
 
 public:
 	static const uint default_width = 265;
@@ -48,4 +63,6 @@ public:
 private:
 	std::vector<HierarchyNode*> nodes;
 	std::vector<HierarchyNode*> selected_nodes;
+
+	int last_pos = 0;
 };
