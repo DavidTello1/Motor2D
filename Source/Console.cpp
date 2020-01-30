@@ -1,4 +1,6 @@
 #include "Console.h"
+#include "Application.h"
+#include "ModuleInput.h"
 
 #include <windows.h>
 
@@ -77,6 +79,16 @@ void Console::UpdateFilters()
 void Console::Draw()
 {
 	static bool copy_to_clipboard = false;
+
+	// Shortcuts
+	if (ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows))
+	{
+		if ((App->input->GetKey(SDL_SCANCODE_LCTRL) == KEY_REPEAT && App->input->GetKey(SDL_SCANCODE_F) == KEY_DOWN) ||
+			(App->input->GetKey(SDL_SCANCODE_RCTRL) == KEY_REPEAT && App->input->GetKey(SDL_SCANCODE_F) == KEY_DOWN))
+		{
+			ShowSearch = !ShowSearch;
+		}
+	}
 
 	// Menu Bar
 	if (ImGui::BeginMenuBar())

@@ -5,12 +5,26 @@
 class Timer
 {
 public:
-	Timer();
+	Timer() {
+		Start();
+	}
 
-	void Start();
-	void Stop();
+	void Start() {
+		running = true;
+		started_at = SDL_GetTicks();
+	}
 
-	Uint32 Read();
+	void Stop() {
+		running = false;
+		stopped_at = SDL_GetTicks();
+	}
+
+	Uint32 Read() {
+		if (running == true)
+			return SDL_GetTicks() - started_at;
+		else
+			return stopped_at - started_at;
+	}
 
 private:
 	bool	running;

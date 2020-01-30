@@ -31,7 +31,7 @@ Hierarchy::~Hierarchy()
 
 void Hierarchy::Draw()
 {
-	if (ImGui::IsMouseClicked(1)) //allow selection & show options with right click
+	if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup) && ImGui::IsMouseClicked(1)) //allow selection & show options with right click
 		ImGui::SetWindowFocus();
 
 	// Right Click Options
@@ -47,14 +47,10 @@ void Hierarchy::Draw()
 	// Empty Space
 	ImGui::BeginChild("Empty");
 
-	if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup) && ImGui::IsMouseClicked(0)) //unselect nodes when clicking on empty space
+	if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup) && (ImGui::IsMouseClicked(0) || ImGui::IsMouseClicked(1))) //unselect nodes when clicking on empty space
 		UnSelectAll();
 
-	if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup) && ImGui::IsMouseClicked(1)) //unselect nodes when clicking on empty space
-	{
-		UnSelectAll();
-	}
-		DrawRightClick(); //draw right-click options
+	DrawRightClick(); //draw right-click options
 
 	ImGui::EndChild();
 }
@@ -263,7 +259,7 @@ int Hierarchy::FindNode(HierarchyNode* node, std::vector<HierarchyNode*> list)
 	return -1;
 }
 
-void Hierarchy::DrawRightClick()
+bool Hierarchy::DrawRightClick()
 {
 	if (ImGui::BeginPopupContextWindow("Hierarchy"))
 	{
@@ -303,7 +299,9 @@ void Hierarchy::DrawRightClick()
 			DeleteNodes(selected_nodes);
 
 		ImGui::EndPopup();
+		return true;
 	}
+	return false;
 }
 
 void Hierarchy::OrderHierarchy()

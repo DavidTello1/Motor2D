@@ -51,7 +51,7 @@ public:
 	void MoveNode(HierarchyNode* node, int pos);
 
 private:
-	void DrawRightClick(); //only draws if right click is pressed
+	bool DrawRightClick(); //only draws if right click is pressed, returns true if drawn
 	void OrderHierarchy();
 
 public:
