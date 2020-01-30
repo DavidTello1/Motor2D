@@ -31,7 +31,7 @@ Hierarchy::~Hierarchy()
 
 void Hierarchy::Draw()
 {
-	if (ImGui::IsMouseClicked(1)) //allow selection & show optinons with right click
+	if (ImGui::IsMouseClicked(1)) //allow selection & show options with right click
 		ImGui::SetWindowFocus();
 
 	// Right Click Options
@@ -48,12 +48,13 @@ void Hierarchy::Draw()
 	ImGui::BeginChild("Empty");
 
 	if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup) && ImGui::IsMouseClicked(0)) //unselect nodes when clicking on empty space
+		UnSelectAll();
+
+	if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup) && ImGui::IsMouseClicked(1)) //unselect nodes when clicking on empty space
 	{
-		ImGui::SetWindowFocus();
 		UnSelectAll();
 	}
-
-	DrawRightClick(); //draw right-click options
+		DrawRightClick(); //draw right-click options
 
 	ImGui::EndChild();
 }
