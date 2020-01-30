@@ -16,7 +16,7 @@ Hierarchy::Hierarchy() : Panel("Hierarchy")
 	pos_x = default_pos_x;
 	pos_y = default_pos_y;
 
-	last_pos = 0;
+	last_id = 0;
 
 	flags = ImGuiWindowFlags_HorizontalScrollbar;
 }
@@ -110,7 +110,7 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 
 	// Left Click (selection)
 	if (ImGui::IsItemClicked(0)) // if treenode is clicked, check whether it is a single or multi selection
-	{		
+	{
 		if (ImGui::IsMouseDoubleClicked(0)) // Double Click
 		{
 			node->rename = true;
@@ -126,7 +126,7 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 			}
 
 			node->selected = !node->selected; //change selection state
-					}
+		}
 	}
 
 	// Right Click (select item to show options)
@@ -145,7 +145,6 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 	else if (!node->selected && pos > -1)
 		selected_nodes.erase(selected_nodes.begin() + pos);
 
-
 	// Open Node
 	if (is_open)
 	{
@@ -162,7 +161,8 @@ HierarchyNode* Hierarchy::CreateNode(const char* name, bool is_folder, Hierarchy
 {
 	HierarchyNode* node = new HierarchyNode();
 
-	node->name = name + std::string("##") + std::to_string(int(nodes.size()));
+	last_id++;
+	node->name = name + std::string("##") + std::to_string(last_id);
 	node->is_folder = is_folder;
 	node->selected = selected;
 
@@ -192,17 +192,8 @@ HierarchyNode* Hierarchy::CreateNode(const char* name, bool is_folder, Hierarchy
 		parent->flags |= ImGuiTreeNodeFlags_DefaultOpen;
 	}
 
-	if (node != nullptr)
-	{
-		node->pos = last_pos;
-		last_pos++;
-		nodes.push_back(node);
-
-		if (node->selected)
-			selected_nodes.push_back(node);
-
-		//OrderHierarchy(); //order hierarchy nodes
-	}
+	nodes.push_back(node);
+	//OrderHierarchy(); //order hierarchy nodes
 
 	return node;
 }
@@ -234,6 +225,53 @@ void Hierarchy::DeleteNodes(std::vector<HierarchyNode*> nodes_list)
 	}
 }
 
+void Hierarchy::DuplicateNodes(std::vector<HierarchyNode*> nodes_list, HierarchyNode* parent)
+{
+	uint size = nodes_list.size();
+	for (uint i = 0; i < size; ++i)
+	{
+		HierarchyNode* node = new HierarchyNode();
+
+		last_id++;
+		node->name = nodes_list[i]->name.substr(0, nodes_list[i]->name.find_first_of("##")) + std::string("##") + std::to_string(last_id);
+		node->is_folder = nodes_list[i]->is_folder;
+
+		nodes_list[i]->selected = false;
+		node->selected = true;
+
+		if (nodes_list[i]->object != nullptr) // if object != nullptr, ResourceScene is not read
+			node->object = nodes_list[i]->object;
+
+		//else if (scene != nullptr)
+		//{
+		//	node->scene = nodes_list[i]->scene;
+		//	node->flags = nodes_list[i]->flags;
+		//}
+
+		if (parent == nullptr) //if no defined parent node, make parent root or selected node
+		{
+			if (nodes_list[i]->parent != nullptr) // if parent is null make root
+			{
+				node->parent = nodes_list[i]->parent;
+				nodes_list[i]->parent->childs.push_back(node);
+				nodes_list[i]->parent->flags |= ImGuiTreeNodeFlags_DefaultOpen;
+			}
+		}
+		else // if defined parent node (parent is a duplicated node)
+		{
+			node->parent = parent;
+			parent->childs.push_back(node);
+			parent->flags |= ImGuiTreeNodeFlags_DefaultOpen;
+		}
+
+		if (!nodes_list[i]->childs.empty()) // if node has childs, duplicate them
+			DuplicateNodes(nodes_list[i]->childs, node);
+
+		nodes.push_back(node);
+		//OrderHierarchy(); //order hierarchy nodes
+	}
+}
+
 void Hierarchy::UnSelectAll(HierarchyNode* exception)
 {
 	for (std::vector<HierarchyNode*>::iterator it = selected_nodes.begin(); it != selected_nodes.end(); ++it)
@@ -259,6 +297,22 @@ int Hierarchy::FindNode(HierarchyNode* node, std::vector<HierarchyNode*> list)
 	return -1;
 }
 
+void Hierarchy::OrderHierarchy()
+{
+	std::priority_queue<HierarchyNode*, std::vector<HierarchyNode*>, Sort> ListOrder;
+
+	for (HierarchyNode* node : nodes) //push nodes into Ordered List
+		ListOrder.push(node);
+
+	nodes.clear(); //clear Nodes List
+
+	while (ListOrder.empty() == false) //push Ordered List into Nodes List
+	{
+		nodes.push_back(ListOrder.top());
+		ListOrder.pop();
+	}
+}
+
 bool Hierarchy::DrawRightClick()
 {
 	if (ImGui::BeginPopupContextWindow("Hierarchy"))
@@ -276,8 +330,8 @@ bool Hierarchy::DrawRightClick()
 
 			ImGui::EndMenu();
 		}
-		if (ImGui::MenuItem("Duplicate", "Ctrl+D", false, !selected_nodes.empty())) {} //duplicate
-		//DuplicateNodes(selected_nodes);
+		if (ImGui::MenuItem("Duplicate", "Ctrl+D", false, !selected_nodes.empty())) //duplicate
+			DuplicateNodes(selected_nodes);
 
 		ImGui::Separator();
 
@@ -302,20 +356,4 @@ bool Hierarchy::DrawRightClick()
 		return true;
 	}
 	return false;
-}
-
-void Hierarchy::OrderHierarchy()
-{
-	std::priority_queue<HierarchyNode*, std::vector<HierarchyNode*>, Sort> ListOrder;
-
-	for (HierarchyNode* node : nodes) //push nodes into Ordered List
-		ListOrder.push(node);
-
-	nodes.clear(); //clear Nodes List
-
-	while (ListOrder.empty() == false) //push Ordered List into Nodes List
-	{
-		nodes.push_back(ListOrder.top());
-		ListOrder.pop();
-	}
 }

@@ -44,7 +44,7 @@ public:
 
 	HierarchyNode* CreateNode(const char* name, bool is_folder = false, HierarchyNode* parent = nullptr, bool selected = true, GameObject* object = nullptr/*, ResourceScene*scene = nullptr*/);
 	void DeleteNodes(std::vector<HierarchyNode*> nodes);
-	void DuplicateNodes(std::vector<HierarchyNode*> nodes);
+	void DuplicateNodes(std::vector<HierarchyNode*> nodes, HierarchyNode* parent = nullptr);
 	void UnSelectAll(HierarchyNode* exception = nullptr);
 
 	int FindNode(HierarchyNode* node, std::vector<HierarchyNode*> list); //returns -1 if not found
@@ -64,5 +64,5 @@ private:
 	std::vector<HierarchyNode*> nodes;
 	std::vector<HierarchyNode*> selected_nodes;
 
-	int last_pos = 0;
+	int last_id = 0; //used for creating unique ids (imgui)
 };
