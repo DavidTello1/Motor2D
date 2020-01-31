@@ -62,6 +62,7 @@ void Hierarchy::Draw()
 		if (App->input->GetKey(SDL_SCANCODE_DELETE) == KEY_DOWN) // Delete
 		{
 			DeleteNodes(selected_nodes);
+			selected_nodes.clear();
 		}
 
 		if ((App->input->GetKey(SDL_SCANCODE_LCTRL) == KEY_REPEAT && App->input->GetKey(SDL_SCANCODE_D) == KEY_DOWN) || // Duplicate
@@ -234,11 +235,16 @@ void Hierarchy::DeleteNodes(std::vector<HierarchyNode*> nodes_list)
 			for (uint j = 0; j < nodes_list[i]->childs.size(); ++j) //if childs are inside deletion list, erase them from list first and then delete
 			{
 				pos = FindNode(nodes_list[i]->childs[j], nodes_list);
-				if (pos != -1)
+				if (pos == -1)
+				{
 					nodes_list.erase(nodes_list.begin() + pos);
+					delete nodes[pos];
+					nodes.erase(nodes.begin() + pos);
+				}
+				nodes_list[i]->childs.clear();
 			}
 
-			DeleteNodes(nodes_list[i]->childs);
+			//DeleteNodes(nodes_list[i]->childs);
 		}
 
 		// Delete node data
@@ -248,8 +254,7 @@ void Hierarchy::DeleteNodes(std::vector<HierarchyNode*> nodes_list)
 		// Delete node from Nodes List
 		nodes.erase(nodes.begin() + pos);
 	}
-	selected_nodes.clear();
-	//nodes_list.clear();
+	nodes_list.clear();
 }
 
 void Hierarchy::DuplicateNodes(std::vector<HierarchyNode*> nodes_list, HierarchyNode* parent)
@@ -373,11 +378,17 @@ bool Hierarchy::DrawRightClick()
 		}
 		ImGui::Separator();
 
+		if (ImGui::MenuItem("Select All", NULL, false, !nodes.empty())) {} //select all
+			//SelectAll();
+
 		if (ImGui::MenuItem("Rename", NULL, false, selected_nodes.size() == 1)) //rename
 		{
 		}
 		if (ImGui::MenuItem("Delete", "Supr", false, !selected_nodes.empty())) //delete
+		{
 			DeleteNodes(selected_nodes);
+			selected_nodes.clear();
+		}
 
 		ImGui::EndPopup();
 		return true;

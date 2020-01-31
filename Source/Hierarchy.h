@@ -46,6 +46,7 @@ public:
 	void DeleteNodes(std::vector<HierarchyNode*> nodes);
 	void DuplicateNodes(std::vector<HierarchyNode*> nodes, HierarchyNode* parent = nullptr);
 	void UnSelectAll(HierarchyNode* exception = nullptr);
+	void SelectAll();
 
 	int FindNode(HierarchyNode* node, std::vector<HierarchyNode*> list); //returns -1 if not found
 	void MoveNode(HierarchyNode* node, int pos);
