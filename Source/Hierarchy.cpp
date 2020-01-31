@@ -1,7 +1,8 @@
-#include "Application.h"
 #include "Hierarchy.h"
+#include "Application.h"
+#include "ModuleInput.h"
 #include "ModuleEditor.h"
-#include "ModuleScene.h"
+//#include "ModuleScene.h"
 #include "GameObject.h"
 
 #include <queue>
@@ -31,7 +32,8 @@ Hierarchy::~Hierarchy()
 
 void Hierarchy::Draw()
 {
-	if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup) && ImGui::IsMouseClicked(1)) //allow selection & show options with right click
+	// Allow selection & show options with right click
+	if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup) && ImGui::IsMouseClicked(1))
 		ImGui::SetWindowFocus();
 
 	// Right Click Options
@@ -53,6 +55,21 @@ void Hierarchy::Draw()
 	DrawRightClick(); //draw right-click options
 
 	ImGui::EndChild();
+
+	// Shortcuts
+	if (ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows))
+	{
+		if (App->input->GetKey(SDL_SCANCODE_DELETE) == KEY_DOWN) // Delete
+		{
+			DeleteNodes(selected_nodes);
+		}
+
+		if ((App->input->GetKey(SDL_SCANCODE_LCTRL) == KEY_REPEAT && App->input->GetKey(SDL_SCANCODE_D) == KEY_DOWN) || // Duplicate
+			(App->input->GetKey(SDL_SCANCODE_RCTRL) == KEY_REPEAT && App->input->GetKey(SDL_SCANCODE_D) == KEY_DOWN))
+		{
+			DuplicateNodes(selected_nodes);
+		}
+	}
 }
 
 void Hierarchy::DrawNode(HierarchyNode* node)
@@ -213,16 +230,26 @@ void Hierarchy::DeleteNodes(std::vector<HierarchyNode*> nodes_list)
 
 		// Delete childs
 		if (!nodes_list[i]->childs.empty())
+		{
+			for (uint j = 0; j < nodes_list[i]->childs.size(); ++j) //if childs are inside deletion list, erase them from list first and then delete
+			{
+				pos = FindNode(nodes_list[i]->childs[j], nodes_list);
+				if (pos != -1)
+					nodes_list.erase(nodes_list.begin() + pos);
+			}
+
 			DeleteNodes(nodes_list[i]->childs);
+		}
 
 		// Delete node data
 		pos = FindNode(nodes_list[i], nodes);
 		delete nodes[pos];
 
-		// Delete node from Nodes & Selected_Nodes lists
+		// Delete node from Nodes List
 		nodes.erase(nodes.begin() + pos);
-		selected_nodes.clear();
 	}
+	selected_nodes.clear();
+	//nodes_list.clear();
 }
 
 void Hierarchy::DuplicateNodes(std::vector<HierarchyNode*> nodes_list, HierarchyNode* parent)
