@@ -62,7 +62,6 @@ void Hierarchy::Draw()
 		if (App->input->GetKey(SDL_SCANCODE_DELETE) == KEY_DOWN) // Delete
 		{
 			DeleteNodes(selected_nodes);
-			selected_nodes.clear();
 		}
 
 		if ((App->input->GetKey(SDL_SCANCODE_LCTRL) == KEY_REPEAT && App->input->GetKey(SDL_SCANCODE_D) == KEY_DOWN) || // Duplicate
@@ -216,45 +215,45 @@ HierarchyNode* Hierarchy::CreateNode(const char* name, bool is_folder, Hierarchy
 	return node;
 }
 
-void Hierarchy::DeleteNodes(std::vector<HierarchyNode*> nodes_list)
+void Hierarchy::DeleteNodes(std::vector<HierarchyNode*> nodes_list) // BUG: IF CHILDS CHILDS ARE IN ORIGINAL LIST, DATA IS DELETED BUT NOT ERASED
 {
-	for (uint i = 0; i < nodes_list.size(); ++i)
+	while(!nodes_list.empty())
 	{
+		HierarchyNode* node = nodes_list.front();
 		int pos = 0;
 
 		// Delete node from parent's child list
-		if (nodes_list[i]->parent != nullptr)
+		if (node->parent != nullptr)
 		{
-			pos = FindNode(nodes_list[i], nodes_list[i]->parent->childs);
-			nodes_list[i]->parent->childs.erase(nodes_list[i]->parent->childs.begin() + pos);
+			pos = FindNode(node, node->parent->childs);
+			if (pos != -1)
+				node->parent->childs.erase(node->parent->childs.begin() + pos);
 		}
 
 		// Delete childs
-		if (!nodes_list[i]->childs.empty())
+		if (!node->childs.empty())
 		{
-			for (uint j = 0; j < nodes_list[i]->childs.size(); ++j) //if childs are inside deletion list, erase them from list first and then delete
+			for (uint i = 0; i < node->childs.size(); ++i) //if child is in deletion list, erase from child list (will be deleted later)
 			{
-				pos = FindNode(nodes_list[i]->childs[j], nodes_list);
-				if (pos == -1)
+				pos = FindNode(node->childs[i], nodes_list);
+				if (pos != -1)
 				{
-					nodes_list.erase(nodes_list.begin() + pos);
-					delete nodes[pos];
-					nodes.erase(nodes.begin() + pos);
+					node->childs[i]->parent = nullptr;
+					node->childs.erase(node->childs.begin() + i);
 				}
-				nodes_list[i]->childs.clear();
 			}
-
-			//DeleteNodes(nodes_list[i]->childs);
+			DeleteNodes(node->childs);
 		}
 
-		// Delete node data
-		pos = FindNode(nodes_list[i], nodes);
-		delete nodes[pos];
-
 		// Delete node from Nodes List
+		pos = FindNode(node, nodes);
+		delete nodes[pos];
 		nodes.erase(nodes.begin() + pos);
+
+		// Delete node data
+		pos = FindNode(node, nodes_list);
+		nodes_list.erase(nodes_list.begin() + pos);
 	}
-	nodes_list.clear();
 }
 
 void Hierarchy::DuplicateNodes(std::vector<HierarchyNode*> nodes_list, HierarchyNode* parent)
@@ -385,10 +384,7 @@ bool Hierarchy::DrawRightClick()
 		{
 		}
 		if (ImGui::MenuItem("Delete", "Supr", false, !selected_nodes.empty())) //delete
-		{
 			DeleteNodes(selected_nodes);
-			selected_nodes.clear();
-		}
 
 		ImGui::EndPopup();
 		return true;
