@@ -8,6 +8,7 @@ class GameObject;
 struct HierarchyNode {
 	std::string name = "node";
 	int pos = 0;
+	int indent = 0;
 
 	HierarchyNode* parent = nullptr;
 	std::vector<HierarchyNode*> childs;
@@ -23,13 +24,23 @@ struct HierarchyNode {
 	//ResourceScene* scene = nullptr;
 };
 
-struct Sort
-{
+struct PositionSort {
 	bool operator()(HierarchyNode* const & node1, HierarchyNode* const & node2) //true if pos1 > pos2
 	{
 		if (node1->pos > node2->pos)
 			return true;
-		return false;
+		else
+			return false;
+	}
+};
+
+struct IndentSort {
+	bool operator()(HierarchyNode* const & node1, HierarchyNode* const & node2) //true if indent1 < indent2
+	{
+		if (node1->indent >= node2->indent)
+			return false;
+		else
+			return true;
 	}
 };
 
@@ -40,10 +51,10 @@ public:
 	virtual ~Hierarchy();
 
 	void Draw();
-	void DrawNode(HierarchyNode* node);
+	void DrawNode(HierarchyNode* node, int indent = 0);
 
 	HierarchyNode* CreateNode(const char* name, bool is_folder = false, HierarchyNode* parent = nullptr, bool selected = true, GameObject* object = nullptr/*, ResourceScene*scene = nullptr*/);
-	void DeleteNodes(std::vector<HierarchyNode*> nodes);
+	void DeleteNodes(std::vector<HierarchyNode*> nodes, bool reorder = true);
 	void DuplicateNodes(std::vector<HierarchyNode*> nodes, HierarchyNode* parent = nullptr);
 	void UnSelectAll(HierarchyNode* exception = nullptr);
 	void SelectAll();
@@ -54,6 +65,7 @@ public:
 private:
 	bool DrawRightClick(); //only draws if right click is pressed, returns true if drawn
 	void OrderHierarchy();
+	std::vector<HierarchyNode*> SortByIndent(std::vector<HierarchyNode*> list);
 
 public:
 	static const uint default_width = 265;

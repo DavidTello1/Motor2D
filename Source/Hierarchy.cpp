@@ -62,6 +62,7 @@ void Hierarchy::Draw()
 		if (App->input->GetKey(SDL_SCANCODE_DELETE) == KEY_DOWN) // Delete
 		{
 			DeleteNodes(selected_nodes);
+			selected_nodes.clear();
 		}
 
 		if ((App->input->GetKey(SDL_SCANCODE_LCTRL) == KEY_REPEAT && App->input->GetKey(SDL_SCANCODE_D) == KEY_DOWN) || // Duplicate
@@ -72,8 +73,11 @@ void Hierarchy::Draw()
 	}
 }
 
-void Hierarchy::DrawNode(HierarchyNode* node)
+void Hierarchy::DrawNode(HierarchyNode* node, int indent)
 {
+	// Indent
+	node->indent = indent;
+
 	// Flags
 	if (node->childs.empty()) // leaf
 		node->flags |= ImGuiTreeNodeFlags_Leaf;
@@ -168,7 +172,7 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 		if (!node->childs.empty())
 		{
 			for (HierarchyNode* child : node->childs)
-				DrawNode(child);
+				DrawNode(child, node->indent + 1);
 		}
 		ImGui::TreePop();
 	}
@@ -215,44 +219,35 @@ HierarchyNode* Hierarchy::CreateNode(const char* name, bool is_folder, Hierarchy
 	return node;
 }
 
-void Hierarchy::DeleteNodes(std::vector<HierarchyNode*> nodes_list) // BUG: IF CHILDS CHILDS ARE IN ORIGINAL LIST, DATA IS DELETED BUT NOT ERASED
+void Hierarchy::DeleteNodes(std::vector<HierarchyNode*> nodes_list, bool reorder)
 {
 	while(!nodes_list.empty())
 	{
+		if (reorder) //reorder list (only once)
+		{
+			nodes_list = SortByIndent(nodes_list);
+			reorder = false;
+		}
+
 		HierarchyNode* node = nodes_list.front();
-		int pos = 0;
 
 		// Delete node from parent's child list
 		if (node->parent != nullptr)
 		{
-			pos = FindNode(node, node->parent->childs);
+			int pos = FindNode(node, node->parent->childs);
 			if (pos != -1)
 				node->parent->childs.erase(node->parent->childs.begin() + pos);
 		}
 
 		// Delete childs
 		if (!node->childs.empty())
-		{
-			for (uint i = 0; i < node->childs.size(); ++i) //if child is in deletion list, erase from child list (will be deleted later)
-			{
-				pos = FindNode(node->childs[i], nodes_list);
-				if (pos != -1)
-				{
-					node->childs[i]->parent = nullptr;
-					node->childs.erase(node->childs.begin() + i);
-				}
-			}
-			DeleteNodes(node->childs);
-		}
-
-		// Delete node from Nodes List
-		pos = FindNode(node, nodes);
-		delete nodes[pos];
-		nodes.erase(nodes.begin() + pos);
+			DeleteNodes(node->childs, false);
 
 		// Delete node data
-		pos = FindNode(node, nodes_list);
-		nodes_list.erase(nodes_list.begin() + pos);
+		int pos = FindNode(node, nodes);
+		delete nodes[pos];
+		nodes.erase(nodes.begin() + pos);
+		nodes_list.erase(nodes_list.begin());
 	}
 }
 
@@ -330,7 +325,7 @@ int Hierarchy::FindNode(HierarchyNode* node, std::vector<HierarchyNode*> list)
 
 void Hierarchy::OrderHierarchy()
 {
-	std::priority_queue<HierarchyNode*, std::vector<HierarchyNode*>, Sort> ListOrder;
+	std::priority_queue<HierarchyNode*, std::vector<HierarchyNode*>, PositionSort> ListOrder;
 
 	for (HierarchyNode* node : nodes) //push nodes into Ordered List
 		ListOrder.push(node);
@@ -342,6 +337,23 @@ void Hierarchy::OrderHierarchy()
 		nodes.push_back(ListOrder.top());
 		ListOrder.pop();
 	}
+}
+
+std::vector<HierarchyNode*> Hierarchy::SortByIndent(std::vector<HierarchyNode*> list)
+{
+	std::priority_queue<HierarchyNode*, std::vector<HierarchyNode*>, IndentSort> ListOrder;
+
+	for (HierarchyNode* node : list) //push nodes into Ordered List
+		ListOrder.push(node);
+
+	list.clear(); //clear Nodes List
+
+	while (ListOrder.empty() == false) //push Ordered List into Nodes List
+	{
+		list.push_back(ListOrder.top());
+		ListOrder.pop();
+	}
+	return list;
 }
 
 bool Hierarchy::DrawRightClick()
@@ -384,7 +396,10 @@ bool Hierarchy::DrawRightClick()
 		{
 		}
 		if (ImGui::MenuItem("Delete", "Supr", false, !selected_nodes.empty())) //delete
+		{
 			DeleteNodes(selected_nodes);
+			selected_nodes.clear();
+		}
 
 		ImGui::EndPopup();
 		return true;
