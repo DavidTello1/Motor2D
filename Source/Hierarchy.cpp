@@ -46,17 +46,19 @@ void Hierarchy::Draw()
 			DrawNode(node);
 	}
 
-	// Empty Space
+	//--- Empty Space ---
 	ImGui::BeginChild("Empty");
 
-	if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup) && (ImGui::IsMouseClicked(0) || ImGui::IsMouseClicked(1))) //unselect nodes when clicking on empty space
+	// Unselect nodes when clicking on empty space
+	if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup) && (ImGui::IsMouseClicked(0) || ImGui::IsMouseClicked(1)))
 		UnSelectAll();
 
-	DrawRightClick(); //draw right-click options
+	// Right Click Options
+	DrawRightClick();
 
 	ImGui::EndChild();
 
-	// Shortcuts
+	//--- Shortcuts ---
 	if (ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows))
 	{
 		if (App->input->GetKey(SDL_SCANCODE_DELETE) == KEY_DOWN) // Delete
@@ -73,119 +75,131 @@ void Hierarchy::Draw()
 	}
 }
 
-void Hierarchy::DrawNode(HierarchyNode* node, int indent)
+void Hierarchy::DrawNode(HierarchyNode* node)
 {
-	// Indent
-	node->indent = indent;
+	// Node Parameters
+	node = NodeParams(node);
 
-	// Flags
-	if (node->childs.empty()) // leaf
-		node->flags |= ImGuiTreeNodeFlags_Leaf;
-	else
-		node->flags &= ~ImGuiTreeNodeFlags_Leaf;
-
-	if (node->selected) // selected
-		node->flags |= ImGuiTreeNodeFlags_Selected;
-	else
-		node->flags &= ~ImGuiTreeNodeFlags_Selected;
-
-	// Folder Params
-	if (node->is_folder)
-		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.9f, 0.6f, 0.0f, 1.0f));
-
-	//// Scene Params
-	//if (node->scene != nullptr)
-	//{
-	//	ImDrawList* draw_list = ImGui::GetWindowDrawList();
-	//	static ImVec4 colorf = ImVec4(0.2f, 0.2f, 0.2f, 1.0f);
-	//	const ImU32 color = ImColor(colorf);
-	//	static float pos = ImGui::GetCursorPosY();
-	//	static bool first = false;
-
-	//	// Draw Scene Background
-	//	if (node->pos == 0)
-	//	{
-	//		first = true;
-	//		pos += 16;
-	//	}
-	//	else
-	//	{
-	//		first = false;
-	//		pos += 18;
-	//	}
-
-	//	draw_list->AddRectFilled(ImVec2(0, pos), ImVec2(ImGui::GetWindowWidth(), pos + 15), color); //actual draw of background
-
-	//	if (first)
-	//		ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 2);
-	//}
-
-	// Draw Node
-	bool is_open = ImGui::TreeNodeEx(node->name.c_str(), node->flags);
-
-	if (node->is_folder)
-		ImGui::PopStyleColor();
-
-	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup) && ImGui::IsMouseClicked(0)) //allow selecting when right-click options is shown
-		ImGui::SetWindowFocus();
-
-	// Left Click (selection)
-	if (ImGui::IsItemClicked(0)) // if treenode is clicked, check whether it is a single or multi selection
+	// Rename
+	if (node->rename)
 	{
-		if (ImGui::IsMouseDoubleClicked(0)) // Double Click
+		char buffer[128];
+		sprintf_s(buffer, 128, "%s", node->name.c_str());
+		if (ImGui::InputText("##RenameNode", buffer, 128, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll))
 		{
-			node->rename = true;
+			node->name = buffer;
+			node->rename = false;
 		}
-		else
-		{
-			if (!ImGui::GetIO().KeyCtrl) // Single selection, clear selected nodes
-			{
-				if (selected_nodes.size() > 1) // if selecting node inside a multi-selection (clear all except node)
-					UnSelectAll();
-				else
-					UnSelectAll(node);
-			}
+	}
+	else
+	{
+		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 15 * node->indent); //set indent
 
+		// Draw Node
+		bool is_open = ImGui::TreeNodeEx(node->name.c_str(), node->flags);
+
+		if (node->is_folder && !node->rename) //push is in NodeParams()
+			ImGui::PopStyleColor();
+
+		if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup) && ImGui::IsMouseClicked(0)) //allow selecting when right-click options is shown
+			ImGui::SetWindowFocus();
+
+		// Left Click (selection)
+		if (ImGui::IsItemClicked(0)) //if treenode is clicked, check whether it is a single or multi selection
+		{
+			if (ImGui::IsMouseDoubleClicked(0)) // Double-click (rename)
+				node->rename = true;
+			else
+			{
+				if (!ImGui::GetIO().KeyCtrl) // Single selection, clear selected nodes
+					UnSelectAll();
+
+				node->selected = !node->selected; //change selection state
+			}
+		}
+
+		// Right Click (select item to show options)
+		if (ImGui::IsItemClicked(1))
+		{
+			UnSelectAll();
 			node->selected = !node->selected; //change selection state
 		}
-	}
 
-	// Right Click (select item to show options)
-	if (ImGui::IsItemClicked(1))
-	{
-		UnSelectAll();
-		node->selected = !node->selected; //change selection state
-	}
+		// Add/Remove from selected_nodes list
+		int pos = FindNode(node, selected_nodes);
+		if (node->selected && pos == -1)
+			selected_nodes.push_back(node);
+		else if (!node->selected && pos != -1)
+			selected_nodes.erase(selected_nodes.begin() + pos);
 
-	// Add/Remove from selected_nodes list
-	int pos = FindNode(node, selected_nodes);
-
-	if (node->selected && pos == -1)
-		selected_nodes.push_back(node);
-
-	else if (!node->selected && pos > -1)
-		selected_nodes.erase(selected_nodes.begin() + pos);
-
-	// Open Node
-	if (is_open)
-	{
-		if (!node->childs.empty())
+		if (is_open)
 		{
-			for (HierarchyNode* child : node->childs)
-				DrawNode(child, node->indent + 1);
+			if (!node->childs.empty())
+			{
+				for (HierarchyNode* child : node->childs)
+					DrawNode(child);
+			}
 		}
-		ImGui::TreePop();
 	}
 }
 
 HierarchyNode* Hierarchy::CreateNode(const char* name, bool is_folder, HierarchyNode* parent, bool selected, GameObject* object/*, ResourceScene* scene*/)
 {
 	HierarchyNode* node = new HierarchyNode();
-
 	last_id++;
+
+	// Name
 	node->name = name + std::string("##") + std::to_string(last_id);
-	node->is_folder = is_folder;
+
+	// Parent
+	if (parent == nullptr && selected_nodes.empty() == false)
+		node->parent = selected_nodes[0]; //parent is first selected node
+	else if (parent != nullptr)
+		node->parent = parent;
+
+	// Position & Indent
+	if (node->parent == nullptr)
+	{
+		node->pos = (int)nodes.size();
+		node->indent = 0;
+	}
+	else
+	{
+		if (node->parent->childs.empty()) //if parent has no childs (pos = parent pos + 1)
+			node->pos = node->parent->pos + 1;
+		else
+			node->pos = node->parent->childs.back()->pos + 1; //if parent has childs (pos = last child pos + 1)
+
+		node->indent = node->parent->indent + 1; //indent = parent indent + 1
+		node->parent->childs.push_back(node); //add node to parent's child list
+		node->parent->flags |= ImGuiTreeNodeFlags_DefaultOpen; //make node open (display childs)
+		//UnSelectAll();
+	}
+		//if (parent->childs.empty()) //if parent has no childs (pos = parent pos + 1
+		//	node->pos = parent->pos + 1;
+		//else
+		//{
+		//	for (uint i = 0; i < parent->childs.size(); ++i)
+		//	{
+		//		if (!parent->childs[i]->childs.empty())
+		//		{
+
+		//		}
+		//	}
+		//	node->pos = parent->childs.back()->pos + 1;
+		//}
+		//node->indent = parent->indent + 1; //indent = parent indent + 1
+		//parent->childs.push_back(node); //add node to parent's child list
+		//parent->flags |= ImGuiTreeNodeFlags_DefaultOpen; //make node open (display childs)
+
+	for (uint i = node->pos; i < nodes.size(); ++i) // update Nodes with new positions
+		nodes[i]->pos++;
+
+	// Selected
 	node->selected = selected;
+
+	// Node Type (folder, object or scene)
+	node->is_folder = is_folder;
 
 	if (object != nullptr) // if object != nullptr, ResourceScene is not read
 		node->object = object;
@@ -196,25 +210,9 @@ HierarchyNode* Hierarchy::CreateNode(const char* name, bool is_folder, Hierarchy
 	//	node->flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanFullWidth | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 	//}
 
-	if (parent == nullptr) // if parent is null, check for first selected node
-	{
-		if (!selected_nodes.empty())
-		{
-			node->parent = selected_nodes[0];
-			selected_nodes[0]->childs.push_back(node);
-			selected_nodes[0]->flags |= ImGuiTreeNodeFlags_DefaultOpen;
-			UnSelectAll(node);
-		}
-	}
-	else
-	{
-		node->parent = parent;
-		parent->childs.push_back(node);
-		parent->flags |= ImGuiTreeNodeFlags_DefaultOpen;
-	}
-
+	// Add to Nodes List & Reorder by Position
 	nodes.push_back(node);
-	//OrderHierarchy(); //order hierarchy nodes
+	nodes = SortByPosition(nodes);
 
 	return node;
 }
@@ -260,6 +258,7 @@ void Hierarchy::DuplicateNodes(std::vector<HierarchyNode*> nodes_list, Hierarchy
 
 		last_id++;
 		node->name = nodes_list[i]->name.substr(0, nodes_list[i]->name.find_first_of("##")) + std::string("##") + std::to_string(last_id);
+		node->indent = nodes_list[i]->indent;
 		node->is_folder = nodes_list[i]->is_folder;
 
 		nodes_list[i]->selected = false;
@@ -298,17 +297,18 @@ void Hierarchy::DuplicateNodes(std::vector<HierarchyNode*> nodes_list, Hierarchy
 	}
 }
 
-void Hierarchy::UnSelectAll(HierarchyNode* exception)
+void Hierarchy::SelectAll()
+{
+	for (std::vector<HierarchyNode*>::iterator it = nodes.begin(); it != nodes.end(); ++it)
+		(*it)->selected = true;
+}
+
+void Hierarchy::UnSelectAll()
 {
 	for (std::vector<HierarchyNode*>::iterator it = selected_nodes.begin(); it != selected_nodes.end(); ++it)
 	{
 		if ((*it)->selected == true)
-		{
-			if (exception != nullptr && *it == exception)
-				continue;
-			else
 				(*it)->selected = false;
-		}
 	}
 	selected_nodes.clear();
 }
@@ -323,20 +323,68 @@ int Hierarchy::FindNode(HierarchyNode* node, std::vector<HierarchyNode*> list)
 	return -1;
 }
 
-void Hierarchy::OrderHierarchy()
+HierarchyNode* Hierarchy::NodeParams(HierarchyNode* node)
+{
+	// Flags
+	if (node->childs.empty()) // leaf
+		node->flags |= ImGuiTreeNodeFlags_Leaf;
+	else
+		node->flags &= ~ImGuiTreeNodeFlags_Leaf;
+
+	if (node->selected) // selected
+		node->flags |= ImGuiTreeNodeFlags_Selected;
+	else
+		node->flags &= ~ImGuiTreeNodeFlags_Selected;
+
+	// Folder Params
+	if (node->is_folder && !node->rename)
+		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.9f, 0.6f, 0.0f, 1.0f));
+
+	//// Scene Params
+	//if (node->scene != nullptr)
+	//{
+	//	ImDrawList* draw_list = ImGui::GetWindowDrawList();
+	//	static ImVec4 colorf = ImVec4(0.2f, 0.2f, 0.2f, 1.0f);
+	//	const ImU32 color = ImColor(colorf);
+	//	static float pos = ImGui::GetCursorPosY();
+	//	static bool first = false;
+
+	//	// Draw Scene Background
+	//	if (node->pos == 0)
+	//	{
+	//		first = true;
+	//		pos += 16;
+	//	}
+	//	else
+	//	{
+	//		first = false;
+	//		pos += 18;
+	//	}
+
+	//	draw_list->AddRectFilled(ImVec2(0, pos), ImVec2(ImGui::GetWindowWidth(), pos + 15), color); //actual draw of background
+
+	//	if (first)
+	//		ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 2);
+	//}
+
+	return node;
+}
+
+std::vector<HierarchyNode*> Hierarchy::SortByPosition(std::vector<HierarchyNode*> list)
 {
 	std::priority_queue<HierarchyNode*, std::vector<HierarchyNode*>, PositionSort> ListOrder;
 
-	for (HierarchyNode* node : nodes) //push nodes into Ordered List
+	for (HierarchyNode* node : list) //push nodes into Ordered List
 		ListOrder.push(node);
 
-	nodes.clear(); //clear Nodes List
+	list.clear(); //clear list
 
-	while (ListOrder.empty() == false) //push Ordered List into Nodes List
+	while (ListOrder.empty() == false) //push Ordered List into New List
 	{
-		nodes.push_back(ListOrder.top());
+		list.push_back(ListOrder.top());
 		ListOrder.pop();
 	}
+	return list;
 }
 
 std::vector<HierarchyNode*> Hierarchy::SortByIndent(std::vector<HierarchyNode*> list)
@@ -346,9 +394,9 @@ std::vector<HierarchyNode*> Hierarchy::SortByIndent(std::vector<HierarchyNode*> 
 	for (HierarchyNode* node : list) //push nodes into Ordered List
 		ListOrder.push(node);
 
-	list.clear(); //clear Nodes List
+	list.clear(); //clear list
 
-	while (ListOrder.empty() == false) //push Ordered List into Nodes List
+	while (ListOrder.empty() == false) //push Ordered List into New List
 	{
 		list.push_back(ListOrder.top());
 		ListOrder.pop();
@@ -389,12 +437,12 @@ bool Hierarchy::DrawRightClick()
 		}
 		ImGui::Separator();
 
-		if (ImGui::MenuItem("Select All", NULL, false, !nodes.empty())) {} //select all
-			//SelectAll();
+		if (ImGui::MenuItem("Select All", NULL, false, !nodes.empty())) //select all
+			SelectAll();
 
 		if (ImGui::MenuItem("Rename", NULL, false, selected_nodes.size() == 1)) //rename
-		{
-		}
+			selected_nodes.front()->rename = true;
+
 		if (ImGui::MenuItem("Delete", "Supr", false, !selected_nodes.empty())) //delete
 		{
 			DeleteNodes(selected_nodes);
