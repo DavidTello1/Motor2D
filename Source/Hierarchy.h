@@ -1,6 +1,7 @@
 #pragma once
 #include "Panel.h"
 
+#include <string>
 #include <vector>
 
 class GameObject;
@@ -59,11 +60,11 @@ public:
 	void UnSelectAll();
 
 	int FindNode(HierarchyNode* node, std::vector<HierarchyNode*> list); //returns -1 if not found
-	void MoveNode(HierarchyNode* node, int pos);
+	//void MoveNode(HierarchyNode* node, int pos);
 
 private:
-	HierarchyNode* NodeParams(HierarchyNode* node);
-	void UpdateNodesPos();
+	HierarchyNode* NodeParams(HierarchyNode* node); //init node with params (leaf, selected and type)
+
 	std::vector<HierarchyNode*> SortByPosition(std::vector<HierarchyNode*> list); //order by position (smaller to bigger)
 	std::vector<HierarchyNode*> SortByIndent(std::vector<HierarchyNode*> list); //order by indent (lower to higher)
 	bool DrawRightClick(); //only draws if right click is pressed, returns true if drawn

@@ -1,12 +1,11 @@
 #include "Application.h"
-#include "Config.h"
 #include "ModuleWindow.h"
 #include "ModuleInput.h"
 #include "ModuleEditor.h"
 #include "ModuleRenderer.h"
 //#include "ModuleScene.h"
+#include "Config.h"
 
-#include "Panel.h"
 #include "Configuration.h"
 #include "Console.h"
 #include "Hierarchy.h"

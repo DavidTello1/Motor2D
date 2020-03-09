@@ -3,6 +3,7 @@
 #include "Timer.h"
 
 #include "MathGeoLib/include/MathGeoLibFwd.h"
+#include <string>
 #include <list>
 
 class Module;

@@ -173,25 +173,8 @@ HierarchyNode* Hierarchy::CreateNode(const char* name, bool is_folder, Hierarchy
 		node->indent = node->parent->indent + 1; //indent = parent indent + 1
 		node->parent->childs.push_back(node); //add node to parent's child list
 		node->parent->flags |= ImGuiTreeNodeFlags_DefaultOpen; //make node open (display childs)
-		//UnSelectAll();
+		UnSelectAll();
 	}
-		//if (parent->childs.empty()) //if parent has no childs (pos = parent pos + 1
-		//	node->pos = parent->pos + 1;
-		//else
-		//{
-		//	for (uint i = 0; i < parent->childs.size(); ++i)
-		//	{
-		//		if (!parent->childs[i]->childs.empty())
-		//		{
-
-		//		}
-		//	}
-		//	node->pos = parent->childs.back()->pos + 1;
-		//}
-		//node->indent = parent->indent + 1; //indent = parent indent + 1
-		//parent->childs.push_back(node); //add node to parent's child list
-		//parent->flags |= ImGuiTreeNodeFlags_DefaultOpen; //make node open (display childs)
-
 	for (uint i = node->pos; i < nodes.size(); ++i) // update Nodes with new positions
 		nodes[i]->pos++;
 
@@ -199,16 +182,18 @@ HierarchyNode* Hierarchy::CreateNode(const char* name, bool is_folder, Hierarchy
 	node->selected = selected;
 
 	// Node Type (folder, object or scene)
-	node->is_folder = is_folder;
-
-	if (object != nullptr) // if object != nullptr, ResourceScene is not read
-		node->object = object;
-
-	//else if (scene != nullptr)
-	//{
-	//	node->scene = scene;
-	//	node->flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanFullWidth | ImGuiTreeNodeFlags_NoTreePushOnOpen;
-	//}
+	if (is_folder == true)
+		node->is_folder = is_folder;
+	else
+	{
+		if (object != nullptr)
+			node->object = object;
+		//else if (scene != nullptr)
+		//{
+		//	node->scene = scene;
+		//	node->flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanFullWidth | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+		//}
+	}
 
 	// Add to Nodes List & Reorder by Position
 	nodes.push_back(node);
@@ -246,7 +231,11 @@ void Hierarchy::DeleteNodes(std::vector<HierarchyNode*> nodes_list, bool reorder
 		delete nodes[pos];
 		nodes.erase(nodes.begin() + pos);
 		nodes_list.erase(nodes_list.begin());
+
+		// Update nodes pos
+		
 	}
+	nodes_list.clear();
 }
 
 void Hierarchy::DuplicateNodes(std::vector<HierarchyNode*> nodes_list, HierarchyNode* parent)
@@ -306,10 +295,7 @@ void Hierarchy::SelectAll()
 void Hierarchy::UnSelectAll()
 {
 	for (std::vector<HierarchyNode*>::iterator it = selected_nodes.begin(); it != selected_nodes.end(); ++it)
-	{
-		if ((*it)->selected == true)
-				(*it)->selected = false;
-	}
+		(*it)->selected = false;
 	selected_nodes.clear();
 }
 
