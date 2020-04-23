@@ -2,6 +2,7 @@
 #include "Application.h"
 #include "ModuleInput.h"
 
+#include "Imgui/imgui_internal.h"
 #include <windows.h>
 
 #include "mmgr/mmgr.h"
@@ -81,20 +82,15 @@ void Console::Draw()
 	static bool copy_to_clipboard = false;
 
 	// Shortcuts
-	if (ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows))
-	{
-		if ((App->input->GetKey(SDL_SCANCODE_LCTRL) == KEY_REPEAT && App->input->GetKey(SDL_SCANCODE_F) == KEY_DOWN) ||
-			(App->input->GetKey(SDL_SCANCODE_RCTRL) == KEY_REPEAT && App->input->GetKey(SDL_SCANCODE_F) == KEY_DOWN))
-		{
-			ShowSearch = !ShowSearch;
-		}
-	}
+	Shortcuts();
 
 	// Menu Bar
 	if (ImGui::BeginMenuBar())
 	{
 		if (ImGui::BeginMenu("Options"))
 		{
+			ImGui::PushItemFlag(ImGuiItemFlags_SelectableDontClosePopup, true);
+
 			copy_to_clipboard = ImGui::MenuItem("Copy");
 			if (ImGui::MenuItem("Clear")) { ClearLog(); }
 
@@ -104,16 +100,20 @@ void Console::Draw()
 			ImGui::MenuItem("Auto-scroll", NULL, &AutoScroll);
 			ImGui::MenuItem("Enable file name", NULL, &EnableFileName);
 
+			ImGui::PopItemFlag();
 			ImGui::EndMenu();
 		}
 
 		if (ImGui::BeginMenu("Filters"))
 		{
+			ImGui::PushItemFlag(ImGuiItemFlags_SelectableDontClosePopup, true);
+
 			if (ImGui::MenuItem("Debug", NULL, &ShowDebugLog)) UpdateFilters();
 			if (ImGui::MenuItem("Verbose", NULL, &ShowVerboseLog)) UpdateFilters();
 			if (ImGui::MenuItem("Geometry", NULL, &ShowGeometryLog)) UpdateFilters();
 			if (ImGui::MenuItem("Warning", NULL, &ShowWarningLog)) UpdateFilters();
 
+			ImGui::PopItemFlag();
 			ImGui::EndMenu();
 		}
 
@@ -211,6 +211,18 @@ void Console::Draw()
 	//ImGui::SetItemDefaultFocus();
 	//if (reclaim_focus)
 	//	ImGui::SetKeyboardFocusHere(-1); // Auto focus previous widget
+}
+
+void Console::Shortcuts()
+{
+	if (ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows))
+	{
+		if ((App->input->GetKey(SDL_SCANCODE_LCTRL) == KEY_REPEAT || App->input->GetKey(SDL_SCANCODE_RCTRL) == KEY_REPEAT)
+			&& App->input->GetKey(SDL_SCANCODE_F) == KEY_DOWN)
+		{
+			ShowSearch = !ShowSearch;
+		}
+	}
 }
 
 // Log Function

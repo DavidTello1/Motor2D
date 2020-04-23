@@ -17,8 +17,6 @@ Hierarchy::Hierarchy() : Panel("Hierarchy")
 	pos_x = default_pos_x;
 	pos_y = default_pos_y;
 
-	last_id = 0;
-
 	flags = ImGuiWindowFlags_HorizontalScrollbar;
 }
 
@@ -59,20 +57,7 @@ void Hierarchy::Draw()
 	ImGui::EndChild();
 
 	//--- Shortcuts ---
-	if (ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows))
-	{
-		if (App->input->GetKey(SDL_SCANCODE_DELETE) == KEY_DOWN) // Delete
-		{
-			DeleteNodes(selected_nodes);
-			selected_nodes.clear();
-		}
-
-		if ((App->input->GetKey(SDL_SCANCODE_LCTRL) == KEY_REPEAT && App->input->GetKey(SDL_SCANCODE_D) == KEY_DOWN) || // Duplicate
-			(App->input->GetKey(SDL_SCANCODE_RCTRL) == KEY_REPEAT && App->input->GetKey(SDL_SCANCODE_D) == KEY_DOWN))
-		{
-			DuplicateNodes(selected_nodes);
-		}
-	}
+	Shortcuts();
 }
 
 void Hierarchy::DrawNode(HierarchyNode* node)
@@ -132,6 +117,7 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 		else if (!node->selected && pos != -1)
 			selected_nodes.erase(selected_nodes.begin() + pos);
 
+		// Draw Childs
 		if (is_open)
 		{
 			if (!node->childs.empty())
@@ -146,10 +132,12 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 HierarchyNode* Hierarchy::CreateNode(const char* name, bool is_folder, HierarchyNode* parent, bool selected, GameObject* object/*, ResourceScene* scene*/)
 {
 	HierarchyNode* node = new HierarchyNode();
-	last_id++;
 
 	// Name
-	node->name = name + std::string("##") + std::to_string(last_id);
+	node->name = name;
+	uint count = CountNode(name);
+	if (count > 0)
+		node->name = name + std::string(" (") + std::to_string(count) + std::string(")");
 
 	// Parent
 	if (parent == nullptr && selected_nodes.empty() == false)
@@ -245,8 +233,8 @@ void Hierarchy::DuplicateNodes(std::vector<HierarchyNode*> nodes_list, Hierarchy
 	{
 		HierarchyNode* node = new HierarchyNode();
 
-		last_id++;
-		node->name = nodes_list[i]->name.substr(0, nodes_list[i]->name.find_first_of("##")) + std::string("##") + std::to_string(last_id);
+		std::string name = nodes_list[i]->name.substr(0, nodes_list[i]->name.find_first_of("(") - 1);
+		node->name =  name + std::string(" (") + std::to_string(CountNode(name.c_str())) + std::string(")");
 		node->indent = nodes_list[i]->indent;
 		node->is_folder = nodes_list[i]->is_folder;
 
@@ -295,7 +283,10 @@ void Hierarchy::SelectAll()
 void Hierarchy::UnSelectAll()
 {
 	for (std::vector<HierarchyNode*>::iterator it = selected_nodes.begin(); it != selected_nodes.end(); ++it)
+	{
 		(*it)->selected = false;
+		(*it)->rename = false;
+	}
 	selected_nodes.clear();
 }
 
@@ -354,6 +345,19 @@ HierarchyNode* Hierarchy::NodeParams(HierarchyNode* node)
 	//}
 
 	return node;
+}
+
+uint Hierarchy::CountNode(const char* name)
+{
+	uint count = 0;
+	for (uint i = 0; i < nodes.size(); ++i)
+	{
+		std::string node_name = nodes[i]->name.substr(0, nodes[i]->name.find_first_of("(") - 1);
+
+		if (strcmp(name, node_name.c_str()) == 0)
+			count++;
+	}
+	return count;
 }
 
 std::vector<HierarchyNode*> Hierarchy::SortByPosition(std::vector<HierarchyNode*> list)
@@ -439,4 +443,22 @@ bool Hierarchy::DrawRightClick()
 		return true;
 	}
 	return false;
+}
+
+void Hierarchy::Shortcuts()
+{
+	if (ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows))
+	{
+		if (App->input->GetKey(SDL_SCANCODE_DELETE) == KEY_DOWN) // Delete
+		{
+			DeleteNodes(selected_nodes);
+			selected_nodes.clear();
+		}
+
+		if ((App->input->GetKey(SDL_SCANCODE_LCTRL) == KEY_REPEAT && App->input->GetKey(SDL_SCANCODE_D) == KEY_DOWN) || // Duplicate
+			(App->input->GetKey(SDL_SCANCODE_RCTRL) == KEY_REPEAT && App->input->GetKey(SDL_SCANCODE_D) == KEY_DOWN))
+		{
+			DuplicateNodes(selected_nodes);
+		}
+	}
 }

@@ -17,6 +17,7 @@ public:
 	const char* GetName() const { return name; }
 
 	virtual void Draw() = 0;
+	virtual void Shortcuts() {};
 
 public:
 	bool active = true;

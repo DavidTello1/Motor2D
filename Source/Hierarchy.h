@@ -51,8 +51,9 @@ public:
 	virtual ~Hierarchy();
 
 	void Draw();
-	void DrawNode(HierarchyNode* node);
+	void Shortcuts();
 
+	void DrawNode(HierarchyNode* node);
 	HierarchyNode* CreateNode(const char* name, bool is_folder = false, HierarchyNode* parent = nullptr, bool selected = true, GameObject* object = nullptr/*, ResourceScene*scene = nullptr*/);
 	void DeleteNodes(std::vector<HierarchyNode*> nodes, bool reorder = true);
 	void DuplicateNodes(std::vector<HierarchyNode*> nodes, HierarchyNode* parent = nullptr);
@@ -64,6 +65,7 @@ public:
 
 private:
 	HierarchyNode* NodeParams(HierarchyNode* node); //init node with params (leaf, selected and type)
+	uint CountNode(const char* name); //get number of nodes with same name
 
 	std::vector<HierarchyNode*> SortByPosition(std::vector<HierarchyNode*> list); //order by position (smaller to bigger)
 	std::vector<HierarchyNode*> SortByIndent(std::vector<HierarchyNode*> list); //order by indent (lower to higher)
@@ -78,6 +80,4 @@ public:
 private:
 	std::vector<HierarchyNode*> nodes;
 	std::vector<HierarchyNode*> selected_nodes;
-
-	int last_id = 0; //used for creating unique ids (imgui)
 };

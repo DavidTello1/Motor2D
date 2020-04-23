@@ -25,10 +25,11 @@ public:
 
 	static void UpdateFilters();
 	void Draw();
+	void Shortcuts();
 
 	static void ClearLog()
 	{
-		for (int i = 0; i < Items.Size; i++)
+		for (int i = 0; i < Items.Size; ++i)
 			free(Items[i]);
 		Items.clear();
 	}
