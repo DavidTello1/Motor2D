@@ -66,13 +66,17 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 	node = NodeParams(node);
 
 	// Rename
-	if (node->rename)
+	if (node->rename && selected_nodes.size() == 1)
 	{
 		char buffer[128];
 		sprintf_s(buffer, 128, "%s", node->name.c_str());
 		if (ImGui::InputText("##RenameNode", buffer, 128, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll))
 		{
-			node->name = buffer;
+			uint count = CountNode(buffer);
+			if (count > 0)
+				node->name = buffer + std::string(" (") + std::to_string(count) + std::string(")");
+			else
+				node->name = buffer;
 			node->rename = false;
 		}
 	}
@@ -92,7 +96,7 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 		// Left Click (selection)
 		if (ImGui::IsItemClicked(0)) //if treenode is clicked, check whether it is a single or multi selection
 		{
-			if (ImGui::IsMouseDoubleClicked(0)) // Double-click (rename)
+			if (ImGui::IsMouseDoubleClicked(0) && selected_nodes.size() == 1) // Double-click (rename)
 				node->rename = true;
 			else
 			{
@@ -145,26 +149,16 @@ HierarchyNode* Hierarchy::CreateNode(const char* name, bool is_folder, Hierarchy
 	else if (parent != nullptr)
 		node->parent = parent;
 
-	// Position & Indent
+	// Indent
 	if (node->parent == nullptr)
-	{
-		node->pos = (int)nodes.size();
 		node->indent = 0;
-	}
 	else
 	{
-		if (node->parent->childs.empty()) //if parent has no childs (pos = parent pos + 1)
-			node->pos = node->parent->pos + 1;
-		else
-			node->pos = node->parent->childs.back()->pos + 1; //if parent has childs (pos = last child pos + 1)
-
 		node->indent = node->parent->indent + 1; //indent = parent indent + 1
 		node->parent->childs.push_back(node); //add node to parent's child list
 		node->parent->flags |= ImGuiTreeNodeFlags_DefaultOpen; //make node open (display childs)
 		UnSelectAll();
 	}
-	for (uint i = node->pos; i < nodes.size(); ++i) // update Nodes with new positions
-		nodes[i]->pos++;
 
 	// Selected
 	node->selected = selected;
@@ -185,7 +179,6 @@ HierarchyNode* Hierarchy::CreateNode(const char* name, bool is_folder, Hierarchy
 
 	// Add to Nodes List & Reorder by Position
 	nodes.push_back(node);
-	nodes = SortByPosition(nodes);
 
 	return node;
 }
@@ -218,10 +211,7 @@ void Hierarchy::DeleteNodes(std::vector<HierarchyNode*> nodes_list, bool reorder
 		int pos = FindNode(node, nodes);
 		delete nodes[pos];
 		nodes.erase(nodes.begin() + pos);
-		nodes_list.erase(nodes_list.begin());
-
-		// Update nodes pos
-		
+		nodes_list.erase(nodes_list.begin());		
 	}
 	nodes_list.clear();
 }
@@ -270,7 +260,6 @@ void Hierarchy::DuplicateNodes(std::vector<HierarchyNode*> nodes_list, Hierarchy
 			DuplicateNodes(nodes_list[i]->childs, node);
 
 		nodes.push_back(node);
-		//OrderHierarchy(); //order hierarchy nodes
 	}
 }
 
@@ -358,23 +347,6 @@ uint Hierarchy::CountNode(const char* name)
 			count++;
 	}
 	return count;
-}
-
-std::vector<HierarchyNode*> Hierarchy::SortByPosition(std::vector<HierarchyNode*> list)
-{
-	std::priority_queue<HierarchyNode*, std::vector<HierarchyNode*>, PositionSort> ListOrder;
-
-	for (HierarchyNode* node : list) //push nodes into Ordered List
-		ListOrder.push(node);
-
-	list.clear(); //clear list
-
-	while (ListOrder.empty() == false) //push Ordered List into New List
-	{
-		list.push_back(ListOrder.top());
-		ListOrder.pop();
-	}
-	return list;
 }
 
 std::vector<HierarchyNode*> Hierarchy::SortByIndent(std::vector<HierarchyNode*> list)

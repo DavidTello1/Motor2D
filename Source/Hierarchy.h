@@ -8,7 +8,6 @@ class GameObject;
 
 struct HierarchyNode {
 	std::string name = "node";
-	int pos = -1;
 	int indent = -1;
 
 	HierarchyNode* parent = nullptr;
@@ -22,16 +21,6 @@ struct HierarchyNode {
 
 	GameObject* object = nullptr;
 	//ResourceScene* scene = nullptr;
-};
-
-struct PositionSort {
-	bool operator()(HierarchyNode* const & node1, HierarchyNode* const & node2) //true if pos1 > pos2
-	{
-		if (node1->pos > node2->pos)
-			return true;
-		else
-			return false;
-	}
 };
 
 struct IndentSort {
@@ -67,7 +56,6 @@ private:
 	HierarchyNode* NodeParams(HierarchyNode* node); //init node with params (leaf, selected and type)
 	uint CountNode(const char* name); //get number of nodes with same name
 
-	std::vector<HierarchyNode*> SortByPosition(std::vector<HierarchyNode*> list); //order by position (smaller to bigger)
 	std::vector<HierarchyNode*> SortByIndent(std::vector<HierarchyNode*> list); //order by indent (lower to higher)
 	bool DrawRightClick(); //only draws if right click is pressed, returns true if drawn
 
