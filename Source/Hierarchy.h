@@ -8,6 +8,7 @@ class GameObject;
 
 struct HierarchyNode {
 	std::string name = "node";
+	int pos = -1;
 	int indent = -1;
 
 	HierarchyNode* parent = nullptr;
@@ -21,6 +22,16 @@ struct HierarchyNode {
 
 	GameObject* object = nullptr;
 	//ResourceScene* scene = nullptr;
+};
+
+struct PositionSort {
+	bool operator()(HierarchyNode* const& node1, HierarchyNode* const& node2) //true if pos1 > pos2
+	{
+		if (node1->pos > node2->pos)
+			return true;
+		else
+			return false;
+	}
 };
 
 struct IndentSort {
@@ -48,16 +59,18 @@ public:
 	void DuplicateNodes(std::vector<HierarchyNode*> nodes, HierarchyNode* parent = nullptr);
 	void SelectAll();
 	void UnSelectAll();
-
 	int FindNode(HierarchyNode* node, std::vector<HierarchyNode*> list); //returns -1 if not found
 	//void MoveNode(HierarchyNode* node, int pos);
 
 private:
 	HierarchyNode* NodeParams(HierarchyNode* node); //init node with params (leaf, selected and type)
 	uint CountNode(const char* name); //get number of nodes with same name
+	void ReorderNodes(HierarchyNode* node, bool is_delete = false); //update nodes pos
+	uint RecursivePos(HierarchyNode* node); //set node pos in CreateNode()
 
-	std::vector<HierarchyNode*> SortByIndent(std::vector<HierarchyNode*> list); //order by indent (lower to higher)
 	bool DrawRightClick(); //only draws if right click is pressed, returns true if drawn
+	std::vector<HierarchyNode*> SortByPosition(std::vector<HierarchyNode*> list); //order by position (smaller to bigger)
+	std::vector<HierarchyNode*> SortByIndent(std::vector<HierarchyNode*> list); //order by indent (lower to higher)
 
 public:
 	static const uint default_width = 265;

@@ -149,11 +149,15 @@ HierarchyNode* Hierarchy::CreateNode(const char* name, bool is_folder, Hierarchy
 	else if (parent != nullptr)
 		node->parent = parent;
 
-	// Indent
+	// Position and Indent
 	if (node->parent == nullptr)
+	{
 		node->indent = 0;
+		node->pos = nodes.size();
+	}
 	else
 	{
+		node->pos = RecursivePos(node->parent);
 		node->indent = node->parent->indent + 1; //indent = parent indent + 1
 		node->parent->childs.push_back(node); //add node to parent's child list
 		node->parent->flags |= ImGuiTreeNodeFlags_DefaultOpen; //make node open (display childs)
@@ -179,6 +183,7 @@ HierarchyNode* Hierarchy::CreateNode(const char* name, bool is_folder, Hierarchy
 
 	// Add to Nodes List & Reorder by Position
 	nodes.push_back(node);
+	ReorderNodes(node);
 
 	return node;
 }
@@ -207,6 +212,9 @@ void Hierarchy::DeleteNodes(std::vector<HierarchyNode*> nodes_list, bool reorder
 		if (!node->childs.empty())
 			DeleteNodes(node->childs, false);
 
+		// Update nodes pos
+		ReorderNodes(node, true);
+		
 		// Delete node data
 		int pos = FindNode(node, nodes);
 		delete nodes[pos];
@@ -349,21 +357,35 @@ uint Hierarchy::CountNode(const char* name)
 	return count;
 }
 
-std::vector<HierarchyNode*> Hierarchy::SortByIndent(std::vector<HierarchyNode*> list)
+void Hierarchy::ReorderNodes(HierarchyNode* node, bool is_delete)
 {
-	std::priority_queue<HierarchyNode*, std::vector<HierarchyNode*>, IndentSort> ListOrder;
-
-	for (HierarchyNode* node : list) //push nodes into Ordered List
-		ListOrder.push(node);
-
-	list.clear(); //clear list
-
-	while (ListOrder.empty() == false) //push Ordered List into New List
+	for (uint i = node->pos; i < nodes.size(); ++i)
 	{
-		list.push_back(ListOrder.top());
-		ListOrder.pop();
+		if (nodes[i] == node)
+			continue;
+		else
+		{
+			if (is_delete)
+				nodes[i]->pos--;
+			else
+				nodes[i]->pos++;
+		}
 	}
-	return list;
+	nodes = SortByPosition(nodes);
+}
+
+uint Hierarchy::RecursivePos(HierarchyNode* node)
+{
+	int pos = -1;
+	if (node->childs.empty())
+		pos = node->pos + 1;
+	else
+	{
+		uint num_childs = node->childs.size() - 1;
+		HierarchyNode* last_child = node->childs[num_childs];
+		pos = RecursivePos(last_child);
+	}
+	return pos;
 }
 
 bool Hierarchy::DrawRightClick()
@@ -415,6 +437,40 @@ bool Hierarchy::DrawRightClick()
 		return true;
 	}
 	return false;
+}
+
+std::vector<HierarchyNode*> Hierarchy::SortByPosition(std::vector<HierarchyNode*> list)
+{
+	std::priority_queue<HierarchyNode*, std::vector<HierarchyNode*>, PositionSort> ListOrder;
+
+	for (HierarchyNode* node : list) //push nodes into Ordered List
+		ListOrder.push(node);
+
+	list.clear(); //clear list
+
+	while (ListOrder.empty() == false) //push Ordered List into New List
+	{
+		list.push_back(ListOrder.top());
+		ListOrder.pop();
+	}
+	return list;
+}
+
+std::vector<HierarchyNode*> Hierarchy::SortByIndent(std::vector<HierarchyNode*> list)
+{
+	std::priority_queue<HierarchyNode*, std::vector<HierarchyNode*>, IndentSort> ListOrder;
+
+	for (HierarchyNode* node : list) //push nodes into Ordered List
+		ListOrder.push(node);
+
+	list.clear(); //clear list
+
+	while (ListOrder.empty() == false) //push Ordered List into New List
+	{
+		list.push_back(ListOrder.top());
+		ListOrder.pop();
+	}
+	return list;
 }
 
 void Hierarchy::Shortcuts()
