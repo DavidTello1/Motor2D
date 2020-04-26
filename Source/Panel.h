@@ -22,7 +22,7 @@ public:
 public:
 	bool active = true;
 	ImGuiWindowFlags flags = ImGuiWindowFlags_None;
-	int width, height, pos_x, pos_y;
+	int width, height, pos_x, pos_y = 0;
 
 private:
 	const char* name;

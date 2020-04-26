@@ -1,28 +1,9 @@
 #pragma once
 #include "Panel.h"
+#include "HierarchyNode.h"
 
 #include <string>
 #include <vector>
-
-class GameObject;
-
-struct HierarchyNode {
-	std::string name = "node";
-	int pos = -1;
-	int indent = -1;
-
-	HierarchyNode* parent = nullptr;
-	std::vector<HierarchyNode*> childs;
-
-	bool rename = false;
-	bool selected = false;
-	bool is_folder = false;
-
-	ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
-
-	GameObject* object = nullptr;
-	//ResourceScene* scene = nullptr;
-};
 
 struct PositionSort {
 	bool operator()(HierarchyNode* const& node1, HierarchyNode* const& node2) //true if pos1 > pos2
@@ -35,7 +16,7 @@ struct PositionSort {
 };
 
 struct IndentSort {
-	bool operator()(HierarchyNode* const & node1, HierarchyNode* const & node2) //true if indent1 < indent2
+	bool operator()(HierarchyNode* const& node1, HierarchyNode* const& node2) //true if indent1 < indent2
 	{
 		if (node1->indent >= node2->indent)
 			return false;
@@ -54,7 +35,7 @@ public:
 	void Shortcuts();
 
 	void DrawNode(HierarchyNode* node);
-	HierarchyNode* CreateNode(const char* name, bool is_folder = false, HierarchyNode* parent = nullptr, bool selected = true, GameObject* object = nullptr/*, ResourceScene*scene = nullptr*/);
+	HierarchyNode* CreateNode(HierarchyNode::NodeType type, HierarchyNode* parent = nullptr);
 	void DeleteNodes(std::vector<HierarchyNode*> nodes, bool reorder = true);
 	void DuplicateNodes(std::vector<HierarchyNode*> nodes, HierarchyNode* parent = nullptr);
 	void SelectAll();
@@ -64,6 +45,7 @@ public:
 
 private:
 	HierarchyNode* NodeParams(HierarchyNode* node); //init node with params (leaf, selected and type)
+	HierarchyNode* HandleSelection(HierarchyNode* node); //selection states
 	uint CountNode(const char* name); //get number of nodes with same name
 	void ReorderNodes(HierarchyNode* node, bool is_delete = false); //update nodes pos
 	uint RecursivePos(HierarchyNode* node); //set node pos in CreateNode()
