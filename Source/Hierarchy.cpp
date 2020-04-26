@@ -104,7 +104,7 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 	}
 	else // Rename
 	{
-		if (selected_nodes.size() == 1)
+		if (selected_nodes.size() == 1) //rename if only 1 selected node
 		{
 			char buffer[128];
 			sprintf_s(buffer, 128, "%s", node->name.c_str());
@@ -123,7 +123,7 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 
 HierarchyNode* Hierarchy::CreateNode(HierarchyNode::NodeType type, HierarchyNode* parent)
 {
-	HierarchyNode* node;
+	HierarchyNode* node = nullptr;
 
 	switch (type)
 	{
@@ -139,12 +139,6 @@ HierarchyNode* Hierarchy::CreateNode(HierarchyNode::NodeType type, HierarchyNode
 	case HierarchyNode::NodeType::PREFAB:
 		//node = new NodePrefab(new Prefab(), parent);
 		break;
-	}
-
-	if (node == nullptr)
-	{
-		LOG("Error creating HierarchyNode returned NULL", e);
-		return node;
 	}
 
 	// Name Count
@@ -221,58 +215,70 @@ void Hierarchy::DeleteNodes(std::vector<HierarchyNode*> nodes_list, bool reorder
 
 void Hierarchy::DuplicateNodes(std::vector<HierarchyNode*> nodes_list, HierarchyNode* parent)
 {
-	//uint size = nodes_list.size();
-	//for (uint i = 0; i < size; ++i)
-	//{
-	//	HierarchyNode* node = new HierarchyNode();
+	uint size = nodes_list.size();
+	for (uint i = 0; i < size; ++i)
+	{
+		HierarchyNode* node = nullptr;
 
-	//	// Name
-	//	std::string name = nodes_list[i]->name.substr(0, nodes_list[i]->name.find_first_of("(") - 1);
-	//	node->name =  name + std::string(" (") + std::to_string(CountNode(name.c_str())) + std::string(")");
+		switch (nodes_list[i]->type)
+		{
+		case HierarchyNode::NodeType::FOLDER:
+			node = new NodeFolder(parent);
+			break;
+		case HierarchyNode::NodeType::GAMEOBJECT:
+			node = new NodeGameObject(nullptr, parent); //***CHANGE NULLPTR BY EMPTY GAMEOBJECT
+			break;
+		case HierarchyNode::NodeType::SCENE:
+			node = new NodeScene(/*new ResourceScene(),*/ parent);
+			break;
+		case HierarchyNode::NodeType::PREFAB:
+			//node = new NodePrefab(new Prefab(), parent);
+			break;
+		}
 
-	//	// Indent & Position
-	//	node->indent = nodes_list[i]->indent;
-	//	//position
+		// Name
+		std::string name = nodes_list[i]->name.substr(0, nodes_list[i]->name.find_first_of(" ("));
 
-	//	// Selected (unselect source node)
-	//	nodes_list[i]->selected = false;
-	//	node->selected = true;
+		// Selected (unselect source node)
+		nodes_list[i]->selected = false;
+		node->selected = true;
 
-	//	// Type
-	//	node->is_folder = nodes_list[i]->is_folder;
+		// Parent
+		if (parent == nullptr) //if no defined parent node, make parent root or selected node
+		{
+			if (nodes_list[i]->parent != nullptr) // if parent is null make root
+			{
+				node->parent = nodes_list[i]->parent;
+				nodes_list[i]->parent->flags |= ImGuiTreeNodeFlags_DefaultOpen;
+			}
+		}
+		else // if defined parent node (parent is a duplicated node)
+		{
+			node->parent = parent;
+			parent->flags |= ImGuiTreeNodeFlags_DefaultOpen;
+		}
 
-	//	if (nodes_list[i]->object != nullptr) // if object != nullptr, ResourceScene is not read
-	//		node->object = nodes_list[i]->object;
-	//	//else if (scene != nullptr)
-	//	//{
-	//	//	node->scene = nodes_list[i]->scene;
-	//	//	node->flags = nodes_list[i]->flags;
-	//	//}
+		// Position and Indent
+		node->indent = nodes_list[i]->indent;
+		if (node->parent == nullptr)
+			node->pos = nodes.size();
+		else
+		{
+			node->pos = RecursivePos(node->parent);
+			node->parent->childs.push_back(node); //add node to parent's child list
+		}
 
-	//	// Parent
-	//	if (parent == nullptr) //if no defined parent node, make parent root or selected node
-	//	{
-	//		if (nodes_list[i]->parent != nullptr) // if parent is null make root
-	//		{
-	//			node->parent = nodes_list[i]->parent;
-	//			nodes_list[i]->parent->childs.push_back(node);
-	//			nodes_list[i]->parent->flags |= ImGuiTreeNodeFlags_DefaultOpen;
-	//		}
-	//	}
-	//	else // if defined parent node (parent is a duplicated node)
-	//	{
-	//		node->parent = parent;
-	//		parent->childs.push_back(node);
-	//		parent->flags |= ImGuiTreeNodeFlags_DefaultOpen;
-	//	}
+		// Childs
+		if (!nodes_list[i]->childs.empty()) // if node has childs, duplicate them
+			DuplicateNodes(nodes_list[i]->childs, node);
 
-	//	// Childs
-	//	if (!nodes_list[i]->childs.empty()) // if node has childs, duplicate them
-	//		DuplicateNodes(nodes_list[i]->childs, node);
+		// Add node count to name
+		node->name = name + std::string(" (") + std::to_string(CountNode(name.c_str())) + std::string(")");
 
-	//	// Add to nodes list
-	//	nodes.push_back(node);
-	//}
+		// Add to nodes list & Reorder by Position
+		nodes.push_back(node);
+		ReorderNodes(node);
+	}
 }
 
 void Hierarchy::SelectAll()
