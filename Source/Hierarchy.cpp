@@ -319,31 +319,31 @@ HierarchyNode* Hierarchy::NodeParams(HierarchyNode* node)
 	{
 		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.9f, 0.6f, 0.0f, 1.0f));
 	}
-	//else if (node->type == NodeType::SCENE) //scene
-	//{
-	//	ImDrawList* draw_list = ImGui::GetWindowDrawList();
-	//	static ImVec4 colorf = ImVec4(0.2f, 0.2f, 0.2f, 1.0f);
-	//	const ImU32 color = ImColor(colorf);
-	//	static float pos = ImGui::GetCursorPosY();
-	//	static bool first = false;
+	else if (node->type == HierarchyNode::NodeType::SCENE) //scene
+	{
+		ImDrawList* draw_list = ImGui::GetWindowDrawList();
+		static ImVec4 colorf = ImVec4(0.2f, 0.2f, 0.2f, 1.0f);
+		const ImU32 color = ImColor(colorf);
+		static float pos;
+		static bool first = false;
 
-	//	// Draw Scene Background
-	//	if (node->pos == 0)
-	//	{
-	//		first = true;
-	//		pos += 16;
-	//	}
-	//	else
-	//	{
-	//		first = false;
-	//		pos += 18;
-	//	}
+		// Draw Scene Background
+		if (node->pos == 0)
+		{
+			first = true;
+			pos = ImGui::GetCursorPosY() + 16;
+		}
+		else
+		{
+			first = false;
+			pos = ImGui::GetCursorPosY() + 18;
+		}
 
-	//	draw_list->AddRectFilled(ImVec2(0, pos), ImVec2(ImGui::GetWindowWidth(), pos + 15), color); //actual draw of background
+		draw_list->AddRectFilled(ImVec2(0, pos), ImVec2(ImGui::GetWindowWidth(), pos + 15), color); //actual draw of background
 
-	//	if (first)
-	//		ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 2);
-	//}
+		if (first)
+			ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 2);
+	}
 
 	return node;
 }
