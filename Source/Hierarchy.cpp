@@ -398,19 +398,6 @@ HierarchyNode* Hierarchy::HandleSelection(HierarchyNode* node)
 	return node;
 }
 
-uint Hierarchy::CountNode(const char* name)
-{
-	uint count = 0;
-	for (uint i = 0; i < nodes.size(); ++i)
-	{
-		std::string node_name = nodes[i]->name.substr(0, nodes[i]->name.find_first_of("(") - 1);
-
-		if (strcmp(name, node_name.c_str()) == 0)
-			count++;
-	}
-	return count;
-}
-
 void Hierarchy::ReorderNodes(HierarchyNode* node, bool is_delete)
 {
 	for (uint i = node->pos; i < nodes.size(); ++i)
@@ -428,11 +415,11 @@ void Hierarchy::ReorderNodes(HierarchyNode* node, bool is_delete)
 	nodes = SortByPosition(nodes);
 }
 
-uint Hierarchy::RecursivePos(HierarchyNode* node, bool duplicate)
+uint Hierarchy::RecursivePos(HierarchyNode* node, bool is_duplicate)
 {
 	if (node->childs.empty())
 	{
-		if (duplicate)
+		if (is_duplicate)
 			return node->pos;
 		else
 			return node->pos + 1;
@@ -442,6 +429,27 @@ uint Hierarchy::RecursivePos(HierarchyNode* node, bool duplicate)
 		HierarchyNode* last_child = node->childs[node->childs.size() - 1];
 		return RecursivePos(last_child);
 	}
+}
+
+uint Hierarchy::CountNode(const char* name)
+{
+	uint count = 0;
+	for (uint i = 0; i < nodes.size(); ++i)
+	{
+		std::string node_name = nodes[i]->name.substr(0, nodes[i]->name.find_first_of("(") - 1);
+
+		if (strcmp(name, node_name.c_str()) == 0)
+			count++;
+	}
+	return count;
+}
+
+uint Hierarchy::GetLastChildPos(HierarchyNode* node)
+{
+	if (node->childs[node->childs.size() - 1]->childs.empty())
+		return (uint)node->childs[node->childs.size() - 1]->pos;
+	else
+		GetLastChildPos(node->childs[node->childs.size() - 1]);
 }
 
 void Hierarchy::DrawConnectorLines(HierarchyNode* node, ImDrawList* draw_list)
@@ -467,7 +475,7 @@ void Hierarchy::DrawConnectorLines(HierarchyNode* node, ImDrawList* draw_list)
 	for (uint i = 0; i < node->childs.size(); ++i)
 	{
 		if (!node->childs[i]->is_open)
-			num_childs_hidden += node->childs[i]->childs.size();
+			num_childs_hidden = GetLastChildPos(node->childs[i]) + node->childs[i]->pos;
 	}
 
 	// Actual draw

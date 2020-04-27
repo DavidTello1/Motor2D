@@ -46,10 +46,12 @@ public:
 private:
 	HierarchyNode* NodeParams(HierarchyNode* node); //init node with params (leaf, selected and type)
 	HierarchyNode* HandleSelection(HierarchyNode* node); //selection states
-	uint CountNode(const char* name); //get number of nodes with same name
 	void ReorderNodes(HierarchyNode* node, bool is_delete = false); //update nodes pos
-	uint RecursivePos(HierarchyNode* node, bool duplicate = false); //set node pos in CreateNode()
-	void DrawConnectorLines(HierarchyNode* node, ImDrawList* draw_list); //draw connector lines when node is open (scene doesn't draw them)
+	uint RecursivePos(HierarchyNode* node, bool is_duplicate = false); //set node pos in CreateNode()
+
+	uint CountNode(const char* name); //get number of nodes with same name
+	uint GetLastChildPos(HierarchyNode* node); //get pos of last child's last child
+	void DrawConnectorLines(HierarchyNode* node, ImDrawList* draw_list); //draw connector lines when node is open
 
 	bool DrawRightClick(); //only draws if right click is pressed, returns true if drawn
 	std::vector<HierarchyNode*> SortByPosition(std::vector<HierarchyNode*> list); //order by position (smaller to bigger)
