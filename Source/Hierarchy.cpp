@@ -141,6 +141,12 @@ HierarchyNode* Hierarchy::CreateNode(HierarchyNode::NodeType type, HierarchyNode
 		break;
 	}
 
+	if (node == nullptr)
+	{
+		LOG("Error creating node", e);
+		return node;
+	}
+
 	// Name Count
 	uint count = CountNode(node->name.c_str());
 	if (count > 0)
@@ -234,6 +240,12 @@ void Hierarchy::DuplicateNodes(std::vector<HierarchyNode*> nodes_list, Hierarchy
 		case HierarchyNode::NodeType::PREFAB:
 			//node = new NodePrefab(new Prefab(), parent);
 			break;
+		}
+
+		if (node == nullptr)
+		{
+			LOG("Error creating node", e);
+			return;
 		}
 
 		// Name
