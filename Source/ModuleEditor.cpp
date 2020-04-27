@@ -130,34 +130,6 @@ void ModuleEditor::Draw()
 	DrawAbout();
 	DrawPanels();
 
-	// Menu Functionalities
-	if (is_new)
-	{
-		//...
-		is_new = false;
-	}
-	if (is_open)
-	{
-		//...
-		is_open = false;
-	}
-	if (is_save) //save
-	{
-		//uint id = 0;
-		//std::string path = App->scene->scene_name;
-		//path = ASSETS_FOLDER + path;
-		//std::string written_file;
-
-		//ResourceScene* scene = (ResourceScene*)App->resources->CreateInitResource(Resource::Type::scene, id, path.c_str(), written_file);
-		//scene->SaveOwnFormat(written_file);
-		is_save = false;
-	}
-	if (is_import)
-	{
-		//...
-		is_import = false;
-	}
-
 	// Shortcuts
 	Shortcuts();
 
@@ -182,19 +154,26 @@ void ModuleEditor::DrawMenuBar()
 		// File
 		if (ImGui::BeginMenu("File"))
 		{
-			if (ImGui::MenuItem("New", "Ctrl+N", false, false))
-				is_new = true;
-
-			if (ImGui::MenuItem("Open", "Ctrl+O", false, false))
-				is_open = true;
-
+			if (ImGui::MenuItem("New", "Ctrl+N", false))
+			{
+			}
+			if (ImGui::MenuItem("Open", "Ctrl+O", false))
+			{
+			}
 			if (ImGui::MenuItem("Save", "Ctrl+S"))
-				is_save = true;
+			{
+				//uint id = 0;
+				//std::string path = App->scene->scene_name;
+				//path = ASSETS_FOLDER + path;
+				//std::string written_file;
+				
+				//ResourceScene* scene = (ResourceScene*)App->resources->CreateInitResource(Resource::Type::scene, id, path.c_str(), written_file);
+				//scene->SaveOwnFormat(written_file);
+			}
 			ImGui::Separator();
-
 			if (ImGui::MenuItem("Build", "Ctrl+S"))
-				is_build = true;
-
+			{
+			}
 			ImGui::Separator();
 			if (ImGui::MenuItem("Quit", "ESC"))
 				App->input->quit = true;
@@ -270,7 +249,6 @@ void ModuleEditor::DrawMenuBar()
 			if (ImGui::MenuItem("Shaders", NULL, false, false))
 			{
 			}
-
 			ImGui::EndMenu();
 		}
 
@@ -443,25 +421,22 @@ void ModuleEditor::ConfirmExit()
 
 void ModuleEditor::Shortcuts()
 {
-	if ((App->input->GetKey(SDL_SCANCODE_LCTRL) == KEY_REPEAT && App->input->GetKey(SDL_SCANCODE_N) == KEY_DOWN) ||
+	if ((App->input->GetKey(SDL_SCANCODE_LCTRL) == KEY_REPEAT && App->input->GetKey(SDL_SCANCODE_N) == KEY_DOWN) || //New
 		(App->input->GetKey(SDL_SCANCODE_RCTRL) == KEY_REPEAT && App->input->GetKey(SDL_SCANCODE_N) == KEY_DOWN))
 	{
-		is_new = true;
 	}
 
-	if ((App->input->GetKey(SDL_SCANCODE_LCTRL) == KEY_REPEAT && App->input->GetKey(SDL_SCANCODE_O) == KEY_DOWN) ||
+	if ((App->input->GetKey(SDL_SCANCODE_LCTRL) == KEY_REPEAT && App->input->GetKey(SDL_SCANCODE_O) == KEY_DOWN) || //Open
 		(App->input->GetKey(SDL_SCANCODE_RCTRL) == KEY_REPEAT && App->input->GetKey(SDL_SCANCODE_O) == KEY_DOWN))
 	{
-		is_open = true;
 	}
 
-	if ((App->input->GetKey(SDL_SCANCODE_LCTRL) == KEY_REPEAT && App->input->GetKey(SDL_SCANCODE_S) == KEY_DOWN) ||
+	if ((App->input->GetKey(SDL_SCANCODE_LCTRL) == KEY_REPEAT && App->input->GetKey(SDL_SCANCODE_S) == KEY_DOWN) || //Save
 		(App->input->GetKey(SDL_SCANCODE_RCTRL) == KEY_REPEAT && App->input->GetKey(SDL_SCANCODE_S) == KEY_DOWN))
 	{
-		is_save = true;
 	}
 
-	if ((App->input->GetKey(SDL_SCANCODE_ESCAPE) == KEY_UP))
+	if ((App->input->GetKey(SDL_SCANCODE_ESCAPE) == KEY_UP)) //Quit
 	{
 		App->input->quit = true;
 	}

@@ -67,11 +67,6 @@ public:
 	//Viewport* panel_viewport = nullptr;
 	//Assets* panel_assets = nullptr;
 
-	bool is_new = false;
-	bool is_open = false;
-	bool is_save = false;
-	bool is_build = false;
-	bool is_import = false;
 	bool is_auto_select = false;
 	bool is_about = false;
 
