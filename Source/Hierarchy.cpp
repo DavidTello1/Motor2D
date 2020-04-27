@@ -38,10 +38,24 @@ void Hierarchy::Draw()
 	DrawRightClick();
 
 	// Draw Nodes
+	ImDrawList* draw_list = ImGui::GetWindowDrawList();
 	for (HierarchyNode* node : nodes)
 	{
 		if (node->parent == nullptr)
 			DrawNode(node);
+
+		// Draw Connector Lines
+		if (!node->childs.empty())
+		{
+			uint last_child_pos = (uint)node->childs[node->childs.size() - 1]->pos;
+			static ImVec4 colorf = ImVec4(0.8f, 0.8f, 0.8f, 1.0f);
+			const ImU32 color = ImColor(colorf);
+			ImVec2 initial_pos = ImVec2(3 + 15 * (node->indent + 1), 60 + 17 * node->pos);
+			ImVec2 final_pos = ImVec2(initial_pos.x, 53 + 17 * last_child_pos);
+
+			draw_list->AddLine(initial_pos, final_pos, color); // vertical line
+			draw_list->AddLine(final_pos, ImVec2(final_pos.x + 7, final_pos.y), color); // horizontal line
+		}
 	}
 
 	//--- Empty Space ---
