@@ -116,11 +116,7 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 			sprintf_s(buffer, 128, "%s", node->name.c_str());
 			if (ImGui::InputText("##RenameNode", buffer, 128, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll))
 			{
-				uint count = CountNode(buffer);
-				if (count > 0)
-					node->name = buffer + std::string(" (") + std::to_string(count) + std::string(")");
-				else
-					node->name = buffer;
+				node->name = CreateName(buffer);
 				node->rename = false;
 			}
 		}
@@ -154,9 +150,7 @@ HierarchyNode* Hierarchy::CreateNode(HierarchyNode::NodeType type, HierarchyNode
 	}
 
 	// Name Count
-	uint count = CountNode(node->name.c_str());
-	if (count > 0)
-		node->name = node->name + std::string(" (") + std::to_string(count) + std::string(")");
+	node->name = CreateName(node->name.c_str());
 
 	// Parent
 	if (parent == nullptr && selected_nodes.empty() == false)
@@ -256,6 +250,7 @@ void Hierarchy::DuplicateNodes(std::vector<HierarchyNode*> nodes_list, Hierarchy
 
 		// Name
 		std::string name = nodes_list[i]->name.substr(0, nodes_list[i]->name.find_first_of(" ("));
+		node->name = CreateName(name.c_str());
 
 		// Selected (unselect source node)
 		nodes_list[i]->selected = false;
@@ -286,16 +281,13 @@ void Hierarchy::DuplicateNodes(std::vector<HierarchyNode*> nodes_list, Hierarchy
 			node->parent->childs.push_back(node); //add node to parent's child list
 		}
 
-		// Childs
-		if (!nodes_list[i]->childs.empty()) // if node has childs, duplicate them
-			DuplicateNodes(nodes_list[i]->childs, node);
-
-		// Add node count to name
-		node->name = name + std::string(" (") + std::to_string(CountNode(name.c_str())) + std::string(")");
-
 		// Add to nodes list & Reorder by Position
 		nodes.push_back(node);
 		ReorderNodes(node);
+
+		// Childs
+		if (!nodes_list[i]->childs.empty()) // if node has childs, duplicate them
+			DuplicateNodes(nodes_list[i]->childs, node);
 	}
 }
 
@@ -431,25 +423,47 @@ uint Hierarchy::RecursivePos(HierarchyNode* node, bool is_duplicate)
 	}
 }
 
-uint Hierarchy::CountNode(const char* name)
+std::string Hierarchy::CreateName(const char* base_name)
 {
+	bool found = false;
 	uint count = 0;
-	for (uint i = 0; i < nodes.size(); ++i)
-	{
-		std::string node_name = nodes[i]->name.substr(0, nodes[i]->name.find_first_of("(") - 1);
+	std::string name = base_name;
 
-		if (strcmp(name, node_name.c_str()) == 0)
-			count++;
+	while (found == false )
+	{
+		if (nodes.empty())
+			found = true;
+
+		for (uint i = 0; i < nodes.size(); ++i)
+		{
+			if (name == nodes[i]->name)
+			{
+				count++;
+				name = base_name + std::string(" (") + std::to_string(count) + std::string(")");
+				break;
+			}
+			else if (i == nodes.size() - 1)
+			{
+				found = true;
+				break;
+			}
+		}
 	}
-	return count;
+
+	return name;
 }
 
 uint Hierarchy::GetLastChildPos(HierarchyNode* node)
 {
-	if (node->childs[node->childs.size() - 1]->childs.empty())
-		return (uint)node->childs[node->childs.size() - 1]->pos;
+	if (node->childs.empty())
+		return node->pos;
 	else
-		GetLastChildPos(node->childs[node->childs.size() - 1]);
+	{
+		if (node->childs[node->childs.size() - 1]->childs.empty())
+			return (uint)node->childs[node->childs.size() - 1]->pos;
+		else
+			GetLastChildPos(node->childs[node->childs.size() - 1]);
+	}
 }
 
 void Hierarchy::DrawConnectorLines(HierarchyNode* node, ImDrawList* draw_list)

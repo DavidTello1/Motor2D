@@ -49,7 +49,7 @@ private:
 	void ReorderNodes(HierarchyNode* node, bool is_delete = false); //update nodes pos
 	uint RecursivePos(HierarchyNode* node, bool is_duplicate = false); //set node pos in CreateNode()
 
-	uint CountNode(const char* name); //get number of nodes with same name
+	std::string CreateName(const char* name); //get name (with count of same names)
 	uint GetLastChildPos(HierarchyNode* node); //get pos of last child's last child
 	void DrawConnectorLines(HierarchyNode* node, ImDrawList* draw_list); //draw connector lines when node is open
 
