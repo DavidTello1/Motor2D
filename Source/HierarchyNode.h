@@ -34,6 +34,7 @@ public:
 
 	bool rename = false;
 	bool selected = false;
+	bool is_open = false;
 
 	ImGuiTreeNodeFlags flags = 0;
 };

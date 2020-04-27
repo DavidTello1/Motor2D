@@ -41,21 +41,13 @@ void Hierarchy::Draw()
 	ImDrawList* draw_list = ImGui::GetWindowDrawList();
 	for (HierarchyNode* node : nodes)
 	{
+		// Draw Parents First
 		if (node->parent == nullptr)
 			DrawNode(node);
 
 		// Draw Connector Lines
-		if (!node->childs.empty())
-		{
-			uint last_child_pos = (uint)node->childs[node->childs.size() - 1]->pos;
-			static ImVec4 colorf = ImVec4(0.8f, 0.8f, 0.8f, 1.0f);
-			const ImU32 color = ImColor(colorf);
-			ImVec2 initial_pos = ImVec2(3 + 15 * (node->indent + 1), 60 + 17 * node->pos);
-			ImVec2 final_pos = ImVec2(initial_pos.x, 53 + 17 * last_child_pos);
-
-			draw_list->AddLine(initial_pos, final_pos, color); // vertical line
-			draw_list->AddLine(final_pos, ImVec2(final_pos.x + 7, final_pos.y), color); // horizontal line
-		}
+		if (node != nullptr && !node->childs.empty() && node->type != HierarchyNode::NodeType::SCENE)
+			DrawConnectorLines(node, draw_list);
 	}
 
 	//--- Empty Space ---
@@ -88,7 +80,7 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 			ImGui::SetCursorPosX(ImGui::GetCursorPosX() - 15);
 
 		// Draw Node
-		bool is_open = ImGui::TreeNodeEx(node->name.c_str(), node->flags);
+		node->is_open = ImGui::TreeNodeEx(node->name.c_str(), node->flags);
 
 		if (node->type == HierarchyNode::NodeType::FOLDER) //push is in NodeParams()
 			ImGui::PopStyleColor();
@@ -107,7 +99,7 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 			selected_nodes.erase(selected_nodes.begin() + pos);
 
 		// Draw Childs
-		if (is_open)
+		if (node->is_open)
 		{
 			if (!node->childs.empty())
 			{
@@ -445,6 +437,36 @@ uint Hierarchy::RecursivePos(HierarchyNode* node)
 		uint num_childs = node->childs.size() - 1;
 		HierarchyNode* last_child = node->childs[num_childs];
 		return RecursivePos(last_child);
+	}
+}
+
+void Hierarchy::DrawConnectorLines(HierarchyNode* node, ImDrawList* draw_list)
+{
+	// Check if any parent is closed
+	bool draw = true;
+	HierarchyNode* tmp_node = node;
+	while (tmp_node != nullptr)
+	{
+		if (!tmp_node->is_open)
+		{
+			draw = false;
+			break;
+		}
+		tmp_node = tmp_node->parent;
+	}
+
+	// Actual draw
+	if (draw)
+	{
+		uint last_child_pos = (uint)node->childs[node->childs.size() - 1]->pos; //***ADAPT POS TO SEE IF ANY CHILD IS CLOSED
+
+		static ImVec4 colorf = ImVec4(0.8f, 0.8f, 0.8f, 1.0f);
+		const ImU32 color = ImColor(colorf);
+		ImVec2 initial_pos = ImVec2(3 + 15 * (node->indent + 1), 60 + 17 * node->pos);
+		ImVec2 final_pos = ImVec2(initial_pos.x, 53 + 17 * last_child_pos);
+
+		draw_list->AddLine(initial_pos, final_pos, color); // vertical line
+		draw_list->AddLine(final_pos, ImVec2(final_pos.x + 7, final_pos.y), color); // horizontal line
 	}
 }
 
