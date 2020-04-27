@@ -46,7 +46,7 @@ void Hierarchy::Draw()
 			DrawNode(node);
 
 		// Draw Connector Lines
-		if (node != nullptr && !node->childs.empty() && node->type != HierarchyNode::NodeType::SCENE)
+		if (!node->childs.empty() && node->type != HierarchyNode::NodeType::SCENE)
 			DrawConnectorLines(node, draw_list);
 	}
 
@@ -282,7 +282,7 @@ void Hierarchy::DuplicateNodes(std::vector<HierarchyNode*> nodes_list, Hierarchy
 			node->pos = nodes.size();
 		else
 		{
-			node->pos = RecursivePos(node->parent);
+			node->pos = RecursivePos(node->parent, false);
 			node->parent->childs.push_back(node); //add node to parent's child list
 		}
 
@@ -428,20 +428,27 @@ void Hierarchy::ReorderNodes(HierarchyNode* node, bool is_delete)
 	nodes = SortByPosition(nodes);
 }
 
-uint Hierarchy::RecursivePos(HierarchyNode* node)
+uint Hierarchy::RecursivePos(HierarchyNode* node, bool duplicate)
 {
 	if (node->childs.empty())
-		return node->pos + 1;
+	{
+		if (duplicate)
+			return node->pos;
+		else
+			return node->pos + 1;
+	}
 	else
 	{
-		uint num_childs = node->childs.size() - 1;
-		HierarchyNode* last_child = node->childs[num_childs];
+		HierarchyNode* last_child = node->childs[node->childs.size() - 1];
 		return RecursivePos(last_child);
 	}
 }
 
 void Hierarchy::DrawConnectorLines(HierarchyNode* node, ImDrawList* draw_list)
 {
+	if (node == nullptr)
+		return;
+
 	// Check if any parent is closed
 	bool draw = true;
 	HierarchyNode* tmp_node = node;
@@ -455,11 +462,18 @@ void Hierarchy::DrawConnectorLines(HierarchyNode* node, ImDrawList* draw_list)
 		tmp_node = tmp_node->parent;
 	}
 
+	// Check if any child is closed
+	uint num_childs_hidden = 0;
+	for (uint i = 0; i < node->childs.size(); ++i)
+	{
+		if (!node->childs[i]->is_open)
+			num_childs_hidden += node->childs[i]->childs.size();
+	}
+
 	// Actual draw
 	if (draw)
 	{
-		uint last_child_pos = (uint)node->childs[node->childs.size() - 1]->pos; //***ADAPT POS TO SEE IF ANY CHILD IS CLOSED
-
+		uint last_child_pos = (uint)node->childs[node->childs.size() - 1]->pos - num_childs_hidden;
 		static ImVec4 colorf = ImVec4(0.8f, 0.8f, 0.8f, 1.0f);
 		const ImU32 color = ImColor(colorf);
 		ImVec2 initial_pos = ImVec2(3 + 15 * (node->indent + 1), 60 + 17 * node->pos);

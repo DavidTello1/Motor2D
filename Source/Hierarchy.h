@@ -48,8 +48,9 @@ private:
 	HierarchyNode* HandleSelection(HierarchyNode* node); //selection states
 	uint CountNode(const char* name); //get number of nodes with same name
 	void ReorderNodes(HierarchyNode* node, bool is_delete = false); //update nodes pos
-	uint RecursivePos(HierarchyNode* node); //set node pos in CreateNode()
+	uint RecursivePos(HierarchyNode* node, bool duplicate = false); //set node pos in CreateNode()
 	void DrawConnectorLines(HierarchyNode* node, ImDrawList* draw_list); //draw connector lines when node is open (scene doesn't draw them)
+
 	bool DrawRightClick(); //only draws if right click is pressed, returns true if drawn
 	std::vector<HierarchyNode*> SortByPosition(std::vector<HierarchyNode*> list); //order by position (smaller to bigger)
 	std::vector<HierarchyNode*> SortByIndent(std::vector<HierarchyNode*> list); //order by indent (lower to higher)
