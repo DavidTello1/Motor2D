@@ -50,7 +50,8 @@ private:
 	uint RecursivePos(HierarchyNode* node, bool is_duplicate = false); //set node pos in CreateNode()
 
 	std::string CreateName(const char* name); //get name (with count of same names)
-	uint GetLastChildPos(HierarchyNode* node); //get pos of last child's last child
+	uint GetNumChilds(HierarchyNode* node); //get number of childs (including childs of childs)
+	uint CheckClosedChilds(HierarchyNode* node); //check if any child is closed
 	void DrawConnectorLines(HierarchyNode* node, ImDrawList* draw_list); //draw connector lines when node is open
 
 	bool DrawRightClick(); //only draws if right click is pressed, returns true if drawn

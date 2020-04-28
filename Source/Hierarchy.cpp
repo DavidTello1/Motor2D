@@ -453,17 +453,33 @@ std::string Hierarchy::CreateName(const char* base_name)
 	return name;
 }
 
-uint Hierarchy::GetLastChildPos(HierarchyNode* node)
+uint Hierarchy::GetNumChilds(HierarchyNode* node)
 {
-	if (node->childs.empty())
-		return node->pos;
-	else
+	uint num_childs = 0;
+	for (uint i = 0; i < node->childs.size(); ++i)
 	{
-		if (node->childs[node->childs.size() - 1]->childs.empty())
-			return (uint)node->childs[node->childs.size() - 1]->pos;
-		else
-			GetLastChildPos(node->childs[node->childs.size() - 1]);
+		num_childs++;
+
+		if (!node->childs[i]->childs.empty()) //if child has childs add them to count
+			num_childs += GetNumChilds(node->childs[i]);
 	}
+	return num_childs;
+}
+
+uint Hierarchy::CheckClosedChilds(HierarchyNode* node)
+{
+	uint hidden_childs = 0;
+	for (uint i = 0; i < node->childs.size(); ++i)
+	{
+		//if (i == node->childs.size() - 1) //do not count last child
+		//	continue;
+
+		if (!node->childs[i]->is_open) //if node is closed get number of childs
+			hidden_childs += GetNumChilds(node->childs[i]);
+		else
+			hidden_childs += CheckClosedChilds(node->childs[i]); //if node is open check if any child is closed
+	}
+	return hidden_childs;
 }
 
 void Hierarchy::DrawConnectorLines(HierarchyNode* node, ImDrawList* draw_list)
@@ -484,23 +500,25 @@ void Hierarchy::DrawConnectorLines(HierarchyNode* node, ImDrawList* draw_list)
 		tmp_node = tmp_node->parent;
 	}
 
-	// Check if any child is closed
-	uint num_childs_hidden = 0;
-	for (uint i = 0; i < node->childs.size(); ++i)
-	{
-		if (!node->childs[i]->is_open)
-			num_childs_hidden = GetLastChildPos(node->childs[i]) + node->childs[i]->pos;
-	}
+	// Check if any childs are hidden
+	uint hidden_childs = 0;
+	if (node->childs.size() > 1)
+		hidden_childs = CheckClosedChilds(node);
 
 	// Actual draw
 	if (draw)
 	{
-		uint last_child_pos = (uint)node->childs[node->childs.size() - 1]->pos - num_childs_hidden;
+		// Color
 		static ImVec4 colorf = ImVec4(0.8f, 0.8f, 0.8f, 1.0f);
 		const ImU32 color = ImColor(colorf);
-		ImVec2 initial_pos = ImVec2(3 + 15 * (node->indent + 1), 60 + 17 * node->pos);
-		ImVec2 final_pos = ImVec2(initial_pos.x, 53 + 17 * last_child_pos);
 
+		// Positions
+		uint last_child_pos = (uint)node->childs[node->childs.size() - 1]->pos - hidden_childs;  //get last child pos updated to hidden childs
+
+		ImVec2 initial_pos = ImVec2(3 + 15 * (node->indent + 1), 60 + 17 * (node->pos - hidden_childs)); //initial pos
+		ImVec2 final_pos = ImVec2(initial_pos.x, 53 + 17 * last_child_pos); //final pos
+
+		// Connector Lines
 		draw_list->AddLine(initial_pos, final_pos, color); // vertical line
 		draw_list->AddLine(final_pos, ImVec2(final_pos.x + 7, final_pos.y), color); // horizontal line
 	}
