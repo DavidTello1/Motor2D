@@ -66,6 +66,30 @@ void Hierarchy::Draw()
 	Shortcuts();
 }
 
+void Hierarchy::Shortcuts()
+{
+	if (ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows))
+	{
+		if (App->input->GetKey(SDL_SCANCODE_DELETE) == KEY_DOWN) // Delete
+		{
+			DeleteNodes(selected_nodes);
+			selected_nodes.clear();
+		}
+
+		if ((App->input->GetKey(SDL_SCANCODE_LCTRL) == KEY_REPEAT && App->input->GetKey(SDL_SCANCODE_D) == KEY_DOWN) || // Duplicate
+			(App->input->GetKey(SDL_SCANCODE_RCTRL) == KEY_REPEAT && App->input->GetKey(SDL_SCANCODE_D) == KEY_DOWN))
+		{
+			DuplicateNodes(selected_nodes);
+		}
+
+		if ((App->input->GetKey(SDL_SCANCODE_LCTRL) == KEY_REPEAT && App->input->GetKey(SDL_SCANCODE_A) == KEY_DOWN) || // SelectAll
+			(App->input->GetKey(SDL_SCANCODE_RCTRL) == KEY_REPEAT && App->input->GetKey(SDL_SCANCODE_A) == KEY_DOWN))
+		{
+			SelectAll();
+		}
+	}
+}
+
 void Hierarchy::DrawNode(HierarchyNode* node)
 {
 	// Node Parameters
@@ -307,61 +331,59 @@ void Hierarchy::UnSelectAll()
 	selected_nodes.clear();
 }
 
-int Hierarchy::FindNode(HierarchyNode* node, std::vector<HierarchyNode*> list)
+// --- MAIN HELPERS ---
+bool Hierarchy::DrawRightClick()
 {
-	for (uint i = 0; i <list.size(); ++i)
+	if (ImGui::BeginPopupContextWindow("Hierarchy"))
 	{
-		if (list[i] == node)
-			return i;
-	}
-	return -1;
-}
-
-HierarchyNode* Hierarchy::NodeParams(HierarchyNode* node)
-{
-	// Flags
-	if (node->childs.empty()) // leaf
-		node->flags |= ImGuiTreeNodeFlags_Leaf;
-	else
-		node->flags &= ~ImGuiTreeNodeFlags_Leaf;
-
-	if (node->selected) // selected
-		node->flags |= ImGuiTreeNodeFlags_Selected;
-	else
-		node->flags &= ~ImGuiTreeNodeFlags_Selected;
-
-	// Type Params
-	if (node->type == HierarchyNode::NodeType::FOLDER && !node->rename) //folder
-	{
-		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.9f, 0.6f, 0.0f, 1.0f));
-	}
-	else if (node->type == HierarchyNode::NodeType::SCENE) //scene
-	{
-		ImDrawList* draw_list = ImGui::GetWindowDrawList();
-		static ImVec4 colorf = ImVec4(0.2f, 0.2f, 0.2f, 1.0f);
-		const ImU32 color = ImColor(colorf);
-		static float pos;
-		static bool first = false;
-
-		// Draw Scene Background
-		if (node->pos == 0)
+		if (ImGui::BeginMenu("Create")) //create
 		{
-			first = true;
-			pos = ImGui::GetCursorPosY() + 16;
+			if (ImGui::MenuItem("Folder"))
+				CreateNode(HierarchyNode::NodeType::FOLDER);
+
+			if (ImGui::MenuItem("Scene"))
+				CreateNode(HierarchyNode::NodeType::SCENE);
+
+			if (ImGui::MenuItem("GameObject"))
+				CreateNode(HierarchyNode::NodeType::GAMEOBJECT);
+
+			//if (ImGui::MenuItem("Prefab"))
+			//	CreateNode(HierarchyNode::NodeType::PREFAB);
+
+			ImGui::EndMenu();
 		}
-		else
+		if (ImGui::MenuItem("Duplicate", "Ctrl+D", false, !selected_nodes.empty())) //duplicate
+			DuplicateNodes(selected_nodes);
+
+		ImGui::Separator();
+
+		if (ImGui::MenuItem("Cut", "Ctrl+X", false, !selected_nodes.empty())) //cut
 		{
-			first = false;
-			pos = ImGui::GetCursorPosY() + 18;
+		}
+		if (ImGui::MenuItem("Copy", "Ctrl+C", false, !selected_nodes.empty())) //copy
+		{
+		}
+		if (ImGui::MenuItem("Paste", "Ctrl+V", false, false)) //paste
+		{
+		}
+		ImGui::Separator();
+
+		if (ImGui::MenuItem("Select All", NULL, false, !nodes.empty())) //select all
+			SelectAll();
+
+		if (ImGui::MenuItem("Rename", NULL, false, selected_nodes.size() == 1)) //rename
+			selected_nodes.front()->rename = true;
+
+		if (ImGui::MenuItem("Delete", "Supr", false, !selected_nodes.empty())) //delete
+		{
+			DeleteNodes(selected_nodes);
+			selected_nodes.clear();
 		}
 
-		draw_list->AddRectFilled(ImVec2(0, pos), ImVec2(ImGui::GetWindowWidth(), pos + 15), color); //actual draw of background
-
-		if (first)
-			ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 2);
+		ImGui::EndPopup();
+		return true;
 	}
-
-	return node;
+	return false;
 }
 
 HierarchyNode* Hierarchy::HandleSelection(HierarchyNode* node)
@@ -388,116 +410,6 @@ HierarchyNode* Hierarchy::HandleSelection(HierarchyNode* node)
 	}
 
 	return node;
-}
-
-void Hierarchy::ReorderNodes(HierarchyNode* node, bool is_delete)
-{
-	for (uint i = node->pos; i < nodes.size(); ++i)
-	{
-		if (nodes[i] == node)
-			continue;
-		else
-		{
-			if (is_delete)
-				nodes[i]->pos--;
-			else
-				nodes[i]->pos++;
-		}
-	}
-	nodes = SortByPosition(nodes);
-}
-
-uint Hierarchy::RecursivePos(HierarchyNode* node, bool is_duplicate)
-{
-	if (node->childs.empty())
-	{
-		if (is_duplicate)
-			return node->pos;
-		else
-			return node->pos + 1;
-	}
-	else
-	{
-		HierarchyNode* last_child = node->childs[node->childs.size() - 1];
-		return RecursivePos(last_child);
-	}
-}
-
-std::string Hierarchy::CreateName(const char* base_name)
-{
-	bool found = false;
-	uint count = 0;
-	std::string name = base_name;
-
-	while (found == false )
-	{
-		if (nodes.empty())
-			found = true;
-
-		for (uint i = 0; i < nodes.size(); ++i)
-		{
-			if (name == nodes[i]->name)
-			{
-				count++;
-				name = base_name + std::string(" (") + std::to_string(count) + std::string(")");
-				break;
-			}
-			else if (i == nodes.size() - 1)
-			{
-				found = true;
-				break;
-			}
-		}
-	}
-
-	return name;
-}
-
-std::vector<HierarchyNode*> Hierarchy::GetAllChilds(HierarchyNode* node)
-{
-	std::vector<HierarchyNode*> num_childs;
-	for (uint i = 0; i < node->childs.size(); ++i)
-	{
-		num_childs.push_back(node->childs[i]);
-
-		if (!node->childs[i]->childs.empty()) //if child has childs add them to list
-		{
-			std::vector<HierarchyNode*> tmp_list = GetAllChilds(node->childs[i]); //get all childs
-			num_childs.insert(num_childs.end(), tmp_list.begin(), tmp_list.end()); //add childs list to hidden_childs
-		}
-	}
-	return num_childs;
-}
-
-std::vector<HierarchyNode*> Hierarchy::GetClosedChilds(HierarchyNode* node)
-{
-	std::vector<HierarchyNode*> hidden_childs;
-	for (uint i = 0; i < node->childs.size(); ++i)
-	{
-		if (!node->childs[i]->is_open) //if node is closed add childs to list
-		{
-			std::vector<HierarchyNode*> tmp_list = GetAllChilds(node->childs[i]); //get all childs
-			hidden_childs.insert(hidden_childs.end(), tmp_list.begin(), tmp_list.end()); //add childs list to hidden_childs
-		}
-		else
-		{
-			std::vector<HierarchyNode*> tmp_list = GetClosedChilds(node->childs[i]); //if node is open check if any child is closed
-			hidden_childs.insert(hidden_childs.end(), tmp_list.begin(), tmp_list.end()); //add tmp_list to hidden_childs
-		}
-	}
-	return hidden_childs;
-}
-
-bool Hierarchy::IsChildOf(HierarchyNode* parent, HierarchyNode* node)
-{
-	if (node->parent != nullptr)
-	{
-		if (node->parent == parent)
-			return true;
-		else
-			return IsChildOf(parent, node->parent);
-	}
-	return false;
 }
 
 void Hierarchy::DrawConnectorLines(HierarchyNode* node, ImDrawList* draw_list)
@@ -577,60 +489,177 @@ void Hierarchy::DrawConnectorLines(HierarchyNode* node, ImDrawList* draw_list)
 	}
 }
 
-bool Hierarchy::DrawRightClick()
+int Hierarchy::FindNode(HierarchyNode* node, std::vector<HierarchyNode*> list)
 {
-	if (ImGui::BeginPopupContextWindow("Hierarchy"))
+	for (uint i = 0; i <list.size(); ++i)
 	{
-		if (ImGui::BeginMenu("Create")) //create
+		if (list[i] == node)
+			return i;
+	}
+	return -1;
+}
+
+// --- NODE CREATION ---
+HierarchyNode* Hierarchy::NodeParams(HierarchyNode* node)
+{
+	// Flags
+	if (node->childs.empty()) // leaf
+		node->flags |= ImGuiTreeNodeFlags_Leaf;
+	else
+		node->flags &= ~ImGuiTreeNodeFlags_Leaf;
+
+	if (node->selected) // selected
+		node->flags |= ImGuiTreeNodeFlags_Selected;
+	else
+		node->flags &= ~ImGuiTreeNodeFlags_Selected;
+
+	// Type Params
+	if (node->type == HierarchyNode::NodeType::FOLDER && !node->rename) //folder
+	{
+		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.9f, 0.6f, 0.0f, 1.0f));
+	}
+	else if (node->type == HierarchyNode::NodeType::SCENE) //scene
+	{
+		ImDrawList* draw_list = ImGui::GetWindowDrawList();
+		static ImVec4 colorf = ImVec4(0.2f, 0.2f, 0.2f, 1.0f);
+		const ImU32 color = ImColor(colorf);
+		static float pos;
+		static bool first = false;
+
+		// Draw Scene Background
+		if (node->pos == 0)
 		{
-			if (ImGui::MenuItem("Folder"))
-				CreateNode(HierarchyNode::NodeType::FOLDER);
-
-			if (ImGui::MenuItem("Scene"))
-				CreateNode(HierarchyNode::NodeType::SCENE);
-
-			if (ImGui::MenuItem("GameObject"))
-				CreateNode(HierarchyNode::NodeType::GAMEOBJECT);
-
-			//if (ImGui::MenuItem("Prefab"))
-			//	CreateNode(HierarchyNode::NodeType::PREFAB);
-
-			ImGui::EndMenu();
+			first = true;
+			pos = ImGui::GetCursorPosY() + 16;
 		}
-		if (ImGui::MenuItem("Duplicate", "Ctrl+D", false, !selected_nodes.empty())) //duplicate
-			DuplicateNodes(selected_nodes);
-
-		ImGui::Separator();
-
-		if (ImGui::MenuItem("Cut", "Ctrl+X", false, !selected_nodes.empty())) //cut
+		else
 		{
+			first = false;
+			pos = ImGui::GetCursorPosY() + 18;
 		}
-		if (ImGui::MenuItem("Copy", "Ctrl+C", false, !selected_nodes.empty())) //copy
+
+		draw_list->AddRectFilled(ImVec2(0, pos), ImVec2(ImGui::GetWindowWidth(), pos + 15), color); //actual draw of background
+
+		if (first)
+			ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 2);
+	}
+
+	return node;
+}
+
+std::string Hierarchy::CreateName(const char* base_name)
+{
+	bool found = false;
+	uint count = 0;
+	std::string name = base_name;
+
+	while (found == false)
+	{
+		if (nodes.empty())
+			found = true;
+
+		for (uint i = 0; i < nodes.size(); ++i)
 		{
+			if (name == nodes[i]->name)
+			{
+				count++;
+				name = base_name + std::string(" (") + std::to_string(count) + std::string(")");
+				break;
+			}
+			else if (i == nodes.size() - 1)
+			{
+				found = true;
+				break;
+			}
 		}
-		if (ImGui::MenuItem("Paste", "Ctrl+V", false, false)) //paste
+	}
+
+	return name;
+}
+
+// --- NODE POS ---
+void Hierarchy::ReorderNodes(HierarchyNode* node, bool is_delete)
+{
+	for (uint i = node->pos; i < nodes.size(); ++i)
+	{
+		if (nodes[i] == node)
+			continue;
+		else
 		{
+			if (is_delete)
+				nodes[i]->pos--;
+			else
+				nodes[i]->pos++;
 		}
-		ImGui::Separator();
+	}
+	nodes = SortByPosition(nodes);
+}
 
-		if (ImGui::MenuItem("Select All", NULL, false, !nodes.empty())) //select all
-			SelectAll();
+uint Hierarchy::RecursivePos(HierarchyNode* node, bool is_duplicate)
+{
+	if (node->childs.empty())
+	{
+		if (is_duplicate)
+			return node->pos;
+		else
+			return node->pos + 1;
+	}
+	else
+	{
+		HierarchyNode* last_child = node->childs[node->childs.size() - 1];
+		return RecursivePos(last_child);
+	}
+}
 
-		if (ImGui::MenuItem("Rename", NULL, false, selected_nodes.size() == 1)) //rename
-			selected_nodes.front()->rename = true;
+// --- CONNECTOR LINES ---
+std::vector<HierarchyNode*> Hierarchy::GetAllChilds(HierarchyNode* node)
+{
+	std::vector<HierarchyNode*> num_childs;
+	for (uint i = 0; i < node->childs.size(); ++i)
+	{
+		num_childs.push_back(node->childs[i]);
 
-		if (ImGui::MenuItem("Delete", "Supr", false, !selected_nodes.empty())) //delete
+		if (!node->childs[i]->childs.empty()) //if child has childs add them to list
 		{
-			DeleteNodes(selected_nodes);
-			selected_nodes.clear();
+			std::vector<HierarchyNode*> tmp_list = GetAllChilds(node->childs[i]); //get all childs
+			num_childs.insert(num_childs.end(), tmp_list.begin(), tmp_list.end()); //add childs list to hidden_childs
 		}
+	}
+	return num_childs;
+}
 
-		ImGui::EndPopup();
-		return true;
+std::vector<HierarchyNode*> Hierarchy::GetClosedChilds(HierarchyNode* node)
+{
+	std::vector<HierarchyNode*> hidden_childs;
+	for (uint i = 0; i < node->childs.size(); ++i)
+	{
+		if (!node->childs[i]->is_open) //if node is closed add childs to list
+		{
+			std::vector<HierarchyNode*> tmp_list = GetAllChilds(node->childs[i]); //get all childs
+			hidden_childs.insert(hidden_childs.end(), tmp_list.begin(), tmp_list.end()); //add childs list to hidden_childs
+		}
+		else
+		{
+			std::vector<HierarchyNode*> tmp_list = GetClosedChilds(node->childs[i]); //if node is open check if any child is closed
+			hidden_childs.insert(hidden_childs.end(), tmp_list.begin(), tmp_list.end()); //add tmp_list to hidden_childs
+		}
+	}
+	return hidden_childs;
+}
+
+bool Hierarchy::IsChildOf(HierarchyNode* parent, HierarchyNode* node)
+{
+	if (node->parent != nullptr)
+	{
+		if (node->parent == parent)
+			return true;
+		else
+			return IsChildOf(parent, node->parent);
 	}
 	return false;
 }
 
+// --- SORTERS ---
 std::vector<HierarchyNode*> Hierarchy::SortByPosition(std::vector<HierarchyNode*> list)
 {
 	std::priority_queue<HierarchyNode*, std::vector<HierarchyNode*>, PositionSort> ListOrder;
@@ -663,28 +692,4 @@ std::vector<HierarchyNode*> Hierarchy::SortByIndent(std::vector<HierarchyNode*> 
 		ListOrder.pop();
 	}
 	return list;
-}
-
-void Hierarchy::Shortcuts()
-{
-	if (ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows))
-	{
-		if (App->input->GetKey(SDL_SCANCODE_DELETE) == KEY_DOWN) // Delete
-		{
-			DeleteNodes(selected_nodes);
-			selected_nodes.clear();
-		}
-
-		if ((App->input->GetKey(SDL_SCANCODE_LCTRL) == KEY_REPEAT && App->input->GetKey(SDL_SCANCODE_D) == KEY_DOWN) || // Duplicate
-			(App->input->GetKey(SDL_SCANCODE_RCTRL) == KEY_REPEAT && App->input->GetKey(SDL_SCANCODE_D) == KEY_DOWN))
-		{
-			DuplicateNodes(selected_nodes);
-		}
-
-		if ((App->input->GetKey(SDL_SCANCODE_LCTRL) == KEY_REPEAT && App->input->GetKey(SDL_SCANCODE_A) == KEY_DOWN) || // SelectAll
-			(App->input->GetKey(SDL_SCANCODE_RCTRL) == KEY_REPEAT && App->input->GetKey(SDL_SCANCODE_A) == KEY_DOWN))
-		{
-			SelectAll();
-		}
-	}
 }
