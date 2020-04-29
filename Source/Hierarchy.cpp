@@ -518,12 +518,20 @@ void Hierarchy::DrawConnectorLines(HierarchyNode* node, ImDrawList* draw_list)
 		tmp_node = tmp_node->parent;
 	}
 
+	// If not drawn skip all computations
+	if (!draw)
+		return;
+
 	// Get all hidden nodes
 	std::vector<HierarchyNode*> hidden_childs;
 	for (uint i = 0; i < nodes.size(); ++i)
 	{
 		if (nodes[i]->parent == nullptr) //** CHANGE TO IF PARENT->TYPE == SCENE
 		{
+			if (!nodes[i]->is_open) //if closed add childs to list
+				hidden_childs.insert(hidden_childs.end(), nodes[i]->childs.begin(), nodes[i]->childs.end());
+
+			// add closed childs' childs to list
 			std::vector<HierarchyNode*> tmp_list = GetClosedChilds(nodes[i]);
 			hidden_childs.insert(hidden_childs.end(), tmp_list.begin(), tmp_list.end()); //add tmp_list to hidden_childs
 		}
@@ -531,7 +539,7 @@ void Hierarchy::DrawConnectorLines(HierarchyNode* node, ImDrawList* draw_list)
 
 	// Get number of hidden childs that actually affect the node
 	uint num_hidden = hidden_childs.size();
-	uint num_hidden2 = num_hidden;
+	uint num_hidden2 = 0;
 	for (uint i = 0; i < hidden_childs.size(); ++i)
 	{
 		// If any of the hidden_childs' pos > node pos and is not child (or child of childs) of node, substract them from count
@@ -543,10 +551,8 @@ void Hierarchy::DrawConnectorLines(HierarchyNode* node, ImDrawList* draw_list)
 			num_hidden--;
 
 		// Get num_hidden2 for initial_pos of parent
-		if (IsChildOf(node, hidden_childs[i]) && hidden_childs[i]->pos > node->pos)
-		{
-			num_hidden2--;
-		}
+		if (hidden_childs[i]->pos < node->pos)
+			num_hidden2++;
 	}
 
 
@@ -559,10 +565,9 @@ void Hierarchy::DrawConnectorLines(HierarchyNode* node, ImDrawList* draw_list)
 
 		// Positions
 		uint last_child_pos = (uint)node->childs[node->childs.size() - 1]->pos - num_hidden;  //get last child pos updated to hidden childs
-		uint parent_pos = node->pos - num_hidden;
-		//if (parent_pos < 0)
-		//	parent_pos = 0;
+		uint parent_pos = node->pos - num_hidden2;
 
+		// Real Positions
 		ImVec2 initial_pos = ImVec2(3 + 15 * (node->indent + 1), 60 + 17 * parent_pos); //initial pos
 		ImVec2 final_pos = ImVec2(initial_pos.x, 53 + 17 * last_child_pos); //final pos
 
