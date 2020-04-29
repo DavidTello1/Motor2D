@@ -466,7 +466,7 @@ uint Hierarchy::GetNumChilds(HierarchyNode* node)
 	return num_childs;
 }
 
-uint Hierarchy::CheckClosedChilds(HierarchyNode* node)
+uint Hierarchy::CheckClosedChilds(HierarchyNode* node) //***SHOULD RETURN VECTOR OF NODES CLOSED
 {
 	uint hidden_childs = 0;
 	for (uint i = 0; i < node->childs.size(); ++i)
@@ -505,6 +505,9 @@ void Hierarchy::DrawConnectorLines(HierarchyNode* node, ImDrawList* draw_list)
 	if (node->childs.size() > 1)
 		hidden_childs = CheckClosedChilds(node);
 
+	//***IF ANY OF THE HIDDEN NODES'S POS < NODE POS, ADD THEM TO COUNT
+	//***IF ANY OF THE HIDDEN NODES ARE CHILDS OF LAST CHILD, SUBSTRACT THEM FROM COUNT
+
 	// Actual draw
 	if (draw)
 	{
@@ -515,7 +518,7 @@ void Hierarchy::DrawConnectorLines(HierarchyNode* node, ImDrawList* draw_list)
 		// Positions
 		uint last_child_pos = (uint)node->childs[node->childs.size() - 1]->pos - hidden_childs;  //get last child pos updated to hidden childs
 
-		ImVec2 initial_pos = ImVec2(3 + 15 * (node->indent + 1), 60 + 17 * (node->pos - hidden_childs)); //initial pos
+		ImVec2 initial_pos = ImVec2(3 + 15 * (node->indent + 1), 60 + 17 * node->pos); //initial pos
 		ImVec2 final_pos = ImVec2(initial_pos.x, 53 + 17 * last_child_pos); //final pos
 
 		// Connector Lines
