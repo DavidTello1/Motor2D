@@ -453,33 +453,51 @@ std::string Hierarchy::CreateName(const char* base_name)
 	return name;
 }
 
-uint Hierarchy::GetNumChilds(HierarchyNode* node)
+std::vector<HierarchyNode*> Hierarchy::GetAllChilds(HierarchyNode* node)
 {
-	uint num_childs = 0;
+	std::vector<HierarchyNode*> num_childs;
 	for (uint i = 0; i < node->childs.size(); ++i)
 	{
-		num_childs++;
+		num_childs.push_back(node->childs[i]);
 
-		if (!node->childs[i]->childs.empty()) //if child has childs add them to count
-			num_childs += GetNumChilds(node->childs[i]);
+		if (!node->childs[i]->childs.empty()) //if child has childs add them to list
+		{
+			std::vector<HierarchyNode*> tmp_list = GetAllChilds(node->childs[i]); //get all childs
+			num_childs.insert(num_childs.end(), tmp_list.begin(), tmp_list.end()); //add childs list to hidden_childs
+		}
 	}
 	return num_childs;
 }
 
-uint Hierarchy::CheckClosedChilds(HierarchyNode* node) //***SHOULD RETURN VECTOR OF NODES CLOSED
+std::vector<HierarchyNode*> Hierarchy::GetClosedChilds(HierarchyNode* node)
 {
-	uint hidden_childs = 0;
+	std::vector<HierarchyNode*> hidden_childs;
 	for (uint i = 0; i < node->childs.size(); ++i)
 	{
-		//if (i == node->childs.size() - 1) //do not count last child
-		//	continue;
-
-		if (!node->childs[i]->is_open) //if node is closed get number of childs
-			hidden_childs += GetNumChilds(node->childs[i]);
+		if (!node->childs[i]->is_open) //if node is closed add childs to list
+		{
+			std::vector<HierarchyNode*> tmp_list = GetAllChilds(node->childs[i]); //get all childs
+			hidden_childs.insert(hidden_childs.end(), tmp_list.begin(), tmp_list.end()); //add childs list to hidden_childs
+		}
 		else
-			hidden_childs += CheckClosedChilds(node->childs[i]); //if node is open check if any child is closed
+		{
+			std::vector<HierarchyNode*> tmp_list = GetClosedChilds(node->childs[i]); //if node is open check if any child is closed
+			hidden_childs.insert(hidden_childs.end(), tmp_list.begin(), tmp_list.end()); //add tmp_list to hidden_childs
+		}
 	}
 	return hidden_childs;
+}
+
+bool Hierarchy::IsChildOf(HierarchyNode* parent, HierarchyNode* node)
+{
+	if (node->parent != nullptr)
+	{
+		if (node->parent == parent)
+			return true;
+		else
+			return IsChildOf(parent, node->parent);
+	}
+	return false;
 }
 
 void Hierarchy::DrawConnectorLines(HierarchyNode* node, ImDrawList* draw_list)
@@ -487,7 +505,7 @@ void Hierarchy::DrawConnectorLines(HierarchyNode* node, ImDrawList* draw_list)
 	if (node == nullptr)
 		return;
 
-	// Check if any parent is closed
+	// If any parent is closed do not draw
 	bool draw = true;
 	HierarchyNode* tmp_node = node;
 	while (tmp_node != nullptr)
@@ -500,13 +518,37 @@ void Hierarchy::DrawConnectorLines(HierarchyNode* node, ImDrawList* draw_list)
 		tmp_node = tmp_node->parent;
 	}
 
-	// Check if any childs are hidden
-	uint hidden_childs = 0;
-	if (node->childs.size() > 1)
-		hidden_childs = CheckClosedChilds(node);
+	// Get all hidden nodes
+	std::vector<HierarchyNode*> hidden_childs;
+	for (uint i = 0; i < nodes.size(); ++i)
+	{
+		if (nodes[i]->parent == nullptr) //** CHANGE TO IF PARENT->TYPE == SCENE
+		{
+			std::vector<HierarchyNode*> tmp_list = GetClosedChilds(nodes[i]);
+			hidden_childs.insert(hidden_childs.end(), tmp_list.begin(), tmp_list.end()); //add tmp_list to hidden_childs
+		}
+	}
 
-	//***IF ANY OF THE HIDDEN NODES'S POS < NODE POS, ADD THEM TO COUNT
-	//***IF ANY OF THE HIDDEN NODES ARE CHILDS OF LAST CHILD, SUBSTRACT THEM FROM COUNT
+	// Get number of hidden childs that actually affect the node
+	uint num_hidden = hidden_childs.size();
+	uint num_hidden2 = num_hidden;
+	for (uint i = 0; i < hidden_childs.size(); ++i)
+	{
+		// If any of the hidden_childs' pos > node pos and is not child (or child of childs) of node, substract them from count
+		if (hidden_childs[i]->pos > node->pos && !IsChildOf(node, hidden_childs[i]))
+			num_hidden--;
+
+		// If any of the hidden_childs are childs of last child, substract them from count
+		if (IsChildOf(node->childs[node->childs.size() - 1], hidden_childs[i]))
+			num_hidden--;
+
+		// Get num_hidden2 for initial_pos of parent
+		if (IsChildOf(node, hidden_childs[i]) && hidden_childs[i]->pos > node->pos)
+		{
+			num_hidden2--;
+		}
+	}
+
 
 	// Actual draw
 	if (draw)
@@ -516,9 +558,12 @@ void Hierarchy::DrawConnectorLines(HierarchyNode* node, ImDrawList* draw_list)
 		const ImU32 color = ImColor(colorf);
 
 		// Positions
-		uint last_child_pos = (uint)node->childs[node->childs.size() - 1]->pos - hidden_childs;  //get last child pos updated to hidden childs
+		uint last_child_pos = (uint)node->childs[node->childs.size() - 1]->pos - num_hidden;  //get last child pos updated to hidden childs
+		uint parent_pos = node->pos - num_hidden;
+		//if (parent_pos < 0)
+		//	parent_pos = 0;
 
-		ImVec2 initial_pos = ImVec2(3 + 15 * (node->indent + 1), 60 + 17 * node->pos); //initial pos
+		ImVec2 initial_pos = ImVec2(3 + 15 * (node->indent + 1), 60 + 17 * parent_pos); //initial pos
 		ImVec2 final_pos = ImVec2(initial_pos.x, 53 + 17 * last_child_pos); //final pos
 
 		// Connector Lines
