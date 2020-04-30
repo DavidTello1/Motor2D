@@ -70,19 +70,22 @@ void Hierarchy::Shortcuts()
 {
 	if (ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows))
 	{
-		if (App->input->GetKey(SDL_SCANCODE_DELETE) == KEY_DOWN) // Delete
+		// Delete
+		if (App->input->GetKey(SDL_SCANCODE_DELETE) == KEY_DOWN)
 		{
 			DeleteNodes(selected_nodes);
 			selected_nodes.clear();
 		}
 
-		if ((App->input->GetKey(SDL_SCANCODE_LCTRL) == KEY_REPEAT && App->input->GetKey(SDL_SCANCODE_D) == KEY_DOWN) || // Duplicate
+		// Duplicate
+		if ((App->input->GetKey(SDL_SCANCODE_LCTRL) == KEY_REPEAT && App->input->GetKey(SDL_SCANCODE_D) == KEY_DOWN) ||
 			(App->input->GetKey(SDL_SCANCODE_RCTRL) == KEY_REPEAT && App->input->GetKey(SDL_SCANCODE_D) == KEY_DOWN))
 		{
 			DuplicateNodes(selected_nodes);
 		}
 
-		if ((App->input->GetKey(SDL_SCANCODE_LCTRL) == KEY_REPEAT && App->input->GetKey(SDL_SCANCODE_A) == KEY_DOWN) || // SelectAll
+		// SelectAll
+		if ((App->input->GetKey(SDL_SCANCODE_LCTRL) == KEY_REPEAT && App->input->GetKey(SDL_SCANCODE_A) == KEY_DOWN) ||
 			(App->input->GetKey(SDL_SCANCODE_RCTRL) == KEY_REPEAT && App->input->GetKey(SDL_SCANCODE_A) == KEY_DOWN))
 		{
 			SelectAll();
@@ -423,31 +426,13 @@ void Hierarchy::DrawConnectorLines(HierarchyNode* node, ImDrawList* draw_list)
 	while (tmp_node != nullptr)
 	{
 		if (!tmp_node->is_open)
-		{
-			draw = false;
-			break;
-		}
+			return;
+
 		tmp_node = tmp_node->parent;
 	}
 
-	// If not drawn skip all computations
-	if (!draw)
-		return;
-
 	// Get all hidden nodes
-	std::vector<HierarchyNode*> hidden_childs;
-	for (uint i = 0; i < nodes.size(); ++i)
-	{
-		if (nodes[i]->parent == nullptr) //** CHANGE TO IF PARENT->TYPE == SCENE
-		{
-			if (!nodes[i]->is_open) //if closed add childs to list
-				hidden_childs.insert(hidden_childs.end(), nodes[i]->childs.begin(), nodes[i]->childs.end());
-
-			// add closed childs' childs to list
-			std::vector<HierarchyNode*> tmp_list = GetClosedChilds(nodes[i]);
-			hidden_childs.insert(hidden_childs.end(), tmp_list.begin(), tmp_list.end()); //add tmp_list to hidden_childs
-		}
-	}
+	std::vector<HierarchyNode*> hidden_childs = GetHiddenNodes(); //*** ONLY CALL GetHiddenNodes() WHEN A NODE IS OPENED/CLOSED
 
 	// Get number of hidden childs that actually affect the node
 	uint num_hidden = hidden_childs.size();
@@ -467,26 +452,21 @@ void Hierarchy::DrawConnectorLines(HierarchyNode* node, ImDrawList* draw_list)
 			num_hidden2++;
 	}
 
+	// Color
+	static ImVec4 colorf = ImVec4(0.8f, 0.8f, 0.8f, 1.0f);
+	const ImU32 color = ImColor(colorf);
 
-	// Actual draw
-	if (draw)
-	{
-		// Color
-		static ImVec4 colorf = ImVec4(0.8f, 0.8f, 0.8f, 1.0f);
-		const ImU32 color = ImColor(colorf);
+	// Positions
+	uint last_child_pos = (uint)node->childs[node->childs.size() - 1]->pos - num_hidden;  //get last child pos updated to hidden childs
+	uint parent_pos = node->pos - num_hidden2;
 
-		// Positions
-		uint last_child_pos = (uint)node->childs[node->childs.size() - 1]->pos - num_hidden;  //get last child pos updated to hidden childs
-		uint parent_pos = node->pos - num_hidden2;
+	// Real Positions
+	ImVec2 initial_pos = ImVec2(3 + 15 * (node->indent + 1), 60 + 17 * parent_pos); //initial pos
+	ImVec2 final_pos = ImVec2(initial_pos.x, 53 + 17 * last_child_pos); //final pos
 
-		// Real Positions
-		ImVec2 initial_pos = ImVec2(3 + 15 * (node->indent + 1), 60 + 17 * parent_pos); //initial pos
-		ImVec2 final_pos = ImVec2(initial_pos.x, 53 + 17 * last_child_pos); //final pos
-
-		// Connector Lines
-		draw_list->AddLine(initial_pos, final_pos, color); // vertical line
-		draw_list->AddLine(final_pos, ImVec2(final_pos.x + 7, final_pos.y), color); // horizontal line
-	}
+	// Connector Lines
+	draw_list->AddLine(initial_pos, final_pos, color); // vertical line
+	draw_list->AddLine(final_pos, ImVec2(final_pos.x + 7, final_pos.y), color); // horizontal line
 }
 
 int Hierarchy::FindNode(HierarchyNode* node, std::vector<HierarchyNode*> list)
@@ -612,6 +592,24 @@ uint Hierarchy::RecursivePos(HierarchyNode* node, bool is_duplicate)
 }
 
 // --- CONNECTOR LINES ---
+std::vector<HierarchyNode*> Hierarchy::GetHiddenNodes()
+{
+	std::vector<HierarchyNode*> hidden;
+	for (uint i = 0; i < nodes.size(); ++i)
+	{
+		if (nodes[i]->parent == nullptr) //** CHANGE TO IF PARENT->TYPE == SCENE
+		{
+			if (!nodes[i]->is_open) //if closed add childs to list
+				hidden.insert(hidden.end(), nodes[i]->childs.begin(), nodes[i]->childs.end());
+
+			// add closed childs' childs to list
+			std::vector<HierarchyNode*> tmp_list = GetClosedChilds(nodes[i]);
+			hidden.insert(hidden.end(), tmp_list.begin(), tmp_list.end()); //add tmp_list to hidden_childs
+		}
+	}
+	return hidden;
+}
+
 std::vector<HierarchyNode*> Hierarchy::GetAllChilds(HierarchyNode* node)
 {
 	std::vector<HierarchyNode*> num_childs;

@@ -58,6 +58,7 @@ private:
 	uint RecursivePos(HierarchyNode* node, bool is_duplicate = false); //set node pos in CreateNode()
 
 	// --- CONNECTOR LINES ---
+	std::vector<HierarchyNode*> GetHiddenNodes(); //get all hidden nodes in hierarchy
 	std::vector<HierarchyNode*> GetAllChilds(HierarchyNode* node); //get childs (including childs of childs)
 	std::vector<HierarchyNode*> GetClosedChilds(HierarchyNode* node); //returns all closed childs (including childs of childs)
 	bool IsChildOf(HierarchyNode* parent, HierarchyNode* node); //check if node is child of parent (including if it is child of childs)
