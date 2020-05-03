@@ -599,12 +599,16 @@ std::vector<HierarchyNode*> Hierarchy::GetHiddenNodes()
 	{
 		if (nodes[i]->parent == nullptr) //** CHANGE TO IF PARENT->TYPE == SCENE
 		{
-			if (!nodes[i]->is_open) //if closed add childs to list
-				hidden.insert(hidden.end(), nodes[i]->childs.begin(), nodes[i]->childs.end());
-
-			// add closed childs' childs to list
-			std::vector<HierarchyNode*> tmp_list = GetClosedChilds(nodes[i]);
-			hidden.insert(hidden.end(), tmp_list.begin(), tmp_list.end()); //add tmp_list to hidden_childs
+			if (!nodes[i]->is_open) //if closed add all childs to list
+			{
+				std::vector<HierarchyNode*> tmp_list = GetAllChilds(nodes[i]);
+				hidden.insert(hidden.end(), tmp_list.begin(), tmp_list.end());
+			}
+			else // add closed childs' childs to list
+			{
+				std::vector<HierarchyNode*> tmp_list = GetClosedChilds(nodes[i]);
+				hidden.insert(hidden.end(), tmp_list.begin(), tmp_list.end()); //add tmp_list to hidden_childs
+			}
 		}
 	}
 	return hidden;
