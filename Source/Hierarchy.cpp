@@ -458,11 +458,11 @@ void Hierarchy::DrawConnectorLines(HierarchyNode* node, ImDrawList* draw_list)
 
 	// Positions
 	uint last_child_pos = (uint)node->childs[node->childs.size() - 1]->pos - num_hidden;  //get last child pos updated to hidden childs
-	uint parent_pos = node->pos - num_hidden2;
+	uint parent_pos = (uint)node->pos - num_hidden2;
 
 	// Real Positions
-	ImVec2 initial_pos = ImVec2(3 + 15 * (node->indent + 1), 60 + 17 * parent_pos); //initial pos
-	ImVec2 final_pos = ImVec2(initial_pos.x, 53 + 17 * last_child_pos); //final pos
+	ImVec2 initial_pos = ImVec2(3 + 15 * float(node->indent + 1), 60 + 17 * (float)parent_pos); //initial pos
+	ImVec2 final_pos = ImVec2(initial_pos.x, 53 + 17 * (float)last_child_pos); //final pos
 
 	// Connector Lines
 	draw_list->AddLine(ImVec2(initial_pos.x - ImGui::GetScrollX(), initial_pos.y - ImGui::GetScrollY()), ImVec2(final_pos.x - ImGui::GetScrollX(), final_pos.y - ImGui::GetScrollY()), color); // vertical line
