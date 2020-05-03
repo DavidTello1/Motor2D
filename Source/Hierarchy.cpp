@@ -465,8 +465,8 @@ void Hierarchy::DrawConnectorLines(HierarchyNode* node, ImDrawList* draw_list)
 	ImVec2 final_pos = ImVec2(initial_pos.x, 53 + 17 * last_child_pos); //final pos
 
 	// Connector Lines
-	draw_list->AddLine(initial_pos, final_pos, color); // vertical line
-	draw_list->AddLine(final_pos, ImVec2(final_pos.x + 7, final_pos.y), color); // horizontal line
+	draw_list->AddLine(ImVec2(initial_pos.x - ImGui::GetScrollX(), initial_pos.y - ImGui::GetScrollY()), ImVec2(final_pos.x - ImGui::GetScrollX(), final_pos.y - ImGui::GetScrollY()), color); // vertical line
+	draw_list->AddLine(ImVec2(final_pos.x - ImGui::GetScrollX(), final_pos.y - ImGui::GetScrollY()), ImVec2(final_pos.x + 7 - ImGui::GetScrollX(), final_pos.y - ImGui::GetScrollY()), color); // horizontal line
 }
 
 int Hierarchy::FindNode(HierarchyNode* node, std::vector<HierarchyNode*> list)
