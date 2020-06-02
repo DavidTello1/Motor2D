@@ -17,6 +17,8 @@ Hierarchy::Hierarchy() : Panel("Hierarchy")
 	pos_x = default_pos_x;
 	pos_y = default_pos_y;
 
+	current_scene = CreateNode(HierarchyNode::NodeType::SCENE, nullptr, "Default Scene");
+
 	flags = ImGuiWindowFlags_HorizontalScrollbar;
 }
 
@@ -150,23 +152,35 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 	}
 }
 
-HierarchyNode* Hierarchy::CreateNode(HierarchyNode::NodeType type, HierarchyNode* parent)
+HierarchyNode* Hierarchy::CreateNode(HierarchyNode::NodeType type, HierarchyNode* parent, std::string name)
 {
 	HierarchyNode* node = nullptr;
 
 	switch (type)
 	{
 	case HierarchyNode::NodeType::FOLDER:
-		node = new NodeFolder(parent);
+		if (name != "")
+			node = new NodeFolder(parent, name);
+		else
+			node = new NodeFolder(parent);
 		break;
 	case HierarchyNode::NodeType::GAMEOBJECT:
-		node = new NodeGameObject(nullptr, parent); //***CHANGE NULLPTR BY EMPTY GAMEOBJECT
+		if (name != "")
+			node = new NodeGameObject(nullptr, parent, name);
+		else
+			node = new NodeGameObject(nullptr, parent); //***CHANGE NULLPTR BY EMPTY GAMEOBJECT
 		break;
 	case HierarchyNode::NodeType::SCENE:
-		node = new NodeScene(/*new ResourceScene(),*/ parent);
+		if (name != "")
+			node = new NodeScene(/*new ResourceScene(),*/ name);
+		else
+			node = new NodeScene(/*new ResourceScene()*/);
 		break;
 	case HierarchyNode::NodeType::PREFAB:
-		//node = new NodePrefab(new Prefab(), parent);
+		//if (name != "")
+		//	node = new NodePrefab(new Prefab(), parent, name);
+		//else
+		//	node = new NodePrefab(new Prefab(), parent);
 		break;
 	}
 
@@ -180,8 +194,13 @@ HierarchyNode* Hierarchy::CreateNode(HierarchyNode::NodeType type, HierarchyNode
 	node->name = CreateName(node->name.c_str());
 
 	// Parent
-	if (parent == nullptr && selected_nodes.empty() == false)
-		node->parent = selected_nodes[0]; //parent is first selected node
+	if (parent == nullptr && type != HierarchyNode::NodeType::SCENE)
+	{
+		if (selected_nodes.empty() == false)
+			node->parent = selected_nodes[0]; //parent is first selected node
+		else
+			node->parent = current_scene; //parent is current scene
+	}
 	else if (parent != nullptr)
 		node->parent = parent;
 
@@ -262,7 +281,7 @@ void Hierarchy::DuplicateNodes(std::vector<HierarchyNode*> nodes_list, Hierarchy
 			node = new NodeGameObject(nullptr, parent); //***CHANGE NULLPTR BY EMPTY GAMEOBJECT
 			break;
 		case HierarchyNode::NodeType::SCENE:
-			node = new NodeScene(/*new ResourceScene(),*/ parent);
+			node = new NodeScene(/*new ResourceScene()*/);
 			break;
 		case HierarchyNode::NodeType::PREFAB:
 			//node = new NodePrefab(new Prefab(), parent);
@@ -284,7 +303,7 @@ void Hierarchy::DuplicateNodes(std::vector<HierarchyNode*> nodes_list, Hierarchy
 		node->selected = true;
 
 		// Parent
-		if (parent == nullptr) //if no defined parent node, make parent root or selected node
+		if (parent == nullptr)
 		{
 			if (nodes_list[i]->parent != nullptr) // if parent is null make root
 			{
@@ -335,6 +354,32 @@ void Hierarchy::UnSelectAll()
 }
 
 // --- MAIN HELPERS ---
+HierarchyNode* Hierarchy::HandleSelection(HierarchyNode* node)
+{
+	// Left Click (selection)
+	if (ImGui::IsItemClicked(0)) //if treenode is clicked, check whether it is a single or multi selection
+	{
+		if (ImGui::IsMouseDoubleClicked(0) && selected_nodes.size() == 1) // Double-click (rename)
+			node->rename = true;
+		else
+		{
+			if (!ImGui::GetIO().KeyCtrl) // Single selection, clear selected nodes
+				UnSelectAll();
+
+			node->selected = !node->selected; //change selection state
+		}
+	}
+
+	// Right Click (select item to show options)
+	if (ImGui::IsItemClicked(1) && selected_nodes.size() <= 1)
+	{
+		UnSelectAll();
+		node->selected = !node->selected; //change selection state
+	}
+
+	return node;
+}
+
 bool Hierarchy::DrawRightClick()
 {
 	if (ImGui::BeginPopupContextWindow("Hierarchy"))
@@ -387,32 +432,6 @@ bool Hierarchy::DrawRightClick()
 		return true;
 	}
 	return false;
-}
-
-HierarchyNode* Hierarchy::HandleSelection(HierarchyNode* node)
-{
-	// Left Click (selection)
-	if (ImGui::IsItemClicked(0)) //if treenode is clicked, check whether it is a single or multi selection
-	{
-		if (ImGui::IsMouseDoubleClicked(0) && selected_nodes.size() == 1) // Double-click (rename)
-			node->rename = true;
-		else
-		{
-			if (!ImGui::GetIO().KeyCtrl) // Single selection, clear selected nodes
-				UnSelectAll();
-
-			node->selected = !node->selected; //change selection state
-		}
-	}
-
-	// Right Click (select item to show options)
-	if (ImGui::IsItemClicked(1) && selected_nodes.size() <= 1)
-	{
-		UnSelectAll();
-		node->selected = !node->selected; //change selection state
-	}
-
-	return node;
 }
 
 void Hierarchy::DrawConnectorLines(HierarchyNode* node, ImDrawList* draw_list)
@@ -501,6 +520,7 @@ HierarchyNode* Hierarchy::NodeParams(HierarchyNode* node)
 	else if (node->type == HierarchyNode::NodeType::SCENE) //scene
 	{
 		ImDrawList* draw_list = ImGui::GetWindowDrawList();
+		
 		static ImVec4 colorf = ImVec4(0.2f, 0.2f, 0.2f, 1.0f);
 		const ImU32 color = ImColor(colorf);
 		static float pos;
@@ -510,12 +530,12 @@ HierarchyNode* Hierarchy::NodeParams(HierarchyNode* node)
 		if (node->pos == 0)
 		{
 			first = true;
-			pos = ImGui::GetCursorPosY() + 16;
+			pos = ImGui::GetCursorPosY() + 16 - ImGui::GetScrollY();
 		}
 		else
 		{
 			first = false;
-			pos = ImGui::GetCursorPosY() + 18;
+			pos = ImGui::GetCursorPosY() + 18 - ImGui::GetScrollY();
 		}
 
 		draw_list->AddRectFilled(ImVec2(0, pos), ImVec2(ImGui::GetWindowWidth(), pos + 15), color); //actual draw of background

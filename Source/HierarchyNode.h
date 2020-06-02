@@ -43,9 +43,9 @@ public:
 class NodeFolder : public HierarchyNode
 {
 public:
-	NodeFolder(HierarchyNode* Parent = nullptr) {
+	NodeFolder(HierarchyNode* Parent = nullptr, std::string Name = "Folder") {
 		type = NodeType::FOLDER;
-		name = "Folder";
+		name = Name;
 		parent = Parent;
 		flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 	}
@@ -57,9 +57,9 @@ public:
 class NodeGameObject : public HierarchyNode
 {
 public:
-	NodeGameObject(GameObject* obj, HierarchyNode* Parent = nullptr) {
+	NodeGameObject(GameObject* obj, HierarchyNode* Parent = nullptr, std::string Name = "GameObject") {
 		type = NodeType::GAMEOBJECT;
-		name = "GameObject";
+		name = Name;
 		parent = Parent;
 		flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 		gameobject = obj;
@@ -75,10 +75,10 @@ public:
 class NodeScene : public HierarchyNode
 {
 public:
-	NodeScene(/*ResourceScene* Scene,*/ HierarchyNode* Parent = nullptr) {
+	NodeScene(/*ResourceScene* Scene,*/ std::string Name = "Scene") {
 		type = NodeType::SCENE;
-		name = "Scene";
-		parent = Parent;
+		name = Name;
+		parent = nullptr;
 		flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanFullWidth | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 		//scene = Scene;
 	}
@@ -93,9 +93,9 @@ public:
 class NodePrefab : public HierarchyNode
 {
 public:
-	NodePrefab(/*Prefab* prefab_,*/ HierarchyNode* Parent = nullptr) {
+	NodePrefab(/*Prefab* prefab_,*/ HierarchyNode* Parent = nullptr, std::string Name = "Prefab") {
 		type = NodeType::PREFAB;
-		name = "Scene";
+		name = Name;
 		parent = Parent;
 		flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 		//prefab = prefab_;

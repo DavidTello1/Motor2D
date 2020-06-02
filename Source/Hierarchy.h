@@ -35,7 +35,7 @@ public:
 	void Shortcuts();
 
 	void DrawNode(HierarchyNode* node);
-	HierarchyNode* CreateNode(HierarchyNode::NodeType type, HierarchyNode* parent = nullptr);
+	HierarchyNode* CreateNode(HierarchyNode::NodeType type, HierarchyNode* parent = nullptr, std::string name = "");
 	void DeleteNodes(std::vector<HierarchyNode*> nodes, bool reorder = true);
 	void DuplicateNodes(std::vector<HierarchyNode*> nodes, HierarchyNode* parent = nullptr);
 	void SelectAll();
@@ -43,8 +43,8 @@ public:
 
 private:
 	// --- MAIN HELPERS ---
-	bool DrawRightClick(); //only draws if right click is pressed, returns true if drawn
 	HierarchyNode* HandleSelection(HierarchyNode* node); //selection states
+	bool DrawRightClick(); //only draws if right click is pressed, returns true if drawn
 	void DrawConnectorLines(HierarchyNode* node, ImDrawList* draw_list); //draw connector lines when node is open
 	int FindNode(HierarchyNode* node, std::vector<HierarchyNode*> list); //returns -1 if not found
 	//void MoveNode(HierarchyNode* node, int pos);
@@ -76,4 +76,6 @@ public:
 private:
 	std::vector<HierarchyNode*> nodes;
 	std::vector<HierarchyNode*> selected_nodes;
+
+	HierarchyNode* current_scene = nullptr;
 };
