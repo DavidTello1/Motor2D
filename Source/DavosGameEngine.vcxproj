@@ -85,6 +85,7 @@
     <ClInclude Include="gpudetect\dxgi1_4.h" />
     <ClInclude Include="Hierarchy.h" />
     <ClInclude Include="HierarchyNode.h" />
+    <ClInclude Include="Icons.h" />
     <ClInclude Include="Module.h" />
     <ClInclude Include="Imgui\imconfig.h" />
     <ClInclude Include="Imgui\imgui.h" />

@@ -61,6 +61,17 @@ bool ModuleEditor::Init(Config* config)
 
 bool ModuleEditor::Start(Config* config)
 {
+	// Icon Font
+	ImGuiIO& io = ImGui::GetIO();
+	io.Fonts->AddFontDefault();
+
+	ImFontConfig icons_config; 
+	icons_config.MergeMode = true; 
+	icons_config.GlyphMinAdvanceX = 14.0f;
+
+	static const ImWchar icons_ranges[] = { ICON_MIN, ICON_MAX, 0 };
+	io.Fonts->AddFontFromFileTTF(ICON_FONT, 14.0f, &icons_config, icons_ranges);
+
 	//panel_viewport->GenerateFBO();
 	return true;
 }
@@ -299,10 +310,12 @@ void ModuleEditor::DrawPanels()
 			ImGui::SetNextWindowPos(ImVec2((float)(*it)->pos_x, (float)(*it)->pos_y), ImGuiCond_FirstUseEver);
 			ImGui::SetNextWindowSize(ImVec2((float)(*it)->width, (float)(*it)->height), ImGuiCond_FirstUseEver);
 
+			std::string name = std::string((*it)->GetIcon()) + std::string(" ") + std::string((*it)->GetName());
+
 			// Configuration
 			if ((*it)->GetName() == "Configuration")
 			{
-				if (ImGui::Begin((*it)->GetName(), NULL, (*it)->flags))
+				if (ImGui::Begin(name.c_str(), NULL, (*it)->flags))
 				{
 					(*it)->Draw();
 					ImGui::End();
@@ -311,7 +324,7 @@ void ModuleEditor::DrawPanels()
 			else // Other Panels
 			{
 				// Draw Panel
-				if (ImGui::Begin((*it)->GetName(), &(*it)->active, (*it)->flags))
+				if (ImGui::Begin(name.c_str(), &(*it)->active, (*it)->flags))
 				{
 					(*it)->Draw();
 					ImGui::End();

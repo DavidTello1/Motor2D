@@ -1,0 +1,6 @@
+Fontello
+Fontawesome
+Dear Imgui
+OpenGL
+VisualStudio
+SDL2

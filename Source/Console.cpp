@@ -25,7 +25,7 @@ bool				Console::ShowSearch;
 bool				Console::ClearOnPlay;
 
 //Constructor
-Console::Console() : Panel("Console")
+Console::Console() : Panel("Console", ICON_CONSOLE)
 {
 	LOG("Init Console");
 	ClearLog();
@@ -135,8 +135,8 @@ void Console::Draw()
 	// Right Click Options
 	if (ImGui::BeginPopupContextWindow())
 	{
-		copy_to_clipboard = ImGui::Selectable("Copy");
-		if (ImGui::Selectable("Clear")) ClearLog();
+		copy_to_clipboard = ImGui::Selectable("Copy", false, 0, ImVec2(60,14));
+		if (ImGui::Selectable("Clear", false, 0, ImVec2(60, 14))) ClearLog();
 		ImGui::EndPopup();
 	}
 

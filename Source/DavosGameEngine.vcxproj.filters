@@ -336,6 +336,9 @@
     <ClInclude Include="HierarchyNode.h">
       <Filter>Sources\Tools</Filter>
     </ClInclude>
+    <ClInclude Include="Icons.h">
+      <Filter>Sources\Tools</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Application.cpp">
