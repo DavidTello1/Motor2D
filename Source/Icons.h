@@ -28,7 +28,7 @@
 #define ICON_ARROW_HIDE u8"\uf020"
 #define ICON_OPTIONS u8"\uf021"
 #define ICON_FOLDER u8"\uf022"
-#define ICON_SCENE_OBJ u8"\uf025"
+#define ICON_SCENE_OBJ u8"\uf023"
 #define ICON_GAMEOBJECT u8"\uf024"
 #define ICON_PREFAB u8"\uf024"
 #define ICON_HIDE u8"\uf026"
