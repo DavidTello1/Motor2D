@@ -7,6 +7,7 @@
 
 #include <queue>
 
+#include "Imgui/imgui_internal.h"
 #include "mmgr/mmgr.h"
 
 // ---------------------------------------------------------
@@ -97,47 +98,80 @@ void Hierarchy::Shortcuts()
 
 void Hierarchy::DrawNode(HierarchyNode* node)
 {
-	// Node Parameters
-	node = NodeParams(node);
+	static ImGuiContext& g = *GImGui;
+	static ImGuiWindow* window = g.CurrentWindow;
+	static ImGuiStyle* style = &ImGui::GetStyle();
+	static ImVec4* colors = style->Colors;
+	const ImU32 color = ImColor(node->color);
+	ImVec2 pos = window->DC.CursorPos;
+	ImRect bb(ImVec2(pos.x - 10, pos.y - g.Style.FramePadding.y), ImVec2(pos.x + ImGui::GetWindowWidth() + ImGui::GetScrollX(), pos.y + g.FontSize + g.Style.FramePadding.y));
 
-	// Normal Node
+	// Background & Button
+	window->DrawList->AddRectFilled(bb.Min, bb.Max, color);
+	float pos_x = ImGui::GetCursorPosX();
+	if (ImGui::InvisibleButton(node->name.c_str(), ImVec2(ImGui::GetContentRegionAvail().x, g.FontSize + g.Style.FramePadding.y)))
+		node->selected = !node->selected;
+	ImGui::SetItemAllowOverlap();
+	ImGui::SameLine();
+	if (ImGui::IsItemHovered())
+		node->color = colors[ImGuiCol_ButtonHovered];
+	else if (node->selected)
+		node->color = colors[ImGuiCol_ButtonActive];
+	else
+		node->color = colors[ImGuiCol_WindowBg];
+
+	// Shown Icon
+	ImGui::SetCursorPosX(pos_x);
+	if (node->is_shown)
+		ImGui::Text(ICON_SHOW);
+	else
+		ImGui::Text(ICON_HIDE);
+	if (ImGui::IsItemClicked())
+	{
+		node->is_shown = !node->is_shown;
+		node->selected = !node->selected;
+	}
+	ImGui::SameLine(0.0f, 3.0f);
+
+	// Indent
+	if (node->indent > 0)
+		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 15 * (node->indent - 1));
+	if (node->childs.empty())
+		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 16);
+
+	// Arrow Icon
+	if (!node->childs.empty())
+	{
+		if (node->is_open)
+			ImGui::Text(ICON_ARROW_OPEN);
+		else
+			ImGui::Text(ICON_ARROW_CLOSED);
+
+		if (ImGui::IsItemClicked())
+		{
+			node->is_open = !node->is_open;
+			node->selected = !node->selected;
+		}
+		ImGui::SameLine(0.0f, 2.0f);
+	}
+
+	// Node Icon
+	if (node->type == HierarchyNode::NodeType::FOLDER) //folder
+		ImGui::TextColored(ImVec4(0.9f, 0.6f, 0.0f, 1.0f), node->icon.c_str());
+	else if (node->type == HierarchyNode::NodeType::PREFAB) //prefab
+		ImGui::TextColored(ImVec4(0.2f, 0.2f, 9.0f, 1.0f), node->icon.c_str());
+	else
+		ImGui::Text(node->icon.c_str());
+	ImGui::SameLine();
+
+	// Name
 	if (!node->rename)
 	{
-		// Indent
-		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 15 * node->indent);
-		if (node->childs.empty())
-			ImGui::SetCursorPosX(ImGui::GetCursorPosX() - 15);
-
-		// Draw Node
-		node->is_open = ImGui::TreeNodeEx(node->name.c_str(), node->flags);
-
-		if (node->type == HierarchyNode::NodeType::FOLDER) //push is in NodeParams()
-			ImGui::PopStyleColor();
-
-		if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup) && ImGui::IsMouseClicked(0)) //allow selecting when right-click options is shown
-			ImGui::SetWindowFocus();
-
-		// Selection
-		HandleSelection(node);
-
-		// Update Selected Nodes List
-		int pos = FindNode(node, selected_nodes);
-		if (node->selected && pos == -1)
-			selected_nodes.push_back(node);
-		else if (!node->selected && pos != -1)
-			selected_nodes.erase(selected_nodes.begin() + pos);
-
-		// Draw Childs
-		if (node->is_open)
-		{
-			if (!node->childs.empty())
-			{
-				for (HierarchyNode* child : node->childs)
-					DrawNode(child);
-			}
-		}
+		ImGui::Text(node->name.c_str());
+		if (ImGui::IsItemClicked())
+			node->selected = !node->selected;
 	}
-	else // Rename
+	else
 	{
 		if (selected_nodes.size() == 1) //rename if only 1 selected node
 		{
@@ -149,6 +183,26 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 				node->rename = false;
 			}
 		}
+	}
+
+	//if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup) && ImGui::IsMouseClicked(0)) //allow selecting when right-click options is shown
+	//	ImGui::SetWindowFocus();
+
+	// Selection
+	HandleSelection(node);
+
+	// Update Selected Nodes List
+	int position = FindNode(node, selected_nodes);
+	if (node->selected && position == -1)
+		selected_nodes.push_back(node);
+	else if (!node->selected && position != -1)
+		selected_nodes.erase(selected_nodes.begin() + position);
+
+	// Draw Childs
+	if (node->is_open && !node->childs.empty())
+	{
+		for (HierarchyNode* child : node->childs)
+			DrawNode(child);
 	}
 }
 
@@ -215,7 +269,6 @@ HierarchyNode* Hierarchy::CreateNode(HierarchyNode::NodeType type, HierarchyNode
 		node->pos = RecursivePos(node->parent);
 		node->indent = node->parent->indent + 1; //indent = parent indent + 1
 		node->parent->childs.push_back(node); //add node to parent's child list
-		node->parent->flags |= ImGuiTreeNodeFlags_DefaultOpen; //make node open (display childs)
 		UnSelectAll();
 	}
 
@@ -308,13 +361,11 @@ void Hierarchy::DuplicateNodes(std::vector<HierarchyNode*> nodes_list, Hierarchy
 			if (nodes_list[i]->parent != nullptr) // if parent is null make root
 			{
 				node->parent = nodes_list[i]->parent;
-				nodes_list[i]->parent->flags |= ImGuiTreeNodeFlags_DefaultOpen;
 			}
 		}
 		else // if defined parent node (parent is a duplicated node)
 		{
 			node->parent = parent;
-			parent->flags |= ImGuiTreeNodeFlags_DefaultOpen;
 		}
 
 		// Position and Indent
@@ -480,7 +531,7 @@ void Hierarchy::DrawConnectorLines(HierarchyNode* node, ImDrawList* draw_list)
 	uint parent_pos = (uint)node->pos - num_hidden2;
 
 	// Real Positions
-	ImVec2 initial_pos = ImVec2(3 + 15 * float(node->indent + 1), 60 + 17 * (float)parent_pos); //initial pos
+	ImVec2 initial_pos = ImVec2(12 + 12 * float(node->indent + 1), 60 + 17 * (float)parent_pos); //initial pos
 	ImVec2 final_pos = ImVec2(initial_pos.x, 53 + 17 * (float)last_child_pos); //final pos
 
 	// Connector Lines
@@ -499,54 +550,6 @@ int Hierarchy::FindNode(HierarchyNode* node, std::vector<HierarchyNode*> list)
 }
 
 // --- NODE CREATION ---
-HierarchyNode* Hierarchy::NodeParams(HierarchyNode* node)
-{
-	// Flags
-	if (node->childs.empty()) // leaf
-		node->flags |= ImGuiTreeNodeFlags_Leaf;
-	else
-		node->flags &= ~ImGuiTreeNodeFlags_Leaf;
-
-	if (node->selected) // selected
-		node->flags |= ImGuiTreeNodeFlags_Selected;
-	else
-		node->flags &= ~ImGuiTreeNodeFlags_Selected;
-
-	// Type Params
-	if (node->type == HierarchyNode::NodeType::FOLDER && !node->rename) //folder
-	{
-		ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.9f, 0.6f, 0.0f, 1.0f));
-	}
-	else if (node->type == HierarchyNode::NodeType::SCENE) //scene
-	{
-		ImDrawList* draw_list = ImGui::GetWindowDrawList();
-		
-		static ImVec4 colorf = ImVec4(0.2f, 0.2f, 0.2f, 1.0f);
-		const ImU32 color = ImColor(colorf);
-		static float pos;
-		static bool first = false;
-
-		// Draw Scene Background
-		if (node->pos == 0)
-		{
-			first = true;
-			pos = ImGui::GetCursorPosY() + 16 - ImGui::GetScrollY();
-		}
-		else
-		{
-			first = false;
-			pos = ImGui::GetCursorPosY() + 18 - ImGui::GetScrollY();
-		}
-
-		draw_list->AddRectFilled(ImVec2(0, pos), ImVec2(ImGui::GetWindowWidth(), pos + 15), color); //actual draw of background
-
-		if (first)
-			ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 2);
-	}
-
-	return node;
-}
-
 std::string Hierarchy::CreateName(const char* base_name)
 {
 	bool found = false;

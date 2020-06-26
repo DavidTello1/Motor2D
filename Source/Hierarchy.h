@@ -46,11 +46,10 @@ private:
 	HierarchyNode* HandleSelection(HierarchyNode* node); //selection states
 	bool DrawRightClick(); //only draws if right click is pressed, returns true if drawn
 	void DrawConnectorLines(HierarchyNode* node, ImDrawList* draw_list); //draw connector lines when node is open
-	int FindNode(HierarchyNode* node, std::vector<HierarchyNode*> list); //returns -1 if not found
+	int FindNode(HierarchyNode* node, std::vector<HierarchyNode*> list); //get node pos in list (returns -1 if not found)
 	//void MoveNode(HierarchyNode* node, int pos);
 
 	// --- NODE CREATION ---
-	HierarchyNode* NodeParams(HierarchyNode* node); //init node with params (leaf, selected and type)
 	std::string CreateName(const char* name); //get name (with count of same names)
 
 	// --- NODE POS ---

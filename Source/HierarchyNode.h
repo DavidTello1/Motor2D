@@ -26,6 +26,7 @@ public:
 public:
 	NodeType type = NodeType::NONE;
 	std::string name = "node";
+	std::string icon = "";
 
 	HierarchyNode* parent = nullptr;
 	std::vector<HierarchyNode*> childs;
@@ -36,8 +37,9 @@ public:
 	bool rename = false;
 	bool selected = false;
 	bool is_open = true;
+	bool is_shown = true;
 
-	ImGuiTreeNodeFlags flags = 0;
+	ImVec4 color = ImVec4(0.06f, 0.06f, 0.06f, 0.94f);
 };
 
 //--- FOLDER ---
@@ -46,9 +48,9 @@ class NodeFolder : public HierarchyNode
 public:
 	NodeFolder(HierarchyNode* Parent = nullptr, std::string Name = "Folder") {
 		type = NodeType::FOLDER;
-		name = ICON_FOLDER + std::string(" ") + Name;
+		name = Name;
+		icon = ICON_FOLDER;
 		parent = Parent;
-		flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 	}
 
 	virtual ~NodeFolder() {};
@@ -60,9 +62,9 @@ class NodeGameObject : public HierarchyNode
 public:
 	NodeGameObject(GameObject* obj, HierarchyNode* Parent = nullptr, std::string Name = "GameObject") {
 		type = NodeType::GAMEOBJECT;
-		name = ICON_GAMEOBJECT + std::string(" ") + Name;
+		name = Name;
+		icon = ICON_GAMEOBJECT;
 		parent = Parent;
-		flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 		gameobject = obj;
 	}
 
@@ -78,9 +80,9 @@ class NodeScene : public HierarchyNode
 public:
 	NodeScene(/*ResourceScene* Scene,*/ std::string Name = "Scene") {
 		type = NodeType::SCENE;
-		name = ICON_SCENE_OBJ + std::string(" ") + Name;
+		name = Name;
+		icon = ICON_SCENE_OBJ;
 		parent = nullptr;
-		flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanFullWidth | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 		//scene = Scene;
 	}
 
@@ -96,9 +98,9 @@ class NodePrefab : public HierarchyNode
 public:
 	NodePrefab(/*Prefab* prefab_,*/ HierarchyNode* Parent = nullptr, std::string Name = "Prefab") {
 		type = NodeType::PREFAB;
-		name = ICON_PREFAB + std::string(" ") + Name;
+		name = Name;
+		icon = ICON_PREFAB;
 		parent = Parent;
-		flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 		//prefab = prefab_;
 	}
 
