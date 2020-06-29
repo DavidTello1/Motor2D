@@ -98,22 +98,24 @@ void Hierarchy::Shortcuts()
 
 void Hierarchy::DrawNode(HierarchyNode* node)
 {
+	// Variables used for drawing background
 	static ImGuiContext& g = *GImGui;
 	static ImGuiWindow* window = g.CurrentWindow;
+	ImU32 id = window->GetID(node->name.c_str());
 	static ImGuiStyle* style = &ImGui::GetStyle();
 	static ImVec4* colors = style->Colors;
 	const ImU32 color = ImColor(node->color);
 	ImVec2 pos = window->DC.CursorPos;
-	ImRect bb(ImVec2(pos.x - 10, pos.y - g.Style.FramePadding.y), ImVec2(pos.x + ImGui::GetWindowWidth() + ImGui::GetScrollX(), pos.y + g.FontSize + g.Style.FramePadding.y));
+	ImRect bg(ImVec2(pos.x - 10, pos.y - g.Style.FramePadding.y), ImVec2(pos.x + ImGui::GetWindowWidth() + ImGui::GetScrollX(), pos.y + g.FontSize + g.Style.FramePadding.y));
 
-	// Background & Button
-	window->DrawList->AddRectFilled(bb.Min, bb.Max, color);
-	float pos_x = ImGui::GetCursorPosX();
-	if (ImGui::InvisibleButton(node->name.c_str(), ImVec2(ImGui::GetContentRegionAvail().x, g.FontSize + g.Style.FramePadding.y)))
+	// Background & Selectable
+	window->DrawList->AddRectFilled(bg.Min, bg.Max, color);
+
+	bool hovered, held;
+	if (ImGui::ButtonBehavior(ImRect(pos.x + 28, bg.Min.y, bg.Max.x, bg.Max.y), id, &hovered, &held))
 		node->selected = !node->selected;
-	ImGui::SetItemAllowOverlap();
-	ImGui::SameLine();
-	if (ImGui::IsItemHovered())
+
+	if (hovered || held)
 		node->color = colors[ImGuiCol_ButtonHovered];
 	else if (node->selected)
 		node->color = colors[ImGuiCol_ButtonActive];
@@ -121,19 +123,51 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 		node->color = colors[ImGuiCol_WindowBg];
 
 	// Shown Icon
-	ImGui::SetCursorPosX(pos_x);
+	float pos_x = ImGui::GetCursorPosX();
 	if (node->is_shown)
-		ImGui::Text(ICON_SHOW);
-	else
-		ImGui::Text(ICON_HIDE);
-	if (ImGui::IsItemClicked())
 	{
-		node->is_shown = !node->is_shown;
-		node->selected = !node->selected;
+		ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.0f), ICON_SHOW);
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::SameLine();
+			ImGui::SetCursorPosX(pos_x);
+			ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), ICON_SHOW);
+			node->color = colors[ImGuiCol_ButtonHovered];
+		}
 	}
+	else
+	{
+		ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.5f), ICON_HIDE);
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::SameLine();
+			ImGui::SetCursorPosX(pos_x);
+			ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), ICON_HIDE);
+			node->color = colors[ImGuiCol_ButtonHovered];
+		}
+	}
+	if (ImGui::IsItemClicked())
+		node->is_shown = !node->is_shown;
 	ImGui::SameLine(0.0f, 3.0f);
 
+	// Small Space
+	pos_x = ImGui::GetCursorPosX();
+	ImGui::SetCursorPosX(pos_x - 3);
+	if (node->childs.empty())
+		ImGui::InvisibleButton(node->name.c_str(), ImVec2(15, g.FontSize + g.Style.FramePadding.y));
+	else
+		ImGui::InvisibleButton(node->name.c_str(), ImVec2(5, g.FontSize + g.Style.FramePadding.y));
+	ImGui::SetItemAllowOverlap();
+	
+	if (ImGui::IsItemClicked())
+		node->selected = !node->selected;
+
+	if (ImGui::IsItemHovered())
+		node->color = colors[ImGuiCol_ButtonHovered];
+	ImGui::SameLine();
+
 	// Indent
+	ImGui::SetCursorPosX(pos_x);
 	if (node->indent > 0)
 		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 15 * (node->indent - 1));
 	if (node->childs.empty())
@@ -142,16 +176,32 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 	// Arrow Icon
 	if (!node->childs.empty())
 	{
+		pos_x = ImGui::GetCursorPosX();
 		if (node->is_open)
-			ImGui::Text(ICON_ARROW_OPEN);
+		{
+			ImGui::TextColored(ImVec4(0.9f, 0.9f, 0.9f, 1.0f), ICON_ARROW_OPEN);
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SameLine();
+				ImGui::SetCursorPosX(pos_x);
+				ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), ICON_ARROW_OPEN);
+				node->color = colors[ImGuiCol_ButtonHovered];
+			}
+		}
 		else
-			ImGui::Text(ICON_ARROW_CLOSED);
+		{
+			ImGui::TextColored(ImVec4(0.9f, 0.9f, 0.9f, 1.0f), ICON_ARROW_CLOSED);
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SameLine();
+				ImGui::SetCursorPosX(pos_x);
+				ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), ICON_ARROW_CLOSED);
+				node->color = colors[ImGuiCol_ButtonHovered];
+			}
+		}
 
 		if (ImGui::IsItemClicked())
-		{
 			node->is_open = !node->is_open;
-			node->selected = !node->selected;
-		}
 		ImGui::SameLine(0.0f, 2.0f);
 	}
 
@@ -162,12 +212,13 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 		ImGui::TextColored(ImVec4(0.2f, 0.2f, 9.0f, 1.0f), node->icon.c_str());
 	else
 		ImGui::Text(node->icon.c_str());
-	ImGui::SameLine();
+	ImGui::SameLine(0.0f, 2.0f);
 
 	// Name
 	if (!node->rename)
 	{
 		ImGui::Text(node->name.c_str());
+
 		if (ImGui::IsItemClicked())
 			node->selected = !node->selected;
 	}
