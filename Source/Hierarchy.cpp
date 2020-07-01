@@ -112,7 +112,7 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 	window->DrawList->AddRectFilled(bg.Min, bg.Max, color);
 
 	bool hovered, held;
-	if (ImGui::ButtonBehavior(ImRect(pos.x + 28, bg.Min.y, bg.Max.x, bg.Max.y), id, &hovered, &held))
+	if (ImGui::ButtonBehavior(ImRect(pos.x + 28, bg.Min.y, bg.Max.x - 20, bg.Max.y), id, &hovered, &held))
 		node->selected = !node->selected;
 
 	if (hovered || held)
@@ -209,7 +209,7 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 	if (node->type == HierarchyNode::NodeType::FOLDER) //folder
 		ImGui::TextColored(ImVec4(0.9f, 0.6f, 0.0f, 1.0f), node->icon.c_str());
 	else if (node->type == HierarchyNode::NodeType::PREFAB) //prefab
-		ImGui::TextColored(ImVec4(0.2f, 0.2f, 9.0f, 1.0f), node->icon.c_str());
+		ImGui::TextColored(ImVec4(0.2f, 1.0f, 1.0f, 1.0f), node->icon.c_str());
 	else
 		ImGui::Text(node->icon.c_str());
 	ImGui::SameLine(0.0f, 2.0f);
@@ -235,6 +235,51 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 			}
 		}
 	}
+
+	// Scene Options & Edit Prefab Buttons
+	if (node->type == HierarchyNode::NodeType::SCENE)
+	{
+		NodeScene* node_scene = (NodeScene*)node;
+
+		ImGui::SameLine();
+		ImGui::SetCursorPos(ImVec2(ImGui::GetWindowWidth() - 20, ImGui::GetCursorPosY() + 1));
+		pos_x = ImGui::GetCursorPosX();
+
+		ImGui::TextColored(ImVec4(0.9f, 0.9f, 0.9f, 0.5f), ICON_OPTIONS);
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::SameLine();
+			ImGui::SetCursorPosX(pos_x);
+			ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), ICON_OPTIONS);
+			node->color = colors[ImGuiCol_ButtonHovered];
+		}
+		if (ImGui::IsItemClicked())
+		{
+			//show scene options***
+		}
+	}
+	else if (node->type == HierarchyNode::NodeType::PREFAB)
+	{
+		NodePrefab* node_scene = (NodePrefab*)node;
+
+		ImGui::SameLine();
+		ImGui::SetCursorPos(ImVec2(ImGui::GetWindowWidth() - 20, ImGui::GetCursorPosY() + 1));
+		pos_x = ImGui::GetCursorPosX();
+
+		ImGui::TextColored(ImVec4(0.9f, 0.9f, 0.9f, 0.5f), ICON_ARROW_SHOW);
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::SameLine();
+			ImGui::SetCursorPosX(pos_x);
+			ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), ICON_ARROW_SHOW);
+			node->color = colors[ImGuiCol_ButtonHovered];
+		}
+		if (ImGui::IsItemClicked())
+		{
+			//edit prefab***
+		}
+	}
+
 
 	//if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup) && ImGui::IsMouseClicked(0)) //allow selecting when right-click options is shown
 	//	ImGui::SetWindowFocus();
@@ -282,10 +327,10 @@ HierarchyNode* Hierarchy::CreateNode(HierarchyNode::NodeType type, HierarchyNode
 			node = new NodeScene(/*new ResourceScene()*/);
 		break;
 	case HierarchyNode::NodeType::PREFAB:
-		//if (name != "")
-		//	node = new NodePrefab(new Prefab(), parent, name);
-		//else
-		//	node = new NodePrefab(new Prefab(), parent);
+		if (name != "")
+			node = new NodePrefab(/*new Prefab(), */parent, name);
+		else
+			node = new NodePrefab(/*new Prefab(), */parent);
 		break;
 	}
 
@@ -495,7 +540,7 @@ bool Hierarchy::DrawRightClick()
 				CreateNode(HierarchyNode::NodeType::SCENE);
 
 			if (ImGui::MenuItem("GameObject"))
-				CreateNode(HierarchyNode::NodeType::GAMEOBJECT);
+				CreateNode(HierarchyNode::NodeType::PREFAB);
 
 			//if (ImGui::MenuItem("Prefab"))
 			//	CreateNode(HierarchyNode::NodeType::PREFAB);
@@ -582,8 +627,8 @@ void Hierarchy::DrawConnectorLines(HierarchyNode* node, ImDrawList* draw_list)
 	uint parent_pos = (uint)node->pos - num_hidden2;
 
 	// Real Positions
-	ImVec2 initial_pos = ImVec2(12 + 12 * float(node->indent + 1), 60 + 17 * (float)parent_pos); //initial pos
-	ImVec2 final_pos = ImVec2(initial_pos.x, 53 + 17 * (float)last_child_pos); //final pos
+	ImVec2 initial_pos = ImVec2(ImGui::GetWindowPos().x + 1 + 15 * float(node->indent + 1), ImGui::GetWindowPos().y + 38 + 20 * (float)parent_pos); //initial pos
+	ImVec2 final_pos = ImVec2(initial_pos.x, ImGui::GetWindowPos().y + 32 + 20 * (float)last_child_pos); //final pos
 
 	// Connector Lines
 	draw_list->AddLine(ImVec2(initial_pos.x - ImGui::GetScrollX(), initial_pos.y - ImGui::GetScrollY()), ImVec2(final_pos.x - ImGui::GetScrollX(), final_pos.y - ImGui::GetScrollY()), color); // vertical line
