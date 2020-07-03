@@ -102,9 +102,11 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 	static ImGuiContext& g = *GImGui;
 	static ImGuiWindow* window = g.CurrentWindow;
 	ImU32 id = window->GetID(node->name.c_str());
+
 	static ImGuiStyle* style = &ImGui::GetStyle();
 	static ImVec4* colors = style->Colors;
 	const ImU32 color = ImColor(node->color);
+
 	ImVec2 pos = window->DC.CursorPos;
 	ImRect bg(ImVec2(pos.x - 10, pos.y - g.Style.FramePadding.y), ImVec2(pos.x + ImGui::GetWindowWidth() + ImGui::GetScrollX(), pos.y + g.FontSize + g.Style.FramePadding.y));
 
@@ -120,7 +122,12 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 	else if (node->selected)
 		node->color = colors[ImGuiCol_ButtonActive];
 	else
-		node->color = colors[ImGuiCol_WindowBg];
+	{
+		if (node->type == HierarchyNode::NodeType::SCENE)
+			node->color = ImVec4(0.25f, 0.25f, 0.25f, 1.0f);
+		else
+			node->color = colors[ImGuiCol_WindowBg];
+	}
 
 	// Shown Icon
 	float pos_x = ImGui::GetCursorPosX();
