@@ -45,11 +45,13 @@ private:
 	// --- MAIN HELPERS ---
 	HierarchyNode* HandleSelection(HierarchyNode* node); //selection states
 	bool DrawRightClick(); //only draws if right click is pressed, returns true if drawn
+	bool ShowSceneOptions(HierarchyNode* node); //popup when options button is clicked
 	void DrawConnectorLines(HierarchyNode* node, ImDrawList* draw_list); //draw connector lines when node is open
 	int FindNode(HierarchyNode* node, std::vector<HierarchyNode*> list); //get node pos in list (returns -1 if not found)
 	//void MoveNode(HierarchyNode* node, int pos);
 
 	// --- NODE CREATION ---
+	void CreateMenu(); //imgui menu for creating nodes (folder, gameobject, scene, etc)
 	std::string CreateName(const char* name); //get name (with count of same names)
 
 	// --- NODE POS ---

@@ -90,6 +90,7 @@ public:
 
 public:
 	//ResourceScene* scene = nullptr;
+	bool is_saved = true;
 };
 
 //--- PREFAB ---

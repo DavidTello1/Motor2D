@@ -200,7 +200,16 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 	// Name
 	if (!node->rename)
 	{
-		ImGui::Text(node->name.c_str());
+		if (node->type == HierarchyNode::NodeType::SCENE)
+		{
+			NodeScene* node_scene = (NodeScene*)node;
+			if (node_scene->is_saved == false)
+				ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.0f, 1.0f), node->name.c_str());
+			else
+				ImGui::Text(node->name.c_str());
+		}
+		else
+			ImGui::Text(node->name.c_str());
 
 		if (ImGui::IsItemClicked())
 			node->selected = !node->selected;
@@ -229,8 +238,9 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 			pos_x = limit.x;
 
 		ImGui::SetCursorPos(ImVec2(pos_x, limit.y + 1));
-		if (ImGui::InvisibleButton(std::string(node->name + ICON_OPTIONS).c_str(), ImVec2(15, height)))
-		{}	//show scene options
+		ImGui::InvisibleButton(std::string(node->name + ICON_OPTIONS).c_str(), ImVec2(15, height));
+
+		ShowSceneOptions(node);
 
 		ImGui::SameLine();
 		ImGui::SetCursorPosX(pos_x);
@@ -534,22 +544,8 @@ bool Hierarchy::DrawRightClick()
 {
 	if (ImGui::BeginPopupContextWindow("Hierarchy"))
 	{
-		if (ImGui::BeginMenu("Create")) //create
-		{
-			if (ImGui::MenuItem("Folder"))
-				CreateNode(HierarchyNode::NodeType::FOLDER);
+		CreateMenu();
 
-			if (ImGui::MenuItem("Scene"))
-				CreateNode(HierarchyNode::NodeType::SCENE);
-
-			if (ImGui::MenuItem("GameObject"))
-				CreateNode(HierarchyNode::NodeType::PREFAB);
-
-			//if (ImGui::MenuItem("Prefab"))
-			//	CreateNode(HierarchyNode::NodeType::PREFAB);
-
-			ImGui::EndMenu();
-		}
 		if (ImGui::MenuItem("Duplicate", "Ctrl+D", false, !selected_nodes.empty())) //duplicate
 			DuplicateNodes(selected_nodes);
 
@@ -578,6 +574,46 @@ bool Hierarchy::DrawRightClick()
 			selected_nodes.clear();
 		}
 
+		ImGui::EndPopup();
+		return true;
+	}
+	return false;
+}
+
+bool Hierarchy::ShowSceneOptions(HierarchyNode* node)
+{
+	if (ImGui::BeginPopupContextItem(0,0))
+	{
+		NodeScene* scene_node = (NodeScene*)node;
+
+		if (ImGui::MenuItem("Set Active Scene"))
+			current_scene = node;
+		ImGui::Separator();
+
+		if (ImGui::MenuItem("Save Scene", NULL, false, !scene_node->is_saved))
+		{}
+
+		if (ImGui::MenuItem("Save Scene As"))
+		{}
+
+		if (ImGui::MenuItem("Save All"))
+		{}
+		ImGui::Separator();
+
+		if (ImGui::MenuItem("Unload Scene"))
+		{}
+
+		if (ImGui::MenuItem("Remove Scene"))
+		{}
+
+		if (ImGui::MenuItem("Discard Changes", NULL, false, !scene_node->is_saved))
+		{}
+		ImGui::Separator();
+
+		if (ImGui::MenuItem("Show in Assets"))
+		{}
+
+		CreateMenu();
 		ImGui::EndPopup();
 		return true;
 	}
@@ -631,7 +667,7 @@ void Hierarchy::DrawConnectorLines(HierarchyNode* node, ImDrawList* draw_list)
 
 	// Real Positions
 	ImVec2 initial_pos = ImVec2(ImGui::GetWindowPos().x + 1 + 15 * float(node->indent + 1), ImGui::GetWindowPos().y + 38 + 20 * (float)parent_pos); //initial pos
-	ImVec2 final_pos = ImVec2(initial_pos.x, ImGui::GetWindowPos().y + 32 + 20 * (float)last_child_pos); //final pos
+	ImVec2 final_pos = ImVec2(initial_pos.x, ImGui::GetWindowPos().y + 34 + 20 * (float)last_child_pos); //final pos
 
 	// Connector Lines
 	draw_list->AddLine(ImVec2(initial_pos.x - ImGui::GetScrollX(), initial_pos.y - ImGui::GetScrollY()), ImVec2(final_pos.x - ImGui::GetScrollX(), final_pos.y - ImGui::GetScrollY()), color); // vertical line
@@ -649,17 +685,37 @@ int Hierarchy::FindNode(HierarchyNode* node, std::vector<HierarchyNode*> list)
 }
 
 // --- NODE CREATION ---
+void Hierarchy::CreateMenu()
+{
+	if (ImGui::BeginMenu("Create")) //create
+	{
+		if (ImGui::MenuItem("Folder"))
+			CreateNode(HierarchyNode::NodeType::FOLDER);
+
+		if (ImGui::MenuItem("Scene"))
+			CreateNode(HierarchyNode::NodeType::SCENE);
+
+		if (ImGui::MenuItem("GameObject"))
+			CreateNode(HierarchyNode::NodeType::PREFAB);
+
+		//if (ImGui::MenuItem("Prefab"))
+		//	CreateNode(HierarchyNode::NodeType::PREFAB);
+
+		ImGui::EndMenu();
+	}
+}
+
 std::string Hierarchy::CreateName(const char* base_name)
 {
+	if (nodes.empty())
+		return std::string(base_name);
+
 	bool found = false;
 	uint count = 0;
 	std::string name = base_name;
 
 	while (found == false)
 	{
-		if (nodes.empty())
-			found = true;
-
 		for (uint i = 0; i < nodes.size(); ++i)
 		{
 			if (name == nodes[i]->name)
@@ -707,10 +763,7 @@ uint Hierarchy::RecursivePos(HierarchyNode* node, bool is_duplicate)
 			return node->pos + 1;
 	}
 	else
-	{
-		HierarchyNode* last_child = node->childs[node->childs.size() - 1];
-		return RecursivePos(last_child);
-	}
+		return RecursivePos(node->childs[node->childs.size() - 1]);
 }
 
 // --- CONNECTOR LINES ---
