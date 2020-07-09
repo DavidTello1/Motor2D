@@ -98,117 +98,93 @@ void Hierarchy::Shortcuts()
 
 void Hierarchy::DrawNode(HierarchyNode* node)
 {
-	// Variables used for drawing background
+	// Main Variables
 	static ImGuiContext& g = *GImGui;
 	static ImGuiWindow* window = g.CurrentWindow;
 	ImU32 id = window->GetID(node->name.c_str());
-
 	static ImGuiStyle* style = &ImGui::GetStyle();
 	static ImVec4* colors = style->Colors;
 	const ImU32 color = ImColor(node->color);
+	const float height = g.FontSize + g.Style.FramePadding.y;
+	bool is_hovered, is_clicked;
 
+	// Background
 	ImVec2 pos = window->DC.CursorPos;
-	ImRect bg(ImVec2(pos.x - 10, pos.y - g.Style.FramePadding.y), ImVec2(pos.x + ImGui::GetWindowWidth() + ImGui::GetScrollX(), pos.y + g.FontSize + g.Style.FramePadding.y));
-
-	// Background & Selectable
+	ImRect bg(ImVec2(pos.x - 10, pos.y - g.Style.FramePadding.y), ImVec2(pos.x + ImGui::GetWindowWidth() + ImGui::GetScrollX(), pos.y + height));
 	window->DrawList->AddRectFilled(bg.Min, bg.Max, color);
 
-	bool hovered, held;
-	if (ImGui::ButtonBehavior(ImRect(pos.x + 28, bg.Min.y, bg.Max.x - 20, bg.Max.y), id, &hovered, &held))
+	// Selectable
+	if (ImGui::ButtonBehavior(ImRect(pos.x + 28, bg.Min.y, bg.Max.x - 20, bg.Max.y), id, &is_hovered, &is_clicked))
 		node->selected = !node->selected;
-
-	if (hovered || held)
-		node->color = colors[ImGuiCol_ButtonHovered];
-	else if (node->selected)
-		node->color = colors[ImGuiCol_ButtonActive];
-	else
-	{
-		if (node->type == HierarchyNode::NodeType::SCENE)
-			node->color = ImVec4(0.25f, 0.25f, 0.25f, 1.0f);
-		else
-			node->color = colors[ImGuiCol_WindowBg];
-	}
 
 	// Shown Icon
 	float pos_x = ImGui::GetCursorPosX();
-	if (node->is_shown)
+	if (ImGui::InvisibleButton(std::string(node->name + ICON_SHOW).c_str(), ImVec2(15, height)))
+		node->is_shown = !node->is_shown;
+
+	ImGui::SameLine();
+	ImGui::SetCursorPosX(pos_x);
+	if (ImGui::IsItemHovered())
 	{
-		ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.0f), ICON_SHOW);
-		if (ImGui::IsItemHovered())
-		{
-			ImGui::SameLine();
-			ImGui::SetCursorPosX(pos_x);
+		is_hovered = true;
+		if (node->is_shown)
 			ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), ICON_SHOW);
-			node->color = colors[ImGuiCol_ButtonHovered];
-		}
+		else
+			ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), ICON_HIDE);
 	}
 	else
 	{
-		ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.5f), ICON_HIDE);
-		if (ImGui::IsItemHovered())
-		{
-			ImGui::SameLine();
-			ImGui::SetCursorPosX(pos_x);
-			ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), ICON_HIDE);
-			node->color = colors[ImGuiCol_ButtonHovered];
-		}
+		if (node->is_shown)
+			ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.0f), ICON_SHOW);
+		else
+			ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.5f), ICON_HIDE);
 	}
-	if (ImGui::IsItemClicked())
-		node->is_shown = !node->is_shown;
-	ImGui::SameLine(0.0f, 3.0f);
+	ImGui::SameLine();
 
 	// Small Space
-	pos_x = ImGui::GetCursorPosX();
-	ImGui::SetCursorPosX(pos_x - 3);
+	ImGui::SetCursorPosX(pos_x + 15);
+	float width = 5;
 	if (node->childs.empty())
-		ImGui::InvisibleButton(node->name.c_str(), ImVec2(15, g.FontSize + g.Style.FramePadding.y));
-	else
-		ImGui::InvisibleButton(node->name.c_str(), ImVec2(5, g.FontSize + g.Style.FramePadding.y));
-	ImGui::SetItemAllowOverlap();
+		width = 15;
 	
-	if (ImGui::IsItemClicked())
+	if (ImGui::InvisibleButton(node->name.c_str(), ImVec2(width, height)))
 		node->selected = !node->selected;
+	ImGui::SetItemAllowOverlap();
 
 	if (ImGui::IsItemHovered())
-		node->color = colors[ImGuiCol_ButtonHovered];
+		is_hovered = true;
 	ImGui::SameLine();
 
 	// Indent
-	ImGui::SetCursorPosX(pos_x);
+	ImGui::SetCursorPosX(pos_x + 17);
 	if (node->indent > 0)
 		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 15 * (node->indent - 1));
 	if (node->childs.empty())
 		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 16);
-
-	// Arrow Icon
-	if (!node->childs.empty())
+	else
 	{
+		// Arrow Icon
 		pos_x = ImGui::GetCursorPosX();
-		if (node->is_open)
+		if (ImGui::InvisibleButton(std::string(node->name + ICON_ARROW_OPEN).c_str(), ImVec2(15, height)))
+			node->is_open = !node->is_open;
+
+		ImGui::SameLine();
+		ImGui::SetCursorPosX(pos_x);
+		if (ImGui::IsItemHovered())
 		{
-			ImGui::TextColored(ImVec4(0.9f, 0.9f, 0.9f, 1.0f), ICON_ARROW_OPEN);
-			if (ImGui::IsItemHovered())
-			{
-				ImGui::SameLine();
-				ImGui::SetCursorPosX(pos_x);
+			is_hovered = true;
+			if (node->is_open)
 				ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), ICON_ARROW_OPEN);
-				node->color = colors[ImGuiCol_ButtonHovered];
-			}
+			else
+				ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), ICON_ARROW_CLOSED);
 		}
 		else
 		{
-			ImGui::TextColored(ImVec4(0.9f, 0.9f, 0.9f, 1.0f), ICON_ARROW_CLOSED);
-			if (ImGui::IsItemHovered())
-			{
-				ImGui::SameLine();
-				ImGui::SetCursorPosX(pos_x);
-				ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), ICON_ARROW_CLOSED);
-				node->color = colors[ImGuiCol_ButtonHovered];
-			}
+			if (node->is_open)
+				ImGui::TextColored(ImVec4(0.9f, 0.9f, 0.9f, 1.0f), ICON_ARROW_OPEN);
+			else
+				ImGui::TextColored(ImVec4(0.9f, 0.9f, 0.9f, 1.0f), ICON_ARROW_CLOSED);
 		}
-
-		if (ImGui::IsItemClicked())
-			node->is_open = !node->is_open;
 		ImGui::SameLine(0.0f, 2.0f);
 	}
 
@@ -246,50 +222,70 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 	// Scene Options & Edit Prefab Buttons
 	if (node->type == HierarchyNode::NodeType::SCENE)
 	{
-		NodeScene* node_scene = (NodeScene*)node;
+		ImGui::SameLine();
+		ImVec2 limit = ImGui::GetCursorPos();
+		pos_x = ImGui::GetWindowWidth() - 23;
+		if (pos_x < limit.x)
+			pos_x = limit.x;
+
+		ImGui::SetCursorPos(ImVec2(pos_x, limit.y + 1));
+		if (ImGui::InvisibleButton(std::string(node->name + ICON_OPTIONS).c_str(), ImVec2(15, height)))
+		{}	//show scene options
 
 		ImGui::SameLine();
-		ImGui::SetCursorPos(ImVec2(ImGui::GetWindowWidth() - 20, ImGui::GetCursorPosY() + 1));
-		pos_x = ImGui::GetCursorPosX();
-
-		ImGui::TextColored(ImVec4(0.9f, 0.9f, 0.9f, 0.5f), ICON_OPTIONS);
+		ImGui::SetCursorPosX(pos_x);
 		if (ImGui::IsItemHovered())
 		{
-			ImGui::SameLine();
-			ImGui::SetCursorPosX(pos_x);
+			is_hovered = true;
 			ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), ICON_OPTIONS);
-			node->color = colors[ImGuiCol_ButtonHovered];
 		}
-		if (ImGui::IsItemClicked())
-		{
-			//show scene options***
-		}
+		else
+			ImGui::TextColored(ImVec4(0.9f, 0.9f, 0.9f, 0.5f), ICON_OPTIONS);
 	}
 	else if (node->type == HierarchyNode::NodeType::PREFAB)
 	{
-		NodePrefab* node_scene = (NodePrefab*)node;
+		ImGui::SameLine();
+		ImVec2 limit = ImGui::GetCursorPos();
+		pos_x = ImGui::GetWindowWidth() - 23;
+		if (pos_x < limit.x)
+			pos_x = limit.x;
+
+		ImGui::SetCursorPos(ImVec2(pos_x, limit.y + 1));
+		if (ImGui::InvisibleButton(std::string(node->name + ICON_ARROW_SHOW).c_str(), ImVec2(15, height)))
+		{}	//edit prefab
 
 		ImGui::SameLine();
-		ImGui::SetCursorPos(ImVec2(ImGui::GetWindowWidth() - 20, ImGui::GetCursorPosY() + 1));
-		pos_x = ImGui::GetCursorPosX();
-
-		ImGui::TextColored(ImVec4(0.9f, 0.9f, 0.9f, 0.5f), ICON_ARROW_SHOW);
+		ImGui::SetCursorPosX(pos_x);
 		if (ImGui::IsItemHovered())
 		{
-			ImGui::SameLine();
-			ImGui::SetCursorPosX(pos_x);
+			is_hovered = true;
 			ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), ICON_ARROW_SHOW);
-			node->color = colors[ImGuiCol_ButtonHovered];
 		}
-		if (ImGui::IsItemClicked())
-		{
-			//edit prefab***
-		}
+		else
+			ImGui::TextColored(ImVec4(0.9f, 0.9f, 0.9f, 0.5f), ICON_ARROW_SHOW);
 	}
 
 
 	//if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup) && ImGui::IsMouseClicked(0)) //allow selecting when right-click options is shown
 	//	ImGui::SetWindowFocus();
+
+	// Highlight
+	if (node->type == HierarchyNode::NodeType::SCENE)
+	{
+		if (current_scene == node)
+			node->color = ImVec4(0.3f, 0.3f, 0.3f, 1.0f);
+		else
+			node->color = ImVec4(0.15f, 0.15f, 0.15f, 1.0f);
+	}
+	else
+	{
+		if (is_hovered || is_clicked)
+			node->color = colors[ImGuiCol_ButtonHovered];
+		else if (node->selected)
+			node->color = colors[ImGuiCol_ButtonActive];
+		else
+			node->color = colors[ImGuiCol_WindowBg];
+	}
 
 	// Selection
 	HandleSelection(node);
