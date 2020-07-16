@@ -42,6 +42,7 @@ void Hierarchy::Draw()
 
 	// Draw Nodes
 	ImDrawList* draw_list = ImGui::GetWindowDrawList();
+
 	for (HierarchyNode* node : nodes)
 	{
 		// Draw Parents First
@@ -93,6 +94,14 @@ void Hierarchy::Shortcuts()
 		{
 			SelectAll();
 		}
+
+		// Find
+		if ((App->input->GetKey(SDL_SCANCODE_LCTRL) == KEY_REPEAT && App->input->GetKey(SDL_SCANCODE_F) == KEY_DOWN) ||
+			(App->input->GetKey(SDL_SCANCODE_RCTRL) == KEY_REPEAT && App->input->GetKey(SDL_SCANCODE_F) == KEY_DOWN))
+		{
+			//FindPopup();
+		}
+
 	}
 }
 
@@ -114,8 +123,22 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 	window->DrawList->AddRectFilled(bg.Min, bg.Max, color);
 
 	// Selectable
-	if (ImGui::ButtonBehavior(ImRect(pos.x + 28, bg.Min.y, bg.Max.x - 20, bg.Max.y), id, &is_hovered, &is_clicked))
-		node->selected = !node->selected;
+	float limit_x = 0;
+	if (node->type == HierarchyNode::NodeType::SCENE || node->type == HierarchyNode::NodeType::PREFAB)
+		limit_x = 20;
+
+	float width = bg.Max.x - limit_x;
+	if (node->rename)
+		width = pos.x + 50;
+
+	if (ImGui::ButtonBehavior(ImRect(pos.x + 28, bg.Min.y, width, bg.Max.y), id, &is_hovered, &is_clicked, ImGuiButtonFlags_PressedOnRelease))
+			node->selected = !node->selected;
+
+	//if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup) && ImGui::IsMouseClicked(0)) //allow selecting when right-click options is shown
+	//	ImGui::SetWindowFocus();
+
+	// Selection
+	HandleSelection(node, is_hovered);
 
 	// Shown Icon
 	float pos_x = ImGui::GetCursorPosX();
@@ -143,11 +166,11 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 
 	// Small Space
 	ImGui::SetCursorPosX(pos_x + 15);
-	float width = 5;
+	width = 5;
 	if (node->childs.empty())
 		width = 15;
 	
-	if (ImGui::InvisibleButton(node->name.c_str(), ImVec2(width, height)))
+	if (ImGui::InvisibleButton(std::string(node->name + "ss").c_str(), ImVec2(width, height)))
 		node->selected = !node->selected;
 	ImGui::SetItemAllowOverlap();
 
@@ -210,21 +233,17 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 		}
 		else
 			ImGui::Text(node->name.c_str());
-
-		if (ImGui::IsItemClicked())
-			node->selected = !node->selected;
 	}
 	else
 	{
-		if (selected_nodes.size() == 1) //rename if only 1 selected node
+		char buffer[128];
+		sprintf_s(buffer, 128, "%s", node->name.c_str());
+
+		ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 3);
+		if (ImGui::InputText("##RenameNode", buffer, 128, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll))
 		{
-			char buffer[128];
-			sprintf_s(buffer, 128, "%s", node->name.c_str());
-			if (ImGui::InputText("##RenameNode", buffer, 128, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll))
-			{
-				node->name = CreateName(buffer);
-				node->rename = false;
-			}
+			node->name = CreateName(buffer);
+			node->rename = false;
 		}
 	}
 
@@ -275,10 +294,6 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 			ImGui::TextColored(ImVec4(0.9f, 0.9f, 0.9f, 0.5f), ICON_ARROW_SHOW);
 	}
 
-
-	//if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup) && ImGui::IsMouseClicked(0)) //allow selecting when right-click options is shown
-	//	ImGui::SetWindowFocus();
-
 	// Highlight
 	if (node->type == HierarchyNode::NodeType::SCENE)
 	{
@@ -296,16 +311,6 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 		else
 			node->color = colors[ImGuiCol_WindowBg];
 	}
-
-	// Selection
-	HandleSelection(node);
-
-	// Update Selected Nodes List
-	int position = FindNode(node, selected_nodes);
-	if (node->selected && position == -1)
-		selected_nodes.push_back(node);
-	else if (!node->selected && position != -1)
-		selected_nodes.erase(selected_nodes.begin() + position);
 
 	// Draw Childs
 	if (node->is_open && !node->childs.empty())
@@ -514,28 +519,49 @@ void Hierarchy::UnSelectAll()
 }
 
 // --- MAIN HELPERS ---
-HierarchyNode* Hierarchy::HandleSelection(HierarchyNode* node)
+HierarchyNode* Hierarchy::HandleSelection(HierarchyNode* node, bool is_hovered)
 {
 	// Left Click (selection)
-	if (ImGui::IsItemClicked(0)) //if treenode is clicked, check whether it is a single or multi selection
+	if (is_hovered) //if treenode is clicked, check whether it is a single or multi selection
 	{
-		if (ImGui::IsMouseDoubleClicked(0) && selected_nodes.size() == 1) // Double-click (rename)
-			node->rename = true;
-		else
+		if (ImGui::IsMouseDoubleClicked(0)) // Double-click (open folder / focus gameobject)
 		{
-			if (!ImGui::GetIO().KeyCtrl) // Single selection, clear selected nodes
-				UnSelectAll();
+			if (node->type == HierarchyNode::NodeType::FOLDER && !node->childs.empty())
+				node->is_open = !node->is_open;
+			else if (node->type == HierarchyNode::NodeType::SCENE)
+				current_scene = node;
+			else if (node->type == HierarchyNode::NodeType::GAMEOBJECT || node->type == HierarchyNode::NodeType::PREFAB)
+			{ /*focus*/ }
+		}
+		else if (ImGui::IsMouseClicked(0))
+		{
+			if (!ImGui::GetIO().KeyCtrl) // Single selection
+			{
+				if (node->selected && selected_nodes.size() == 1) // Rename
+					node->rename = true;
+				else
+					UnSelectAll();
+			}
+			else if (ImGui::GetIO().KeyShift && !selected_nodes.empty()) // Multiple Selection (Shift)
+			{
 
+			}
+		}
+
+		// Right Click (select item to show options)
+		if (ImGui::IsMouseClicked(1) && selected_nodes.size() <= 1 && node->type != HierarchyNode::NodeType::SCENE)
+		{
+			UnSelectAll();
 			node->selected = !node->selected; //change selection state
 		}
 	}
 
-	// Right Click (select item to show options)
-	if (ImGui::IsItemClicked(1) && selected_nodes.size() <= 1)
-	{
-		UnSelectAll();
-		node->selected = !node->selected; //change selection state
-	}
+	// Update Selected Nodes List
+	int position = FindNode(node, selected_nodes);
+	if (node->selected && position == -1)
+		selected_nodes.push_back(node);
+	else if (!node->selected && position != -1)
+		selected_nodes.erase(selected_nodes.begin() + position);
 
 	return node;
 }
@@ -573,6 +599,12 @@ bool Hierarchy::DrawRightClick()
 			DeleteNodes(selected_nodes);
 			selected_nodes.clear();
 		}
+		ImGui::Separator();
+
+		if (ImGui::MenuItem("Search", "Ctrl+F")) //search
+		{
+
+		}
 
 		ImGui::EndPopup();
 		return true;
@@ -604,7 +636,13 @@ bool Hierarchy::ShowSceneOptions(HierarchyNode* node)
 		{}
 
 		if (ImGui::MenuItem("Remove Scene"))
-		{}
+		{
+			//if scene nodes is the only scene, delete and create default scene
+			//if scene node is current_scene -> change to first scene in nodes
+			std::vector<HierarchyNode*>list;
+			//push back scene node and all its childs and childs of childs
+			//DeleteNodes(list);
+		}
 
 		if (ImGui::MenuItem("Discard Changes", NULL, false, !scene_node->is_saved))
 		{}
@@ -614,6 +652,7 @@ bool Hierarchy::ShowSceneOptions(HierarchyNode* node)
 		{}
 
 		CreateMenu();
+
 		ImGui::EndPopup();
 		return true;
 	}
@@ -696,7 +735,7 @@ void Hierarchy::CreateMenu()
 			CreateNode(HierarchyNode::NodeType::SCENE);
 
 		if (ImGui::MenuItem("GameObject"))
-			CreateNode(HierarchyNode::NodeType::PREFAB);
+			CreateNode(HierarchyNode::NodeType::GAMEOBJECT);
 
 		//if (ImGui::MenuItem("Prefab"))
 		//	CreateNode(HierarchyNode::NodeType::PREFAB);

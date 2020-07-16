@@ -43,7 +43,7 @@ public:
 
 private:
 	// --- MAIN HELPERS ---
-	HierarchyNode* HandleSelection(HierarchyNode* node); //selection states
+	HierarchyNode* HandleSelection(HierarchyNode* node, bool is_hovered); //selection states
 	bool DrawRightClick(); //only draws if right click is pressed, returns true if drawn
 	bool ShowSceneOptions(HierarchyNode* node); //popup when options button is clicked
 	void DrawConnectorLines(HierarchyNode* node, ImDrawList* draw_list); //draw connector lines when node is open
