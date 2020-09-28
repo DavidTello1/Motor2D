@@ -52,11 +52,11 @@ private:
 
 	// --- NODE CREATION ---
 	void CreateMenu(); //imgui menu for creating nodes (folder, gameobject, scene, etc)
-	std::string CreateName(const char* name); //get name (with count of same names)
+	uint GetNameCount(HierarchyNode* node); //get name count
 
 	// --- NODE POS ---
 	void ReorderNodes(HierarchyNode* node, bool is_delete = false); //update nodes pos
-	uint RecursivePos(HierarchyNode* node, bool is_duplicate = false); //set node pos in CreateNode()
+	uint RecursivePos(HierarchyNode* node); //set node pos in CreateNode()
 
 	// --- CONNECTOR LINES ---
 	std::vector<HierarchyNode*> GetHiddenNodes(); //get all hidden nodes in hierarchy
@@ -77,6 +77,8 @@ public:
 private:
 	std::vector<HierarchyNode*> nodes;
 	std::vector<HierarchyNode*> selected_nodes;
+	std::vector<HierarchyNode*> hidden_childs;
+
 
 	HierarchyNode* current_scene = nullptr;
 };

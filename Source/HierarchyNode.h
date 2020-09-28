@@ -27,6 +27,7 @@ public:
 	NodeType type = NodeType::NONE;
 	std::string name = "node";
 	std::string icon = "";
+	uint count = 0;
 
 	HierarchyNode* parent = nullptr;
 	std::vector<HierarchyNode*> childs;

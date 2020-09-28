@@ -110,41 +110,26 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 	// Main Variables
 	static ImGuiContext& g = *GImGui;
 	static ImGuiWindow* window = g.CurrentWindow;
-	ImU32 id = window->GetID(node->name.c_str());
 	static ImGuiStyle* style = &ImGui::GetStyle();
 	static ImVec4* colors = style->Colors;
 	const ImU32 color = ImColor(node->color);
 	const float height = g.FontSize + g.Style.FramePadding.y;
-	bool is_hovered, is_clicked;
+	bool is_hovered = false, is_clicked = false;
+
+	// Real Node Name
+	std::string name = node->name;
+	if (node->count != 0)
+		name = name + std::string(" (") + std::to_string(node->count) + std::string(")");
 
 	// Background
 	ImVec2 pos = window->DC.CursorPos;
 	ImRect bg(ImVec2(pos.x - 10, pos.y - g.Style.FramePadding.y), ImVec2(pos.x + ImGui::GetWindowWidth() + ImGui::GetScrollX(), pos.y + height));
 	window->DrawList->AddRectFilled(bg.Min, bg.Max, color);
 
-	// Selectable
-	float limit_x = 0;
-	if (node->type == HierarchyNode::NodeType::SCENE || node->type == HierarchyNode::NodeType::PREFAB)
-		limit_x = 20;
-
-	float width = bg.Max.x - limit_x;
-	if (node->rename)
-		width = pos.x + 50;
-
-	if (ImGui::ButtonBehavior(ImRect(pos.x + 28, bg.Min.y, width, bg.Max.y), id, &is_hovered, &is_clicked, ImGuiButtonFlags_PressedOnRelease))
-			node->selected = !node->selected;
-
-	//if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup) && ImGui::IsMouseClicked(0)) //allow selecting when right-click options is shown
-	//	ImGui::SetWindowFocus();
-
-	// Selection
-	HandleSelection(node, is_hovered);
-
 	// Shown Icon
 	float pos_x = ImGui::GetCursorPosX();
-	if (ImGui::InvisibleButton(std::string(node->name + ICON_SHOW).c_str(), ImVec2(15, height)))
+	if (ImGui::InvisibleButton(std::string(name + ICON_SHOW).c_str(), ImVec2(15, height)))
 		node->is_shown = !node->is_shown;
-
 	ImGui::SameLine();
 	ImGui::SetCursorPosX(pos_x);
 	if (ImGui::IsItemHovered())
@@ -164,19 +149,24 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 	}
 	ImGui::SameLine();
 
-	// Small Space
+	// Selectable
 	ImGui::SetCursorPosX(pos_x + 15);
-	width = 5;
-	if (node->childs.empty())
-		width = 15;
-	
-	if (ImGui::InvisibleButton(std::string(node->name + "ss").c_str(), ImVec2(width, height)))
+	if (ImGui::InvisibleButton(name.c_str(), ImVec2(bg.Max.x - 39, height)))
+	{
 		node->selected = !node->selected;
-	ImGui::SetItemAllowOverlap();
-
-	if (ImGui::IsItemHovered())
+		is_clicked = true;
+	}
+	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup))
+	{
 		is_hovered = true;
+		if (ImGui::IsMouseClicked(0)) //allow selecting when right-click options is shown
+			ImGui::SetWindowFocus();
+	}
+	ImGui::SetItemAllowOverlap();
 	ImGui::SameLine();
+
+	// Selection
+	HandleSelection(node, is_hovered);
 
 	// Indent
 	ImGui::SetCursorPosX(pos_x + 17);
@@ -188,8 +178,11 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 	{
 		// Arrow Icon
 		pos_x = ImGui::GetCursorPosX();
-		if (ImGui::InvisibleButton(std::string(node->name + ICON_ARROW_OPEN).c_str(), ImVec2(15, height)))
+		if (ImGui::InvisibleButton(std::string(name + ICON_ARROW_OPEN).c_str(), ImVec2(15, height)))
+		{
 			node->is_open = !node->is_open;
+			hidden_childs = GetHiddenNodes(); //refresh hidden_childs list
+		}
 
 		ImGui::SameLine();
 		ImGui::SetCursorPosX(pos_x);
@@ -204,9 +197,9 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 		else
 		{
 			if (node->is_open)
-				ImGui::TextColored(ImVec4(0.9f, 0.9f, 0.9f, 1.0f), ICON_ARROW_OPEN);
+				ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.8f), ICON_ARROW_OPEN);
 			else
-				ImGui::TextColored(ImVec4(0.9f, 0.9f, 0.9f, 1.0f), ICON_ARROW_CLOSED);
+				ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.8f), ICON_ARROW_CLOSED);
 		}
 		ImGui::SameLine(0.0f, 2.0f);
 	}
@@ -227,14 +220,14 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 		{
 			NodeScene* node_scene = (NodeScene*)node;
 			if (node_scene->is_saved == false)
-				ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.0f, 1.0f), node->name.c_str());
+				ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.0f, 1.0f), name.c_str());
 			else
-				ImGui::Text(node->name.c_str());
+				ImGui::Text(name.c_str());
 		}
 		else
-			ImGui::Text(node->name.c_str());
+			ImGui::Text(name.c_str());
 	}
-	else
+	else // Rename
 	{
 		char buffer[128];
 		sprintf_s(buffer, 128, "%s", node->name.c_str());
@@ -242,14 +235,25 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 		ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 3);
 		if (ImGui::InputText("##RenameNode", buffer, 128, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll))
 		{
-			node->name = CreateName(buffer);
-			node->rename = false;
+			if (strchr(buffer, '(') != nullptr || strchr(buffer, ')') != nullptr)
+				LOG("Error renaming node, character not valid '()'", 'e')
+			else
+			{
+				node->name = buffer;
+				node->count = 0;
+				node->count = GetNameCount(node);
+				node->rename = false;
+			}
 		}
 	}
 
 	// Scene Options & Edit Prefab Buttons
-	if (node->type == HierarchyNode::NodeType::SCENE)
+	if (node->type == HierarchyNode::NodeType::SCENE || node->type == HierarchyNode::NodeType::PREFAB)
 	{
+		std::string icon = ICON_OPTIONS;
+		if (node->type == HierarchyNode::NodeType::PREFAB)
+			icon = ICON_ARROW_SHOW;
+
 		ImGui::SameLine();
 		ImVec2 limit = ImGui::GetCursorPos();
 		pos_x = ImGui::GetWindowWidth() - 23;
@@ -257,41 +261,24 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 			pos_x = limit.x;
 
 		ImGui::SetCursorPos(ImVec2(pos_x, limit.y + 1));
-		ImGui::InvisibleButton(std::string(node->name + ICON_OPTIONS).c_str(), ImVec2(15, height));
-
-		ShowSceneOptions(node);
+		ImGui::InvisibleButton(std::string(name + icon).c_str(), ImVec2(15, height));
+		{
+			if (node->type == HierarchyNode::NodeType::SCENE) // Scenes
+				ShowSceneOptions(node);
+			else if (node->type == HierarchyNode::NodeType::PREFAB) //Prefabs
+			{
+			}	//edit prefab
+		}
 
 		ImGui::SameLine();
 		ImGui::SetCursorPosX(pos_x);
 		if (ImGui::IsItemHovered())
 		{
 			is_hovered = true;
-			ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), ICON_OPTIONS);
+			ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), icon.c_str());
 		}
 		else
-			ImGui::TextColored(ImVec4(0.9f, 0.9f, 0.9f, 0.5f), ICON_OPTIONS);
-	}
-	else if (node->type == HierarchyNode::NodeType::PREFAB)
-	{
-		ImGui::SameLine();
-		ImVec2 limit = ImGui::GetCursorPos();
-		pos_x = ImGui::GetWindowWidth() - 23;
-		if (pos_x < limit.x)
-			pos_x = limit.x;
-
-		ImGui::SetCursorPos(ImVec2(pos_x, limit.y + 1));
-		if (ImGui::InvisibleButton(std::string(node->name + ICON_ARROW_SHOW).c_str(), ImVec2(15, height)))
-		{}	//edit prefab
-
-		ImGui::SameLine();
-		ImGui::SetCursorPosX(pos_x);
-		if (ImGui::IsItemHovered())
-		{
-			is_hovered = true;
-			ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), ICON_ARROW_SHOW);
-		}
-		else
-			ImGui::TextColored(ImVec4(0.9f, 0.9f, 0.9f, 0.5f), ICON_ARROW_SHOW);
+			ImGui::TextColored(ImVec4(0.9f, 0.9f, 0.9f, 0.5f), icon.c_str());
 	}
 
 	// Highlight
@@ -327,28 +314,24 @@ HierarchyNode* Hierarchy::CreateNode(HierarchyNode::NodeType type, HierarchyNode
 	switch (type)
 	{
 	case HierarchyNode::NodeType::FOLDER:
-		if (name != "")
-			node = new NodeFolder(parent, name);
-		else
-			node = new NodeFolder(parent);
+		if (name == "")
+			name = "Folder";
+		node = new NodeFolder(parent, name);
 		break;
 	case HierarchyNode::NodeType::GAMEOBJECT:
-		if (name != "")
-			node = new NodeGameObject(nullptr, parent, name);
-		else
-			node = new NodeGameObject(nullptr, parent); //***CHANGE NULLPTR BY EMPTY GAMEOBJECT
+		if (name == "")
+			name = "GameObject";
+		node = new NodeGameObject(nullptr, parent); //***CHANGE NULLPTR BY EMPTY GAMEOBJECT
 		break;
 	case HierarchyNode::NodeType::SCENE:
-		if (name != "")
-			node = new NodeScene(/*new ResourceScene(),*/ name);
-		else
-			node = new NodeScene(/*new ResourceScene()*/);
+		if (name == "")
+			name = "Scene";
+		node = new NodeScene(/*new ResourceScene()*/);
 		break;
 	case HierarchyNode::NodeType::PREFAB:
-		if (name != "")
-			node = new NodePrefab(/*new Prefab(), */parent, name);
-		else
-			node = new NodePrefab(/*new Prefab(), */parent);
+		if (name == "")
+			name = "Prefab";
+		node = new NodePrefab(/*new Prefab(), */parent);
 		break;
 	}
 
@@ -359,15 +342,15 @@ HierarchyNode* Hierarchy::CreateNode(HierarchyNode::NodeType type, HierarchyNode
 	}
 
 	// Name Count
-	node->name = CreateName(node->name.c_str());
+	node->count = GetNameCount(node);
 
 	// Parent
 	if (parent == nullptr && type != HierarchyNode::NodeType::SCENE)
 	{
-		if (selected_nodes.empty() == false)
-			node->parent = selected_nodes[0]; //parent is first selected node
-		else
+		if (selected_nodes.empty() == true)
 			node->parent = current_scene; //parent is current scene
+		else
+			node->parent = selected_nodes[0]; //parent is first selected node
 	}
 	else if (parent != nullptr)
 		node->parent = parent;
@@ -400,7 +383,7 @@ void Hierarchy::DeleteNodes(std::vector<HierarchyNode*> nodes_list, bool reorder
 {
 	while(!nodes_list.empty())
 	{
-		if (reorder) //reorder list (only once)
+		if (reorder) //reorder list by indent (only once)
 		{
 			nodes_list = SortByIndent(nodes_list);
 			reorder = false;
@@ -425,8 +408,11 @@ void Hierarchy::DeleteNodes(std::vector<HierarchyNode*> nodes_list, bool reorder
 		
 		// Delete node data
 		int pos = FindNode(node, nodes);
-		delete nodes[pos];
-		nodes.erase(nodes.begin() + pos);
+		if (pos != -1)
+		{
+			delete nodes[pos];
+			nodes.erase(nodes.begin() + pos);
+		}
 		nodes_list.erase(nodes_list.begin());		
 	}
 	nodes_list.clear();
@@ -434,67 +420,21 @@ void Hierarchy::DeleteNodes(std::vector<HierarchyNode*> nodes_list, bool reorder
 
 void Hierarchy::DuplicateNodes(std::vector<HierarchyNode*> nodes_list, HierarchyNode* parent)
 {
-	uint size = nodes_list.size();
-	for (uint i = 0; i < size; ++i)
+	for (uint i = 0; i < nodes_list.size(); ++i)
 	{
-		HierarchyNode* node = nullptr;
-
-		switch (nodes_list[i]->type)
-		{
-		case HierarchyNode::NodeType::FOLDER:
-			node = new NodeFolder(parent);
-			break;
-		case HierarchyNode::NodeType::GAMEOBJECT:
-			node = new NodeGameObject(nullptr, parent); //***CHANGE NULLPTR BY EMPTY GAMEOBJECT
-			break;
-		case HierarchyNode::NodeType::SCENE:
-			node = new NodeScene(/*new ResourceScene()*/);
-			break;
-		case HierarchyNode::NodeType::PREFAB:
-			//node = new NodePrefab(new Prefab(), parent);
-			break;
-		}
-
-		if (node == nullptr)
-		{
-			LOG("Error creating node", e);
-			return;
-		}
-
-		// Name
-		std::string name = nodes_list[i]->name.substr(0, nodes_list[i]->name.find_first_of(" ("));
-		node->name = CreateName(name.c_str());
-
-		// Selected (unselect source node)
-		nodes_list[i]->selected = false;
-		node->selected = true;
-
 		// Parent
+		HierarchyNode* final_parent = parent;
 		if (parent == nullptr)
 		{
 			if (nodes_list[i]->parent != nullptr) // if parent is null make root
-			{
-				node->parent = nodes_list[i]->parent;
-			}
-		}
-		else // if defined parent node (parent is a duplicated node)
-		{
-			node->parent = parent;
+				final_parent = nodes_list[i]->parent;
 		}
 
-		// Position and Indent
-		node->indent = nodes_list[i]->indent;
-		if (node->parent == nullptr)
-			node->pos = nodes.size();
-		else
-		{
-			node->pos = RecursivePos(node->parent, false);
-			node->parent->childs.push_back(node); //add node to parent's child list
-		}
+		// Create Node
+		HierarchyNode* node = CreateNode(nodes_list[i]->type, final_parent, nodes_list[i]->name);
 
-		// Add to nodes list & Reorder by Position
-		nodes.push_back(node);
-		ReorderNodes(node);
+		// Selected (unselect source node)
+		nodes_list[i]->selected = false;
 
 		// Childs
 		if (!nodes_list[i]->childs.empty()) // if node has childs, duplicate them
@@ -535,17 +475,25 @@ HierarchyNode* Hierarchy::HandleSelection(HierarchyNode* node, bool is_hovered)
 		}
 		else if (ImGui::IsMouseClicked(0))
 		{
-			if (!ImGui::GetIO().KeyCtrl) // Single selection
+			if (ImGui::GetIO().KeyShift && !selected_nodes.empty()) // Multiple Selection (Shift)
 			{
-				if (node->selected && selected_nodes.size() == 1) // Rename
-					node->rename = true;
-				else
-					UnSelectAll();
-			}
-			else if (ImGui::GetIO().KeyShift && !selected_nodes.empty()) // Multiple Selection (Shift)
-			{
+				HierarchyNode* start_node = selected_nodes[0];
+				if (selected_nodes.size() > 1)
+					start_node = selected_nodes.back();
 
+				uint first = start_node->pos;
+				uint last = node->pos;
+				if (first > last)
+				{
+					first = node->pos;
+					last = start_node->pos;
+				}
+
+				for (uint i = first; i < last; ++i)
+					nodes[i]->selected = true;
 			}
+			else if (!ImGui::GetIO().KeyCtrl) // Single selection
+				UnSelectAll();
 		}
 
 		// Right Click (select item to show options)
@@ -661,8 +609,12 @@ bool Hierarchy::ShowSceneOptions(HierarchyNode* node)
 
 void Hierarchy::DrawConnectorLines(HierarchyNode* node, ImDrawList* draw_list)
 {
+	// Error handling
 	if (node == nullptr)
+	{
+		LOG("node was NULL", 'e');
 		return;
+	}
 
 	// If any parent is closed do not draw
 	bool draw = true;
@@ -674,9 +626,6 @@ void Hierarchy::DrawConnectorLines(HierarchyNode* node, ImDrawList* draw_list)
 
 		tmp_node = tmp_node->parent;
 	}
-
-	// Get all hidden nodes
-	std::vector<HierarchyNode*> hidden_childs = GetHiddenNodes(); //*** ONLY CALL GetHiddenNodes() WHEN A NODE IS OPENED/CLOSED
 
 	// Get number of hidden childs that actually affect the node
 	uint num_hidden = hidden_childs.size();
@@ -701,7 +650,7 @@ void Hierarchy::DrawConnectorLines(HierarchyNode* node, ImDrawList* draw_list)
 	const ImU32 color = ImColor(colorf);
 
 	// Positions
-	uint last_child_pos = (uint)node->childs[node->childs.size() - 1]->pos - num_hidden;  //get last child pos updated to hidden childs
+	uint last_child_pos = (uint)node->childs[node->childs.size() - 1]->pos - num_hidden;  //get last_child_pos updated to hidden childs
 	uint parent_pos = (uint)node->pos - num_hidden2;
 
 	// Real Positions
@@ -744,34 +693,50 @@ void Hierarchy::CreateMenu()
 	}
 }
 
-std::string Hierarchy::CreateName(const char* base_name)
+uint Hierarchy::GetNameCount(HierarchyNode* node)
 {
-	if (nodes.empty())
-		return std::string(base_name);
-
-	bool found = false;
-	uint count = 0;
-	std::string name = base_name;
-
-	while (found == false)
+	std::vector<HierarchyNode*> repeated_nodes;
+	for (uint i = 0; i < nodes.size(); ++i) //get nodes with repeated name and highest name count
 	{
-		for (uint i = 0; i < nodes.size(); ++i)
+		if (node != nodes[i] && node->name == nodes[i]->name)
 		{
-			if (name == nodes[i]->name)
-			{
-				count++;
-				name = base_name + std::string(" (") + std::to_string(count) + std::string(")");
-				break;
-			}
-			else if (i == nodes.size() - 1)
-			{
-				found = true;
-				break;
-			}
+			repeated_nodes.push_back(nodes[i]);
+			if (node->count <= nodes[i]->count)
+				node->count = nodes[i]->count;
 		}
 	}
 
-	return name;
+	if (!repeated_nodes.empty()) //if name is repeated
+	{
+		if (repeated_nodes.size() <= node->count) //if there are gaps between the name counts
+		{
+			node->count = 0;
+			bool found = false;
+
+			while (found == false)
+			{
+				for (uint i = 0; i < repeated_nodes.size(); ++i) //if count is repeated increase it and try again, if not repeated set count
+				{
+					if (repeated_nodes[i]->count == node->count)
+					{
+						repeated_nodes.erase(repeated_nodes.begin() + i); //if count is repeated, erase repeated count node from repeated_nodes list
+						node->count++;
+						break;
+					}
+					else if (i == repeated_nodes.size() - 1)
+					{
+						found = true;
+						break;
+					}
+
+				}
+			}
+		}
+		else //if there are no gaps
+			node->count++;
+	}
+
+	return node->count;
 }
 
 // --- NODE POS ---
@@ -792,15 +757,10 @@ void Hierarchy::ReorderNodes(HierarchyNode* node, bool is_delete)
 	nodes = SortByPosition(nodes);
 }
 
-uint Hierarchy::RecursivePos(HierarchyNode* node, bool is_duplicate)
+uint Hierarchy::RecursivePos(HierarchyNode* node)
 {
 	if (node->childs.empty())
-	{
-		if (is_duplicate)
-			return node->pos;
-		else
-			return node->pos + 1;
-	}
+		return node->pos + 1;
 	else
 		return RecursivePos(node->childs[node->childs.size() - 1]);
 }
@@ -811,7 +771,7 @@ std::vector<HierarchyNode*> Hierarchy::GetHiddenNodes()
 	std::vector<HierarchyNode*> hidden;
 	for (uint i = 0; i < nodes.size(); ++i)
 	{
-		if (nodes[i]->parent == nullptr) //** CHANGE TO IF PARENT->TYPE == SCENE
+		if (nodes[i]->type == HierarchyNode::NodeType::SCENE)
 		{
 			if (!nodes[i]->is_open) //if closed add all childs to list
 			{
