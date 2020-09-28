@@ -151,7 +151,10 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 
 	// Selectable
 	ImGui::SetCursorPosX(pos_x + 15);
-	if (ImGui::InvisibleButton(name.c_str(), ImVec2(bg.Max.x - 39, height)))
+	float width = bg.Max.x - 39;
+	if (node->rename)
+		width = 34;
+	if (ImGui::InvisibleButton(name.c_str(), ImVec2(width, height)))
 	{
 		node->selected = !node->selected;
 		is_clicked = true;
@@ -244,6 +247,21 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 				node->count = GetNameCount(node);
 				node->rename = false;
 			}
+		}
+		
+		// Space after input text
+		ImGui::SameLine();
+		ImGui::SetCursorPosX(ImGui::GetCursorPosX() - 8);
+		if (ImGui::InvisibleButton(std::string(node->name + std::to_string(node->count)).c_str(), ImVec2(bg.Max.x - 39, height)))
+		{
+			node->rename = false;
+			is_clicked = true;
+		}
+		if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup))
+		{
+			is_hovered = true;
+			if (ImGui::IsMouseClicked(0)) //allow selecting when right-click options is shown
+				ImGui::SetWindowFocus();
 		}
 	}
 
