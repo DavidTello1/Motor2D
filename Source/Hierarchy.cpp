@@ -493,6 +493,10 @@ HierarchyNode* Hierarchy::HandleSelection(HierarchyNode* node, bool is_hovered)
 		}
 		else if (ImGui::IsMouseClicked(0))
 		{
+			//if Drag and Drop
+			//get new node pos
+			//call MoveNode()
+			
 			if (ImGui::GetIO().KeyShift && !selected_nodes.empty()) // Multiple Selection (Shift)
 			{
 				HierarchyNode* start_node = selected_nodes.back();
@@ -530,6 +534,17 @@ HierarchyNode* Hierarchy::HandleSelection(HierarchyNode* node, bool is_hovered)
 		selected_nodes.erase(selected_nodes.begin() + position);
 
 	return node;
+}
+
+void Hierarchy::MoveNode(HierarchyNode* node, int pos, HierarchyNode* parent)
+{
+	//if parent, set node parent and add to parent's child list
+
+	//check if pos is between childs, set new parent
+
+	//set new indent
+
+	//reorder all nodes pos
 }
 
 bool Hierarchy::DrawRightClick()
