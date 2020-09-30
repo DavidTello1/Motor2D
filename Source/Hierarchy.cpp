@@ -499,14 +499,16 @@ HierarchyNode* Hierarchy::HandleSelection(HierarchyNode* node, bool is_hovered)
 
 				uint first = start_node->pos;
 				uint last = node->pos;
-				if (first > last)
+				if (first < last)
 				{
-					first = node->pos;
-					last = start_node->pos;
+					for (uint i = first; i < last; ++i)
+						nodes[i]->selected = true;
 				}
-
-				for (uint i = first; i < last; ++i)
-					nodes[i]->selected = true;
+				else
+				{
+					for (uint i = first; i > last; --i)
+						nodes[i]->selected = true;
+				}
 			}
 			else if (!ImGui::GetIO().KeyCtrl) // Single selection
 				UnSelectAll();
