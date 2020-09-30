@@ -495,9 +495,7 @@ HierarchyNode* Hierarchy::HandleSelection(HierarchyNode* node, bool is_hovered)
 		{
 			if (ImGui::GetIO().KeyShift && !selected_nodes.empty()) // Multiple Selection (Shift)
 			{
-				HierarchyNode* start_node = selected_nodes[0];
-				if (selected_nodes.size() > 1)
-					start_node = selected_nodes.back();
+				HierarchyNode* start_node = selected_nodes.back();
 
 				uint first = start_node->pos;
 				uint last = node->pos;
