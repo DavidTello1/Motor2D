@@ -252,7 +252,10 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 		// Space after input text
 		ImGui::SameLine();
 		ImGui::SetCursorPosX(ImGui::GetCursorPosX() - 8);
-		if (ImGui::InvisibleButton(std::string(node->name + std::to_string(node->count)).c_str(), ImVec2(bg.Max.x - 39, height)))
+		width = ImGui::GetWindowWidth() - ImGui::GetCursorPosX() - 8;
+		if (width == 0.0f) //error handling (invisible button size cannot be 0)
+			width = 0.1f;
+		if (ImGui::InvisibleButton(std::string(node->name + std::to_string(node->count)).c_str(), ImVec2(width, height)))
 		{
 			node->rename = false;
 			is_clicked = true;
