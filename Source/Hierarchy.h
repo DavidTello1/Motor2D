@@ -44,7 +44,7 @@ public:
 private:
 	// --- MAIN HELPERS ---
 	HierarchyNode* HandleSelection(HierarchyNode* node, bool is_hovered); //selection states
-	void MoveNode(HierarchyNode* node, int pos, HierarchyNode* parent = nullptr); //move node
+	HierarchyNode* MoveNode(HierarchyNode* node, HierarchyNode* parent, int pos); //move node
 	bool DrawRightClick(); //only draws if right click is pressed, returns true if drawn
 	bool ShowSceneOptions(HierarchyNode* node); //popup when options button is clicked
 	void DrawConnectorLines(HierarchyNode* node, ImDrawList* draw_list); //draw connector lines when node is open
@@ -78,6 +78,8 @@ private:
 	std::vector<HierarchyNode*> nodes;
 	std::vector<HierarchyNode*> selected_nodes;
 	std::vector<HierarchyNode*> hidden_childs;
+
+	HierarchyNode* drag_node = nullptr;
 
 
 	HierarchyNode* current_scene = nullptr;

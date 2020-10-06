@@ -43,15 +43,15 @@ void Hierarchy::Draw()
 	// Draw Nodes
 	ImDrawList* draw_list = ImGui::GetWindowDrawList();
 
-	for (HierarchyNode* node : nodes)
+	for (uint i = 0; i< nodes.size(); ++i)
 	{
 		// Draw Parents First
-		if (node->parent == nullptr)
-			DrawNode(node);
+		if (nodes[i]->parent == nullptr)
+			DrawNode(nodes[i]);
 
 		// Draw Connector Lines
-		if (!node->childs.empty() && node->type != HierarchyNode::NodeType::SCENE)
-			DrawConnectorLines(node, draw_list);
+		if (!nodes[i]->childs.empty() && nodes[i]->type != HierarchyNode::NodeType::SCENE)
+			DrawConnectorLines(nodes[i], draw_list);
 	}
 
 	//--- Empty Space ---
@@ -167,6 +167,25 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 	}
 	ImGui::SetItemAllowOverlap();
 	ImGui::SameLine();
+
+	//Drag and Drop
+	if (ImGui::BeginDragDropSource())
+	{
+		ImGui::SetDragDropPayload("Node", &name, sizeof(std::string));
+		ImGui::Text(name.c_str());
+		drag_node = node;
+		ImGui::EndDragDropSource();
+	}
+
+	if (ImGui::BeginDragDropTarget())
+	{
+		if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Node"))
+		{
+			node = MoveNode(drag_node, node, -1);
+			drag_node = nullptr;
+		}
+		ImGui::EndDragDropTarget();
+	}
 
 	// Selection
 	HandleSelection(node, is_hovered);
@@ -495,11 +514,7 @@ HierarchyNode* Hierarchy::HandleSelection(HierarchyNode* node, bool is_hovered)
 			{ /*focus*/ }
 		}
 		else if (ImGui::IsMouseClicked(0))
-		{
-			//if Drag and Drop
-			//get new node pos
-			//call MoveNode()
-			
+		{			
 			if (ImGui::GetIO().KeyShift && !selected_nodes.empty()) // Multiple Selection (Shift)
 			{
 				HierarchyNode* start_node = selected_nodes.back();
@@ -539,15 +554,52 @@ HierarchyNode* Hierarchy::HandleSelection(HierarchyNode* node, bool is_hovered)
 	return node;
 }
 
-void Hierarchy::MoveNode(HierarchyNode* node, int pos, HierarchyNode* parent)
+HierarchyNode* Hierarchy::MoveNode(HierarchyNode* node, HierarchyNode* parent, int pos)
 {
-	//if parent, set node parent and add to parent's child list
+	// If new parent is child of node (error handling)
+	if (IsChildOf(node, parent))
+		return node;
 
-	//check if pos is between childs, set new parent
+	// If node has parent, delete node from parent's child list
+	if (node->parent != nullptr)
+		node->parent->childs.erase(node->parent->childs.begin() + FindNode(node, node->parent->childs));
 
-	//set new indent
+	// Set indent
+	node->indent = parent->indent + 1;
+	if (parent->type == HierarchyNode::NodeType::SCENE)
+		node->indent = 0;
 
-	//reorder all nodes pos
+	// Set pos
+	nodes.erase(nodes.begin() + FindNode(node, nodes)); //erase from nodes list (data is mantained in *node)
+	ReorderNodes(node, true);
+	if (pos == -1)
+	{
+		if (parent->childs.empty())
+			node->pos = parent->pos + 1;
+		else
+			node->pos = parent->childs.back()->pos + 1; //if parent.childs has childs pos has to include this
+	}
+	else
+		node->pos = pos + 1;
+
+	// Set parent and add to child list
+	node->parent = parent;
+	parent->childs.push_back(node);
+
+	// Add to nodes list and Reorder all nodes
+	nodes.push_back(node);
+	ReorderNodes(node);
+
+	// Move Childs
+	if (!node->childs.empty())
+	{
+		for (uint i = 0; i < node->childs.size(); ++i)
+		{
+			node->childs[i] = MoveNode(node->childs[i], node, -1);
+		}
+	}
+
+	return node;
 }
 
 bool Hierarchy::DrawRightClick()
