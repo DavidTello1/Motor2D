@@ -560,10 +560,6 @@ HierarchyNode* Hierarchy::MoveNode(HierarchyNode* node, HierarchyNode* parent, i
 	if (IsChildOf(node, parent))
 		return node;
 
-	// If node has parent, delete node from parent's child list
-	if (node->parent != nullptr)
-		node->parent->childs.erase(node->parent->childs.begin() + FindNode(node, node->parent->childs));
-
 	// Erase node and childs from nodes list
 	std::vector<HierarchyNode*> childs_list = GetAllChilds(node);
 	int position = FindNode(node, nodes);
@@ -579,11 +575,16 @@ HierarchyNode* Hierarchy::MoveNode(HierarchyNode* node, HierarchyNode* parent, i
 			position = FindNode(childs_list[i], nodes);
 			if (position != -1)
 			{
+				childs_list[i]->parent->childs.erase(childs_list[i]->parent->childs.begin() + FindNode(childs_list[i], childs_list[i]->parent->childs));
 				nodes.erase(nodes.begin() + position);
 				ReorderNodes(childs_list[i], true);
 			}
 		}
 	}
+
+	// If node has parent, delete node from parent's child list
+	if (node->parent != nullptr)
+		node->parent->childs.erase(node->parent->childs.begin() + FindNode(node, node->parent->childs));
 
 	// Set indent
 	node->indent = parent->indent + 1;
@@ -596,12 +597,7 @@ HierarchyNode* Hierarchy::MoveNode(HierarchyNode* node, HierarchyNode* parent, i
 		if (parent->childs.empty())
 			node->pos = parent->pos + 1;
 		else
-		{
-			if (FindNode(parent->childs.front(), nodes) == -1) //if first child is being moved and parent has more than 1 child
-				node->pos = parent->pos + 1;
-			else
-				node->pos = GetLastChild(parent)->pos + 1; //if parent.childs has childs pos has to include this
-		}
+			node->pos = GetLastChild(parent)->pos + 1;
 	}
 	else
 		node->pos = pos + 1;
@@ -618,7 +614,12 @@ HierarchyNode* Hierarchy::MoveNode(HierarchyNode* node, HierarchyNode* parent, i
 	if (!childs_list.empty())
 	{
 		for (uint i = 0; i < childs_list.size(); ++i)
-			childs_list[i] = MoveNode(childs_list[i], childs_list[i]->parent, -1);
+		{
+			UpdateNode(childs_list[i]); //update node's pos and indent to new parent's pos
+			childs_list[i]->parent->childs.push_back(childs_list[i]); //add node back to parent's child list
+			nodes.push_back(childs_list[i]); //add node to nodes_list
+			ReorderNodes(childs_list[i]); //reorder nodes
+		}
 	}
 
 	return node;
@@ -873,6 +874,15 @@ uint Hierarchy::RecursivePos(HierarchyNode* node)
 		return node->pos + 1;
 	else
 		return RecursivePos(node->childs[node->childs.size() - 1]);
+}
+
+void Hierarchy::UpdateNode(HierarchyNode* node)
+{
+	if (node->parent->childs.empty())
+		node->pos = node->parent->pos + 1;
+	else
+		node->pos = GetLastChild(node->parent)->pos + 1;
+	node->indent = node->parent->indent + 1;
 }
 
 // --- CONNECTOR LINES ---

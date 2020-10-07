@@ -57,6 +57,7 @@ private:
 	// --- NODE POS ---
 	void ReorderNodes(HierarchyNode* node, bool is_delete = false); //update nodes pos
 	uint RecursivePos(HierarchyNode* node); //set node pos in CreateNode()
+	void UpdateNode(HierarchyNode* node); //update nodes pos and indent
 
 	// --- CHILDS (CONNECTOR LINES) ---
 	std::vector<HierarchyNode*> GetHiddenNodes(); //get all hidden nodes in hierarchy
