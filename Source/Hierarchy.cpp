@@ -564,20 +564,44 @@ HierarchyNode* Hierarchy::MoveNode(HierarchyNode* node, HierarchyNode* parent, i
 	if (node->parent != nullptr)
 		node->parent->childs.erase(node->parent->childs.begin() + FindNode(node, node->parent->childs));
 
+	// Erase node and childs from nodes list
+	std::vector<HierarchyNode*> childs_list = GetAllChilds(node);
+	int position = FindNode(node, nodes);
+	if (position != -1)
+	{
+		nodes.erase(nodes.begin() + position); //erase from nodes list (data is mantained in *node)
+		ReorderNodes(node, true);
+	}
+	if (!childs_list.empty())
+	{
+		for (uint i = 0; i < childs_list.size(); ++i) //erase childs from nodes list
+		{
+			position = FindNode(childs_list[i], nodes);
+			if (position != -1)
+			{
+				nodes.erase(nodes.begin() + position);
+				ReorderNodes(childs_list[i], true);
+			}
+		}
+	}
+
 	// Set indent
 	node->indent = parent->indent + 1;
 	if (parent->type == HierarchyNode::NodeType::SCENE)
-		node->indent = 0;
+		node->indent = 1;
 
 	// Set pos
-	nodes.erase(nodes.begin() + FindNode(node, nodes)); //erase from nodes list (data is mantained in *node)
-	ReorderNodes(node, true);
 	if (pos == -1)
 	{
 		if (parent->childs.empty())
 			node->pos = parent->pos + 1;
 		else
-			node->pos = parent->childs.back()->pos + 1; //if parent.childs has childs pos has to include this
+		{
+			if (FindNode(parent->childs.front(), nodes) == -1) //if first child is being moved and parent has more than 1 child
+				node->pos = parent->pos + 1;
+			else
+				node->pos = GetLastChild(parent)->pos + 1; //if parent.childs has childs pos has to include this
+		}
 	}
 	else
 		node->pos = pos + 1;
@@ -591,12 +615,10 @@ HierarchyNode* Hierarchy::MoveNode(HierarchyNode* node, HierarchyNode* parent, i
 	ReorderNodes(node);
 
 	// Move Childs
-	if (!node->childs.empty())
+	if (!childs_list.empty())
 	{
-		for (uint i = 0; i < node->childs.size(); ++i)
-		{
-			node->childs[i] = MoveNode(node->childs[i], node, -1);
-		}
+		for (uint i = 0; i < childs_list.size(); ++i)
+			childs_list[i] = MoveNode(childs_list[i], childs_list[i]->parent, -1);
 	}
 
 	return node;
@@ -921,6 +943,14 @@ bool Hierarchy::IsChildOf(HierarchyNode* parent, HierarchyNode* node)
 			return IsChildOf(parent, node->parent);
 	}
 	return false;
+}
+
+HierarchyNode* Hierarchy::GetLastChild(HierarchyNode* node)
+{
+	if (node->childs.empty())
+		return node;
+	else
+		return GetLastChild(node->childs.back());
 }
 
 // --- SORTERS ---

@@ -58,11 +58,12 @@ private:
 	void ReorderNodes(HierarchyNode* node, bool is_delete = false); //update nodes pos
 	uint RecursivePos(HierarchyNode* node); //set node pos in CreateNode()
 
-	// --- CONNECTOR LINES ---
+	// --- CHILDS (CONNECTOR LINES) ---
 	std::vector<HierarchyNode*> GetHiddenNodes(); //get all hidden nodes in hierarchy
 	std::vector<HierarchyNode*> GetAllChilds(HierarchyNode* node); //get childs (including childs of childs)
 	std::vector<HierarchyNode*> GetClosedChilds(HierarchyNode* node); //returns all closed childs (including childs of childs)
 	bool IsChildOf(HierarchyNode* parent, HierarchyNode* node); //check if node is child of parent (including if it is child of childs)
+	HierarchyNode* GetLastChild(HierarchyNode* node); //get last child (including childs of childs)
 
 	// --- SORTERS ---
 	std::vector<HierarchyNode*> SortByPosition(std::vector<HierarchyNode*> list); //order by position (smaller to bigger)
