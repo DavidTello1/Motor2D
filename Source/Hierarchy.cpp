@@ -385,8 +385,8 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 	// Draw Childs
 	if (node->is_open && !node->childs.empty())
 	{
-		for (HierarchyNode* child : node->childs)
-			DrawNode(child);
+		for (uint i = 0; i < node->childs.size(); ++i)
+			DrawNode(node->childs[i]);
 	}
 }
 
@@ -660,6 +660,7 @@ void Hierarchy::MoveNode(HierarchyNode* node, HierarchyNode* parent, int pos, in
 	// Add to nodes list and Reorder all nodes
 	nodes.push_back(node);
 	ReorderNodes(node);
+	parent->childs = SortByPosition(parent->childs);
 
 	// Move Childs
 	if (!childs_list.empty())
