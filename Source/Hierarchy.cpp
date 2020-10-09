@@ -43,6 +43,7 @@ void Hierarchy::Draw()
 	// Draw Nodes
 	ImDrawList* draw_list = ImGui::GetWindowDrawList();
 
+	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(-2, 3));
 	for (uint i = 0; i< nodes.size(); ++i)
 	{
 		// Draw Parents First
@@ -53,6 +54,7 @@ void Hierarchy::Draw()
 		if (!nodes[i]->childs.empty() && nodes[i]->type != HierarchyNode::NodeType::SCENE)
 			DrawConnectorLines(nodes[i], draw_list);
 	}
+	ImGui::PopStyleVar();
 
 	//--- Empty Space ---
 	ImGui::BeginChild("Empty");
@@ -113,6 +115,7 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 	static ImGuiStyle* style = &ImGui::GetStyle();
 	static ImVec4* colors = style->Colors;
 	const ImU32 color = ImColor(node->color);
+	const ImU32 bar_color = ImColor(ImVec4(0.7f, 0.7f, 0.7f, 1.0f));
 	const float height = g.FontSize + g.Style.FramePadding.y;
 	bool is_hovered = false, is_clicked = false;
 
@@ -149,9 +152,45 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 	}
 	ImGui::SameLine();
 
-	// Selectable
-	ImGui::SetCursorPosX(pos_x + 15);
+	// Drag&Drop selectable (top of node)
+	ImGui::SetCursorPos(ImVec2(pos_x + 15, ImGui::GetCursorPosY() - 3));
 	float width = bg.Max.x - 39;
+	if (ImGui::InvisibleButton(std::string(name + "dnd").c_str(), ImVec2(width, 3)))
+	{
+		node->selected = !node->selected;
+		is_clicked = true;
+	}
+	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup))
+	{
+		is_hovered = true;
+		if (ImGui::IsMouseClicked(0)) //allow selecting when right-click options is shown
+			ImGui::SetWindowFocus();
+	}
+	ImGui::SetItemAllowOverlap();
+	ImGui::SameLine();
+
+	if (ImGui::BeginDragDropTarget()) // Reordering
+	{
+		if ((node->type == HierarchyNode::NodeType::SCENE && drag_node->type == HierarchyNode::NodeType::SCENE) ||
+			(node->type != HierarchyNode::NodeType::SCENE && drag_node->type != HierarchyNode::NodeType::SCENE)) // error handling
+		{
+			if (node != drag_node)
+			{
+				is_hovered = false;
+				window->DrawList->AddRect(ImVec2(pos_x + 15, bg.Min.y + 2), ImVec2(pos_x + 15 + width, bg.Min.y + 2), bar_color);
+
+				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Node"))
+				{
+					MoveNode(drag_node, node->parent, node->pos, node->indent);
+					drag_node = nullptr;
+				}
+				ImGui::EndDragDropTarget();
+			}
+		}
+	}
+
+	// Selectable
+	ImGui::SetCursorPos(ImVec2(pos_x + 15, ImGui::GetCursorPosY() + 3));
 	if (node->rename)
 		width = 34;
 	if (ImGui::InvisibleButton(name.c_str(), ImVec2(width, height)))
@@ -169,20 +208,24 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 	ImGui::SameLine();
 
 	//Drag and Drop
-	if (ImGui::BeginDragDropSource())
+	if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_AcceptNoDrawDefaultRect)) // Source
 	{
 		ImGui::SetDragDropPayload("Node", &name, sizeof(std::string));
 		ImGui::Text(name.c_str());
 		drag_node = node;
 		ImGui::EndDragDropSource();
 	}
+	ImGui::SetItemAllowOverlap();
 
-	if (ImGui::BeginDragDropTarget())
+	if (ImGui::BeginDragDropTarget()) // Reparenting
 	{
 		if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Node"))
 		{
-			node = MoveNode(drag_node, node, -1);
-			drag_node = nullptr;
+			if (drag_node->type != HierarchyNode::NodeType::SCENE) // error handling
+			{
+				MoveNode(drag_node, node, -1, -1);
+				drag_node = nullptr;
+			}
 		}
 		ImGui::EndDragDropTarget();
 	}
@@ -554,11 +597,11 @@ HierarchyNode* Hierarchy::HandleSelection(HierarchyNode* node, bool is_hovered)
 	return node;
 }
 
-HierarchyNode* Hierarchy::MoveNode(HierarchyNode* node, HierarchyNode* parent, int pos)
+void Hierarchy::MoveNode(HierarchyNode* node, HierarchyNode* parent, int pos, int indent)
 {
 	// If new parent is child of node (error handling)
-	if (IsChildOf(node, parent))
-		return node;
+	if (IsChildOf(node, parent) || node == parent)
+		return;
 
 	// Erase node and childs from nodes list
 	std::vector<HierarchyNode*> childs_list = GetAllChilds(node);
@@ -587,9 +630,14 @@ HierarchyNode* Hierarchy::MoveNode(HierarchyNode* node, HierarchyNode* parent, i
 		node->parent->childs.erase(node->parent->childs.begin() + FindNode(node, node->parent->childs));
 
 	// Set indent
-	node->indent = parent->indent + 1;
-	if (parent->type == HierarchyNode::NodeType::SCENE)
-		node->indent = 1;
+	if (indent == -1)
+	{
+		node->indent = parent->indent + 1;
+		if (parent->type == HierarchyNode::NodeType::SCENE)
+			node->indent = 1;
+	}
+	else
+		node->indent = indent;
 
 	// Set pos
 	if (pos == -1)
@@ -600,11 +648,14 @@ HierarchyNode* Hierarchy::MoveNode(HierarchyNode* node, HierarchyNode* parent, i
 			node->pos = GetLastChild(parent)->pos + 1;
 	}
 	else
-		node->pos = pos + 1;
+		node->pos = pos;
 
 	// Set parent and add to child list
-	node->parent = parent;
-	parent->childs.push_back(node);
+	if (parent != nullptr)
+	{
+		node->parent = parent;
+		parent->childs.push_back(node);
+	}
 
 	// Add to nodes list and Reorder all nodes
 	nodes.push_back(node);
@@ -621,8 +672,6 @@ HierarchyNode* Hierarchy::MoveNode(HierarchyNode* node, HierarchyNode* parent, i
 			ReorderNodes(childs_list[i]); //reorder nodes
 		}
 	}
-
-	return node;
 }
 
 bool Hierarchy::DrawRightClick()
@@ -945,7 +994,7 @@ std::vector<HierarchyNode*> Hierarchy::GetClosedChilds(HierarchyNode* node)
 
 bool Hierarchy::IsChildOf(HierarchyNode* parent, HierarchyNode* node)
 {
-	if (node->parent != nullptr)
+	if (parent != nullptr && node != nullptr && node->parent != nullptr)
 	{
 		if (node->parent == parent)
 			return true;
