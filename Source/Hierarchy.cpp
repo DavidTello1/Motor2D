@@ -179,7 +179,7 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 
 				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Node"))
 				{
-					MoveNode(drag_node, node->parent, node->pos, node->indent);
+					MoveNode(drag_node, node->parent, node, node->indent);
 					drag_node = nullptr;
 				}
 				ImGui::EndDragDropTarget();
@@ -226,7 +226,7 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 
 			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Node"))
 			{
-				MoveNode(drag_node, node, -1, -1);
+				MoveNode(drag_node, node, nullptr, -1);
 				drag_node = nullptr;
 			}		
 			ImGui::EndDragDropTarget();
@@ -600,7 +600,7 @@ HierarchyNode* Hierarchy::HandleSelection(HierarchyNode* node, bool is_hovered)
 	return node;
 }
 
-void Hierarchy::MoveNode(HierarchyNode* node, HierarchyNode* parent, int pos, int indent)
+void Hierarchy::MoveNode(HierarchyNode* node, HierarchyNode* parent, HierarchyNode* pos, int indent)
 {
 	// If new parent is child of node (error handling)
 	if (IsChildOf(node, parent) || node == parent)
@@ -643,7 +643,7 @@ void Hierarchy::MoveNode(HierarchyNode* node, HierarchyNode* parent, int pos, in
 		node->indent = indent;
 
 	// Set pos
-	if (pos == -1)
+	if (pos == nullptr)
 	{
 		if (parent->childs.empty())
 			node->pos = parent->pos + 1;
@@ -651,7 +651,7 @@ void Hierarchy::MoveNode(HierarchyNode* node, HierarchyNode* parent, int pos, in
 			node->pos = GetLastChild(parent)->pos + 1;
 	}
 	else
-		node->pos = pos;
+		node->pos = pos->pos;
 
 	// Add to nodes list and Reorder all nodes
 	nodes.push_back(node);

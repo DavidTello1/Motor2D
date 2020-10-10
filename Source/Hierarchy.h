@@ -44,7 +44,7 @@ public:
 private:
 	// --- MAIN HELPERS ---
 	HierarchyNode* HandleSelection(HierarchyNode* node, bool is_hovered); //selection states
-	void MoveNode(HierarchyNode* node, HierarchyNode* parent, int pos, int indent); //move node (if pos or indent is -1 they will be set according to parent)
+	void MoveNode(HierarchyNode* node, HierarchyNode* parent, HierarchyNode* pos, int indent); //move node (if pos or indent is nullptr or -1 they will be set according to parent)
 	bool DrawRightClick(); //only draws if right click is pressed, returns true if drawn
 	bool ShowSceneOptions(HierarchyNode* node); //popup when options button is clicked
 	void DrawConnectorLines(HierarchyNode* node, ImDrawList* draw_list); //draw connector lines when node is open
