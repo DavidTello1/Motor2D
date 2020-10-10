@@ -114,8 +114,6 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 	static ImGuiWindow* window = g.CurrentWindow;
 	static ImGuiStyle* style = &ImGui::GetStyle();
 	static ImVec4* colors = style->Colors;
-	const ImU32 color = ImColor(node->color);
-	const ImU32 bar_color = ImColor(ImVec4(0.7f, 0.7f, 0.7f, 1.0f));
 	const float height = g.FontSize + g.Style.FramePadding.y;
 	bool is_hovered = false, is_clicked = false;
 
@@ -127,7 +125,7 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 	// Background
 	ImVec2 pos = window->DC.CursorPos;
 	ImRect bg(ImVec2(pos.x - 10, pos.y - g.Style.FramePadding.y), ImVec2(pos.x + ImGui::GetWindowWidth() + ImGui::GetScrollX(), pos.y + height));
-	window->DrawList->AddRectFilled(bg.Min, bg.Max, color);
+	window->DrawList->AddRectFilled(bg.Min, bg.Max, ImColor(node->color));
 
 	// Shown Icon
 	float pos_x = ImGui::GetCursorPosX();
@@ -177,7 +175,7 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 			if (node != drag_node)
 			{
 				is_hovered = false;
-				window->DrawList->AddRect(ImVec2(pos_x + 15, bg.Min.y + 2), ImVec2(pos_x + 15 + width, bg.Min.y + 2), bar_color);
+				window->DrawList->AddLine(ImVec2(pos_x + 15, bg.Min.y + 1.5f), ImVec2(pos_x + 15 + width, bg.Min.y + 1.5f), ImColor(255, 255, 255, 255));
 
 				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Node"))
 				{
@@ -219,15 +217,20 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 
 	if (ImGui::BeginDragDropTarget()) // Reparenting
 	{
-		if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Node"))
+		if (drag_node->type != HierarchyNode::NodeType::SCENE && IsChildOf(drag_node, node) == false && node != drag_node) // error handling
 		{
-			if (drag_node->type != HierarchyNode::NodeType::SCENE) // error handling
+			HierarchyNode* last_child = GetLastChild(node);
+			float w = pos_x + 15;
+			float h = bg.Min.y + 1.5f + (height + 3.0f) * float(last_child->pos - node->pos + 1.0f);
+			window->DrawList->AddRect(ImVec2(w, h), ImVec2(w + width, h), ImColor(255, 255, 255, 255));
+
+			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Node"))
 			{
 				MoveNode(drag_node, node, -1, -1);
 				drag_node = nullptr;
-			}
+			}		
+			ImGui::EndDragDropTarget();
 		}
-		ImGui::EndDragDropTarget();
 	}
 
 	// Selection
@@ -650,17 +653,17 @@ void Hierarchy::MoveNode(HierarchyNode* node, HierarchyNode* parent, int pos, in
 	else
 		node->pos = pos;
 
+	// Add to nodes list and Reorder all nodes
+	nodes.push_back(node);
+	ReorderNodes(node);
+
 	// Set parent and add to child list
 	if (parent != nullptr)
 	{
 		node->parent = parent;
 		parent->childs.push_back(node);
+		parent->childs = SortByPosition(parent->childs); //order childs (needed for reordering correctly)
 	}
-
-	// Add to nodes list and Reorder all nodes
-	nodes.push_back(node);
-	ReorderNodes(node);
-	parent->childs = SortByPosition(parent->childs);
 
 	// Move Childs
 	if (!childs_list.empty())
@@ -806,21 +809,17 @@ void Hierarchy::DrawConnectorLines(HierarchyNode* node, ImDrawList* draw_list)
 			num_hidden2++;
 	}
 
-	// Color
-	static ImVec4 colorf = ImVec4(0.8f, 0.8f, 0.8f, 1.0f);
-	const ImU32 color = ImColor(colorf);
-
 	// Positions
 	uint last_child_pos = (uint)node->childs[node->childs.size() - 1]->pos - num_hidden;  //get last_child_pos updated to hidden childs
 	uint parent_pos = (uint)node->pos - num_hidden2;
 
 	// Real Positions
-	ImVec2 initial_pos = ImVec2(ImGui::GetWindowPos().x + 1 + 15 * float(node->indent + 1), ImGui::GetWindowPos().y + 38 + 20 * (float)parent_pos); //initial pos
-	ImVec2 final_pos = ImVec2(initial_pos.x, ImGui::GetWindowPos().y + 34 + 20 * (float)last_child_pos); //final pos
+	ImVec2 initial_pos = ImVec2(ImGui::GetWindowPos().x + 1 + 15 * float(node->indent + 1), ImGui::GetWindowPos().y + 38 + 19 * (float)parent_pos); //initial pos
+	ImVec2 final_pos = ImVec2(initial_pos.x, ImGui::GetWindowPos().y + 34 + 19 * (float)last_child_pos); //final pos
 
 	// Connector Lines
-	draw_list->AddLine(ImVec2(initial_pos.x - ImGui::GetScrollX(), initial_pos.y - ImGui::GetScrollY()), ImVec2(final_pos.x - ImGui::GetScrollX(), final_pos.y - ImGui::GetScrollY()), color); // vertical line
-	draw_list->AddLine(ImVec2(final_pos.x - ImGui::GetScrollX(), final_pos.y - ImGui::GetScrollY()), ImVec2(final_pos.x + 7 - ImGui::GetScrollX(), final_pos.y - ImGui::GetScrollY()), color); // horizontal line
+	draw_list->AddLine(ImVec2(initial_pos.x - ImGui::GetScrollX(), initial_pos.y - ImGui::GetScrollY()), ImVec2(final_pos.x - ImGui::GetScrollX(), final_pos.y - ImGui::GetScrollY()), ImColor(ImVec4(0.8f, 0.8f, 0.8f, 1.0f))); // vertical line
+	draw_list->AddLine(ImVec2(final_pos.x - ImGui::GetScrollX(), final_pos.y - ImGui::GetScrollY()), ImVec2(final_pos.x + 7 - ImGui::GetScrollX(), final_pos.y - ImGui::GetScrollY()), ImColor(ImVec4(0.8f, 0.8f, 0.8f, 1.0f))); // horizontal line
 }
 
 int Hierarchy::FindNode(HierarchyNode* node, std::vector<HierarchyNode*> list)
