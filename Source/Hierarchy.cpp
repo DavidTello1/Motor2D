@@ -33,6 +33,9 @@ Hierarchy::~Hierarchy()
 
 void Hierarchy::Draw()
 {
+	static ImGuiContext& g = *GImGui;
+	static ImGuiWindow* window = g.CurrentWindow;
+
 	// Allow selection & show options with right click
 	if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup) && ImGui::IsMouseClicked(1))
 		ImGui::SetWindowFocus();
@@ -41,10 +44,9 @@ void Hierarchy::Draw()
 	DrawRightClick();
 
 	// Draw Nodes
-	ImDrawList* draw_list = ImGui::GetWindowDrawList();
-
 	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(-2, 3));
-	for (uint i = 0; i< nodes.size(); ++i)
+	ImVec2 pos = ImGui::GetCursorPos();
+	for (uint i = 0; i < nodes.size(); ++i)
 	{
 		// Draw Parents First
 		if (nodes[i]->parent == nullptr)
@@ -52,7 +54,7 @@ void Hierarchy::Draw()
 
 		// Draw Connector Lines
 		if (!nodes[i]->childs.empty() && nodes[i]->type != HierarchyNode::NodeType::SCENE)
-			DrawConnectorLines(nodes[i], draw_list);
+			DrawConnectorLines(nodes[i], window->DrawList);
 	}
 	ImGui::PopStyleVar();
 
@@ -67,6 +69,34 @@ void Hierarchy::Draw()
 	DrawRightClick();
 
 	ImGui::EndChild();
+
+	//--- Scroll Areas ---
+	ImVec2 scroll = ImVec2(ImGui::GetScrollX(), ImGui::GetScrollY());
+	ImVec2 size = ImVec2(ImGui::GetWindowWidth() - 26, 50);
+
+	// Top Area
+	ImGui::SetCursorPos(ImVec2(pos.x + scroll.x - 4, pos.y + scroll.y - 8));
+	ImGui::Dummy(size);
+	//const ImRect bb(window->DC.CursorPos, ImVec2(window->DC.CursorPos.x + size.x, window->DC.CursorPos.y + size.y));
+	//window->DrawList->AddRect(bb.Min, bb.Max, ImColor(0.0f, 1.0f, 0.0f, 1.0f));
+	if (ImGui::BeginDragDropTarget())
+	{
+		if (scroll.y >= 1.0f)
+			window->Scroll.y -= 1.0f;
+		ImGui::EndDragDropTarget();
+	}
+
+	//Bottom Area
+	ImGui::SetCursorPos(ImVec2(pos.x + scroll.x - 4, ImGui::GetWindowHeight() + scroll.y - 58));
+	ImGui::Dummy(size);
+	//const ImRect bb2(window->DC.CursorPos, ImVec2(window->DC.CursorPos.x + size.x, window->DC.CursorPos.y + size.y));
+	//window->DrawList->AddRect(bb2.Min, bb2.Max, ImColor(1.0f, 0.0f, 0.0f, 1.0f));
+	if (ImGui::BeginDragDropTarget())
+	{
+		if (scroll.y < window->ScrollMax.y - 1.0f)
+			window->Scroll.y += 1.0f;
+		ImGui::EndDragDropTarget();
+	}
 
 	//--- Shortcuts ---
 	Shortcuts();
@@ -152,7 +182,7 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 
 	// Drag&Drop selectable (top of node)
 	ImGui::SetCursorPos(ImVec2(pos_x + 15, ImGui::GetCursorPosY() - 3));
-	float width = bg.Max.x - 39;
+	float width = bg.Max.x - 53;
 	if (ImGui::InvisibleButton(std::string(name + "dnd").c_str(), ImVec2(width, 3)))
 	{
 		node->selected = !node->selected;
@@ -169,22 +199,20 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 
 	if (ImGui::BeginDragDropTarget()) // Reordering
 	{
-		if ((node->type == HierarchyNode::NodeType::SCENE && drag_node->type == HierarchyNode::NodeType::SCENE) ||
-			(node->type != HierarchyNode::NodeType::SCENE && drag_node->type != HierarchyNode::NodeType::SCENE)) // error handling
+		for (uint i = 0; i < selected_nodes.size(); ++i)
 		{
-			if (node != drag_node)
+			if (((node->type == HierarchyNode::NodeType::SCENE && selected_nodes[i]->type == HierarchyNode::NodeType::SCENE) ||
+				(node->type != HierarchyNode::NodeType::SCENE && selected_nodes[i]->type != HierarchyNode::NodeType::SCENE)) &&
+				(node != selected_nodes[i]))// error handling
 			{
 				is_hovered = false;
 				window->DrawList->AddLine(ImVec2(pos_x + 15, bg.Min.y + 1.5f), ImVec2(pos_x + 15 + width, bg.Min.y + 1.5f), ImColor(255, 255, 255, 255));
 
 				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Node"))
-				{
-					MoveNode(drag_node, node->parent, node, node->indent);
-					drag_node = nullptr;
-				}
-				ImGui::EndDragDropTarget();
+					MoveNode(selected_nodes[i], node->parent, node, node->indent);
 			}
 		}
+		ImGui::EndDragDropTarget();
 	}
 
 	// Selectable
@@ -206,31 +234,40 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 	ImGui::SameLine();
 
 	//Drag and Drop
-	if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_AcceptNoDrawDefaultRect)) // Source
+	if (!selected_nodes.empty() && ImGui::BeginDragDropSource(ImGuiDragDropFlags_AcceptNoDrawDefaultRect)) // Source
 	{
 		ImGui::SetDragDropPayload("Node", &name, sizeof(std::string));
-		ImGui::Text(name.c_str());
-		drag_node = node;
+
+		if (selected_nodes.size() == 1)
+		{
+			std::string node_name = selected_nodes[0]->name;
+			if (selected_nodes[0]->count != 0)
+				node_name = node_name + std::string(" (") + std::to_string(selected_nodes[0]->count) + std::string(")");
+			ImGui::Text(node_name.c_str());
+		}
+		else
+			ImGui::Text(std::to_string(selected_nodes.size()).c_str());
+
 		ImGui::EndDragDropSource();
 	}
 	ImGui::SetItemAllowOverlap();
 
 	if (ImGui::BeginDragDropTarget()) // Reparenting
 	{
-		if (drag_node->type != HierarchyNode::NodeType::SCENE && IsChildOf(drag_node, node) == false && node != drag_node) // error handling
+		for (uint i = 0; i < selected_nodes.size(); ++i)
 		{
-			HierarchyNode* last_child = GetLastChild(node);
-			float w = pos_x + 15;
-			float h = bg.Min.y + 1.5f + (height + 3.0f) * float(last_child->pos - node->pos + 1.0f);
-			window->DrawList->AddRect(ImVec2(w, h), ImVec2(w + width, h), ImColor(255, 255, 255, 255));
-
-			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Node"))
+			if (selected_nodes[i]->type != HierarchyNode::NodeType::SCENE && IsChildOf(selected_nodes[i], node) == false && node != selected_nodes[i]) // error handling
 			{
-				MoveNode(drag_node, node, nullptr, -1);
-				drag_node = nullptr;
-			}		
-			ImGui::EndDragDropTarget();
+				HierarchyNode* last_child = GetLastChild(node);
+				float w = pos_x + 15;
+				float h = bg.Min.y - 1.5f + (height + 3) * float(last_child->pos - node->pos + 1);
+				window->DrawList->AddLine(ImVec2(w, h), ImVec2(w + width, h), ImColor(255, 255, 255, 255));
+
+				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Node"))
+					MoveNode(selected_nodes[i], node, nullptr, -1);
+			}
 		}
+		ImGui::EndDragDropTarget();
 	}
 
 	// Selection
@@ -342,7 +379,7 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 
 		ImGui::SameLine();
 		ImVec2 limit = ImGui::GetCursorPos();
-		pos_x = ImGui::GetWindowWidth() - 23;
+		pos_x = ImGui::GetWindowWidth() - 37 + ImGui::GetScrollX();
 		if (pos_x < limit.x)
 			pos_x = limit.x;
 
@@ -371,7 +408,7 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 	if (node->type == HierarchyNode::NodeType::SCENE)
 	{
 		if (current_scene == node)
-			node->color = ImVec4(0.3f, 0.3f, 0.3f, 1.0f);
+			node->color = ImVec4(0.25f, 0.25, 0.25f, 1.0f);
 		else
 			node->color = ImVec4(0.15f, 0.15f, 0.15f, 1.0f);
 	}
@@ -559,7 +596,7 @@ HierarchyNode* Hierarchy::HandleSelection(HierarchyNode* node, bool is_hovered)
 			else if (node->type == HierarchyNode::NodeType::GAMEOBJECT || node->type == HierarchyNode::NodeType::PREFAB)
 			{ /*focus*/ }
 		}
-		else if (ImGui::IsMouseClicked(0))
+		else if (ImGui::IsMouseClicked(0)) // Multiple Selection
 		{			
 			if (ImGui::GetIO().KeyShift && !selected_nodes.empty()) // Multiple Selection (Shift)
 			{
@@ -578,7 +615,10 @@ HierarchyNode* Hierarchy::HandleSelection(HierarchyNode* node, bool is_hovered)
 						nodes[i]->selected = true;
 				}
 			}
-			else if (!ImGui::GetIO().KeyCtrl) // Single selection
+		}
+		else if (ImGui::IsMouseReleased(0)) // Single selection
+		{
+			if (!ImGui::GetIO().KeyCtrl && !ImGui::GetIO().KeyShift && !ImGui::IsMouseDragging())
 				UnSelectAll();
 		}
 

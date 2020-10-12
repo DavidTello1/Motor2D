@@ -81,6 +81,5 @@ private:
 	std::vector<HierarchyNode*> selected_nodes;
 	std::vector<HierarchyNode*> hidden_childs;
 
-	HierarchyNode* drag_node = nullptr;
 	HierarchyNode* current_scene = nullptr;
 };
