@@ -208,7 +208,7 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 				is_hovered = false;
 				window->DrawList->AddLine(ImVec2(pos_x + 15, bg.Min.y + 1.5f), ImVec2(pos_x + 15 + width, bg.Min.y + 1.5f), ImColor(255, 255, 255, 255));
 
-				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Node"))
+				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HierarchyNode"))
 					MoveNode(selected_nodes[i], node->parent, node, node->indent);
 			}
 		}
@@ -236,7 +236,7 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 	//Drag and Drop
 	if (!selected_nodes.empty() && ImGui::BeginDragDropSource(ImGuiDragDropFlags_AcceptNoDrawDefaultRect)) // Source
 	{
-		ImGui::SetDragDropPayload("Node", &name, sizeof(std::string));
+		ImGui::SetDragDropPayload("HierarchyNode", &name, sizeof(std::string));
 
 		if (selected_nodes.size() == 1)
 		{
@@ -263,7 +263,7 @@ void Hierarchy::DrawNode(HierarchyNode* node)
 				float h = bg.Min.y - 1.5f + (height + 3) * float(last_child->pos - node->pos + 1);
 				window->DrawList->AddLine(ImVec2(w, h), ImVec2(w + width, h), ImColor(255, 255, 255, 255));
 
-				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Node"))
+				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HierarchyNode"))
 					MoveNode(selected_nodes[i], node, nullptr, -1);
 			}
 		}

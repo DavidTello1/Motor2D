@@ -9,8 +9,8 @@
 #include "Configuration.h"
 #include "Console.h"
 #include "Hierarchy.h"
+#include "Assets.h"
 //#include "Inspector.h"
-//#include "Assets.h"
 //#include "Viewport.h"
 
 #include "imgui/imgui_impl_sdl.h"
@@ -52,8 +52,8 @@ bool ModuleEditor::Init(Config* config)
 	panels.push_back(panel_configuration = new Configuration());
 	panels.push_back(panel_console = new Console());
 	panels.push_back(panel_hierarchy = new Hierarchy());
+	panels.push_back(panel_assets = new Assets());
 	//panels.push_back(panel_inspector = new Inspector());
-	//panels.push_back(panel_assets = new Assets());
 	//panels.push_back(panel_viewport = new Viewport());
 
 	return true;
@@ -270,8 +270,8 @@ void ModuleEditor::DrawMenuBar()
 			ImGui::Separator();
 			ImGui::MenuItem("Console", NULL, &GetPanel("Console")->active);
 			ImGui::MenuItem("Hierarchy", NULL, &GetPanel("Hierarchy")->active);
+			ImGui::MenuItem("Assets", NULL, &GetPanel("Assets")->active);
 			//ImGui::MenuItem("Inspector", NULL, &GetPanel("Inspector")->active);
-			//ImGui::MenuItem("Assets", NULL, &GetPanel("Assets")->active);
 
 			ImGui::EndMenu();
 		}
@@ -316,19 +316,14 @@ void ModuleEditor::DrawPanels()
 			if ((*it)->GetName() == "Configuration")
 			{
 				if (ImGui::Begin(name.c_str(), NULL, (*it)->flags))
-				{
 					(*it)->Draw();
-					ImGui::End();
-				}
+				ImGui::End();
 			}
 			else // Other Panels
 			{
-				// Draw Panel
 				if (ImGui::Begin(name.c_str(), &(*it)->active, (*it)->flags))
-				{
 					(*it)->Draw();
-					ImGui::End();
-				}
+				ImGui::End();
 			}
 
 			//if ((*it)->GetName() == "Inspector" && (App->scene->is_creating || App->scene->is_selecting)) //show inspector when a gameobject is created/selected

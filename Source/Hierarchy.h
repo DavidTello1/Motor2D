@@ -2,9 +2,6 @@
 #include "Panel.h"
 #include "HierarchyNode.h"
 
-#include <string>
-#include <vector>
-
 struct PositionSort {
 	bool operator()(HierarchyNode* const& node1, HierarchyNode* const& node2) //true if pos1 > pos2
 	{
@@ -36,7 +33,7 @@ public:
 
 	void DrawNode(HierarchyNode* node);
 	HierarchyNode* CreateNode(HierarchyNode::NodeType type, HierarchyNode* parent = nullptr, std::string name = "");
-	void DeleteNodes(std::vector<HierarchyNode*> nodes, bool reorder = true);
+	void DeleteNodes(std::vector<HierarchyNode*> nodes_list, bool reorder = true);
 	void DuplicateNodes(std::vector<HierarchyNode*> nodes, HierarchyNode* parent = nullptr);
 	void SelectAll();
 	void UnSelectAll();

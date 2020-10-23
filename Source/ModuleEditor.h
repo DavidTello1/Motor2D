@@ -7,8 +7,8 @@ class Panel;
 class Configuration;
 class Console;
 class Hierarchy;
+class Assets;
 //class Inspector;
-//class Assets;
 //class Viewport;
 
 enum Style {
@@ -63,15 +63,15 @@ public:
 	Configuration* panel_configuration = nullptr;
 	Console* panel_console = nullptr;
 	Hierarchy* panel_hierarchy = nullptr;
+	Assets* panel_assets = nullptr;
 	//Inspector* panel_inspector = nullptr;
 	//Viewport* panel_viewport = nullptr;
-	//Assets* panel_assets = nullptr;
 
 	bool is_auto_select = false;
 	bool is_about = false;
 
 private:
-	bool close = false;
-
 	std::vector<Panel*> panels;
+
+	bool close = false;
 };
