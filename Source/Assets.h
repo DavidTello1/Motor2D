@@ -29,9 +29,12 @@ private:
 	bool DrawRightClick();
 	void UpdateAssets();
 
+	AssetNode* GetNode(std::string name); //get node from name
 	int FindNode(AssetNode* node, std::vector<AssetNode*> list); //get node pos in list (returns -1 if not found)
-	std::string SetNameCount(AssetNode* node); //get name count
-	AssetNode::NodeType GetType(AssetNode* node);
+	std::string GetNameWithCount(std::string name); //get name with count
+	AssetNode::NodeType GetType(AssetNode* node); //get node type
+	std::vector<AssetNode*> GetParents(AssetNode* node); //get all parents until root
+
 
 	AssetNode* GetAllFiles(const char* directory, std::vector<std::string>* filter_ext = nullptr, std::vector<std::string>* ignore_ext = nullptr); //filter if you only want specific extensions or ignore if you want to ignore specific extensions
 	std::string GetFileName(const char* full_path) const; //returns file name (baker_house.fbx)
@@ -51,13 +54,13 @@ public:
 
 private:
 	// --- MAIN VARIABLES ---
+	bool is_any_hover = false;
 	bool is_cut = false;
 	bool is_copy = false;
 
 	// --- HIERARCHY VARIABLES ---
 	static ImGuiTextFilter Searcher;
 	AssetNode* root = nullptr;
-
 	bool is_search = false;
 
 	// --- NODES VARIABLES ---
@@ -69,7 +72,8 @@ private:
 	bool is_ascending_order = true;
 	uint order = 0; // 0 = type, 1 = name, 2 = date
 
-	const int spacing = 8;
 	uint icon_size = BIG_SIZE;
-	ImVec4 border_color;
+	ImVec4 bg_color = ImVec4(0.4f, 0.7f, 1.0f, 0.0f);
+	ImVec4 border_color = ImVec4(0.0f, 0.4f, 0.8f, 0.0f);
+
 };

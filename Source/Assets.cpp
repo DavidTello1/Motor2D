@@ -4,6 +4,7 @@
 #include "ModuleFileSystem.h"
 #include "Assets.h"
 
+#include "Imgui/imgui_internal.h"
 #include <windows.h>
 #include <ShlObj_core.h>
 
@@ -71,11 +72,15 @@ void Assets::Draw()
 	// --- Child Icons ---
 	ImGui::BeginChild("Icons", ImVec2(0, 0), true, ImGuiWindowFlags_MenuBar);
 
+	// Allow selection & show options with right click
+	if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup) && ImGui::IsMouseClicked(1))
+			ImGui::SetWindowFocus();
+
 	// Right Click Options
 	DrawRightClick();
 
 	// Menu Bar
-	if (ImGui::BeginMenuBar()) //Show path
+	if (ImGui::BeginMenuBar()) // Path with links
 	{
 		//if (filter_models)
 		//	ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.0f, 1.0f), "Showing All Models");
@@ -89,27 +94,62 @@ void Assets::Draw()
 		//else if (selected_node.path != "")
 		//	ImGui::Text(selected_node.path.c_str());
 
-		//else
-			ImGui::Text(current_folder->path.c_str());
+		//else // Path
+		{
+			if (current_folder->parent != nullptr)
+			{
+				std::vector<AssetNode*> parents = GetParents(current_folder);
+				for (int i = parents.size() - 1; i >= 0; --i)
+				{
+					ImVec4 color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+					float pos = ImGui::GetCursorPosX();
+					ImGui::Text(std::string(parents[i]->name + " >").c_str());
 
+					float pos2 = ImGui::GetCursorPosX();
+					ImGui::SetCursorPosX(pos);
+					ImGui::Dummy(ImGui::GetItemRectSize());
+
+					if (ImGui::IsItemHovered())
+						color = ImVec4(0.2f, 0.6f, 1.0f, 1.0f);
+					if (ImGui::IsItemClicked())
+						current_folder = parents[i];
+
+					ImGui::SetCursorPosX(pos);
+					ImGui::TextColored(color, std::string(parents[i]->name).c_str());
+					ImGui::SetCursorPosX(pos2);
+				}
+			}
+			ImGui::Text(current_folder->name.c_str());
+		}
 		ImGui::EndMenuBar();
 	}
 
 	// Draw Icons
-	int columns = ((int)ImGui::GetWindowWidth() - spacing) / (icon_size + spacing);
+	int columns = ((int)ImGui::GetWindowWidth() - 8) / (icon_size + 8);
+	float spacing = 15.0f;
 	for (uint i = 0; i < current_folder->childs.size(); ++i)
 	{
 		DrawNode(current_folder->childs[i]);
+		if (current_folder->childs[i]->rename)
+			spacing = 3.0f;
 		if (columns > 0 && (i + 1) % columns != 0)
-			ImGui::SameLine();
+			ImGui::SameLine(0.0f, spacing);
 	}
+
+	// Unselect nodes when clicking on empty space
+	if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup) && ImGui::IsMouseClicked(0) && !is_any_hover)
+		UnSelectAll();
+	is_any_hover = false;
 
 	ImGui::EndChild();
 }
 
 void Assets::DrawHierarchy(AssetNode* node)
 {
-	ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_DefaultOpen;
+	ImGuiTreeNodeFlags nodeFlags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
+	if (node == root)
+		nodeFlags |= ImGuiTreeNodeFlags_DefaultOpen;
+
 	if (node->childs.empty())
 	{
 		nodeFlags |= ImGuiTreeNodeFlags_Leaf;
@@ -137,44 +177,124 @@ void Assets::DrawHierarchy(AssetNode* node)
 
 void Assets::DrawNode(AssetNode* node)
 {
-	// Change border color if selected
-	if (node->selected)
-		border_color = ImVec4(0.0f, 0.0f, 1.0f, 1.0f);
-	else
-		border_color = ImVec4(0.0f, 1.0f, 0.0f, 0.0f);
+	bg_color.w = 0.0f;
+	border_color.w = 0.0f;
 
-	// Draw
-	ImGui::SetNextItemWidth((float)icon_size);
-	ImGui::BeginGroup();
-	ImGui::Image((ImTextureID)node->icon, ImVec2((float)icon_size, (float)icon_size), ImVec2(0, 1), ImVec2(1, 0), ImVec4(1, 1, 1, 1), border_color);
-
-	// Text size
-	std::string text = node->name;
-	std::string dots = "...";
-
-	uint text_size = (uint)ImGui::CalcTextSize(text.c_str()).x;
-	uint max_size = (uint)(icon_size - ImGui::CalcTextSize(dots.c_str()).x) / 7;
-	if (text_size > icon_size)
-	{
-		text = text.substr(0, max_size);
-		text.append(dots);
-	}
-	else if (text_size < icon_size)
-		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ((icon_size - text_size) / 2));
-
-	ImGui::Text(text.c_str());
-	ImGui::EndGroup();
+	// Dummy
+	static ImGuiContext& g = *GImGui;
+	float size = icon_size + g.FontSize + 11;
+	ImVec2 pos = ImGui::GetCursorPos();
+	ImGui::Dummy(ImVec2(size,size));
 
 	// Handle Selection
-	if (ImGui::IsItemClicked())
+	if (ImGui::IsItemHovered()) // Hover
 	{
-		UnSelectAll();
-		node->selected = true;
-		selected_nodes.push_back(node);
-		//Show in Resources Panel
+		is_any_hover = true;
+		if (ImGui::IsMouseClicked(0) && !node->rename) // Left Click
+		{
+			if (!ImGui::GetIO().KeyCtrl)
+				UnSelectAll();
+
+			node->selected = !node->selected;
+			//Show in Resources Panel
+		}
+		else if (ImGui::IsMouseClicked(1) && selected_nodes.size() <= 1) // Right Click (select item to show options)
+		{
+			UnSelectAll();
+			node->selected = true; //change selection state
+		}
+		else if (ImGui::IsMouseDoubleClicked(0)) // Double Click
+		{
+			switch (node->type)
+			{
+			case AssetNode::NodeType::FOLDER:
+				current_folder = node;
+				break;
+			case AssetNode::NodeType::SCENE:
+				//Load Scene
+				break;
+			case AssetNode::NodeType::SCRIPT:
+				//Open in Editor
+				break;
+			default:
+				break;
+			}
+		}
+
+		// Show full name
+		ImGui::BeginTooltip();
+		ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+		ImGui::TextUnformatted(node->name.c_str());
+		ImGui::PopTextWrapPos();
+		ImGui::EndTooltip();
+
+		bg_color.w = 0.3f;
 	}
-	if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0) && node->type == AssetNode::NodeType::FOLDER) // Open folder
-		current_folder = node;
+	if (node->selected) // Color
+	{
+		bg_color.w = 0.5f;
+		border_color.w = 1.0f;
+	}
+
+	// Draw Highlight
+	if (!node->rename)
+	{
+		ImGui::GetWindowDrawList()->AddRectFilled(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), ImColor(bg_color), 3.0f);
+		ImGui::GetWindowDrawList()->AddRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), ImColor(border_color), 3.0f);
+	}
+
+	// Draw Actual Node
+	ImGui::SetCursorPos(ImVec2(pos.x + (size - icon_size) / 2, pos.y));
+	ImGui::SetNextItemWidth((float)icon_size);
+
+	ImGui::BeginGroup();
+	ImGui::SetCursorPosY(pos.y + 5);
+
+	ImGui::Image((ImTextureID)node->icon, ImVec2((float)icon_size, (float)icon_size), ImVec2(0, 1), ImVec2(1, 0));
+
+	if (ImGui::IsItemClicked() && node->rename)
+		node->rename = false;
+
+	if (!node->rename)
+	{
+		// Text
+		std::string text = node->name;
+		uint text_size = (uint)ImGui::CalcTextSize(text.c_str()).x;
+		uint max_size = (uint)(icon_size - ImGui::CalcTextSize("...").x) / 7;
+		if (text_size > icon_size)
+			text = text.substr(0, max_size) + "...";
+		else
+			ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ((icon_size - text_size) / 2));
+		ImGui::Text(text.c_str());
+	}
+	else // Rename
+	{
+		char buffer[128];
+		sprintf_s(buffer, 128, "%s", node->name.c_str());
+
+		ImGui::SetCursorPosX(pos.x);
+		ImGui::SetNextItemWidth(size);
+		if (ImGui::InputText("##RenameAsset", buffer, 128, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll))
+		{
+			if (strchr(buffer, '(') != nullptr || strchr(buffer, ')') != nullptr)
+				LOG("Error renaming asset, character not valid '()'", 'e')
+			else
+			{
+				node->rename = false;
+				node->name = GetNameWithCount(buffer);
+				std::string new_name = node->path.substr(0, node->path.find_last_of("/") + 1) + node->name;
+				MoveFile(node->path.c_str(), new_name.c_str());
+			}
+		}
+	}
+	ImGui::EndGroup();
+
+	// Update Selected Nodes List
+	int position = FindNode(node, selected_nodes);
+	if (node->selected && position == -1)
+		selected_nodes.push_back(node);
+	else if (!node->selected && position != -1)
+		selected_nodes.erase(selected_nodes.begin() + position);
 }
 
 AssetNode* Assets::CreateNode(std::string path, AssetNode* parent, std::string name)
@@ -189,7 +309,7 @@ AssetNode* Assets::CreateNode(std::string path, AssetNode* parent, std::string n
 	}
 	else
 		node->name = name;
-	node->name = SetNameCount(node);
+	node->name = GetNameWithCount(node->name);
 	node->path = path + std::string("/") + node->name;
 	node->type = GetType(node);
 
@@ -351,7 +471,7 @@ bool Assets::DrawRightClick()
 			TCHAR  buffer[4096] = TEXT("");
 			GetFullPathName(selected_nodes[0]->path.c_str(), 4096, buffer, NULL);
 
-			CoInitializeEx(0, NULL);
+			HRESULT hr = CoInitializeEx(0, NULL);
 			ITEMIDLIST* pidl = ILCreateFromPath(std::string(buffer).substr(0, std::string(buffer).find_last_of("/")).c_str());
 			if (pidl) 
 			{
@@ -375,6 +495,16 @@ void Assets::UpdateAssets()
 	root = GetAllFiles("Assets", nullptr, &ignore_ext);
 }
 
+AssetNode* Assets::GetNode(std::string name)
+{
+	for (uint i = 0; i < nodes.size(); ++i)
+	{
+		if (nodes[i]->name == name)
+			return nodes[i];
+	}
+	return nullptr;
+}
+
 int Assets::FindNode(AssetNode* node, std::vector<AssetNode*> list)
 {
 	for (uint i = 0; i < list.size(); ++i)
@@ -385,23 +515,23 @@ int Assets::FindNode(AssetNode* node, std::vector<AssetNode*> list)
 	return -1;
 }
 
-std::string Assets::SetNameCount(AssetNode* node)
+std::string Assets::GetNameWithCount(std::string name)
 {
 	if (nodes.empty())
-		return node->name;
+		return name;
 
 	bool found = false;
 	uint count = 0;
-	std::string name = node->name;
+	std::string new_name = name;
 
 	while (found == false)
 	{
 		for (uint i = 0; i < nodes.size(); ++i)
 		{
-			if (name == nodes[i]->name)
+			if (new_name == nodes[i]->name)
 			{
 				count++;
-				name = node->name + std::string(" (") + std::to_string(count) + std::string(")");
+				new_name = name + (" (") + std::to_string(count) + (")");
 				break;
 			}
 			else if (i == nodes.size() - 1)
@@ -411,7 +541,7 @@ std::string Assets::SetNameCount(AssetNode* node)
 			}
 		}
 	}
-	return name;
+	return new_name;
 }
 
 AssetNode::NodeType Assets::GetType(AssetNode* node)
@@ -435,6 +565,18 @@ AssetNode::NodeType Assets::GetType(AssetNode* node)
 
 	else
 		return AssetNode::NodeType::NONE;
+}
+
+std::vector<AssetNode*> Assets::GetParents(AssetNode* node)
+{
+	std::vector<AssetNode*> parents;
+	AssetNode* aux_node = node;
+	while (aux_node->parent != nullptr)
+	{
+		parents.push_back(aux_node->parent);
+		aux_node = aux_node->parent;
+	}
+	return parents;
 }
 
 AssetNode* Assets::GetAllFiles(const char* directory, std::vector<std::string>* filter_ext, std::vector<std::string>* ignore_ext)

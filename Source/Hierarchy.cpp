@@ -621,9 +621,7 @@ HierarchyNode* Hierarchy::HandleSelection(HierarchyNode* node, bool is_hovered)
 			if (!ImGui::GetIO().KeyCtrl && !ImGui::GetIO().KeyShift && !ImGui::IsMouseDragging())
 				UnSelectAll();
 		}
-
-		// Right Click (select item to show options)
-		if (ImGui::IsMouseClicked(1) && selected_nodes.size() <= 1 && node->type != HierarchyNode::NodeType::SCENE)
+		else if (ImGui::IsMouseClicked(1) && selected_nodes.size() <= 1 && node->type != HierarchyNode::NodeType::SCENE) // Right Click (select item to show options)
 		{
 			UnSelectAll();
 			node->selected = !node->selected; //change selection state
