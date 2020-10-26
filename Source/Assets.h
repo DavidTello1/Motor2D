@@ -26,16 +26,20 @@ public:
 	//Resource* GetSelectedResource();
 
 private:
+	// --- MAIN HELPERS ---
+	AssetNode* HandleSelection(AssetNode* node); //selection states
 	bool DrawRightClick();
 	void UpdateAssets();
 
+	// --- NODES ---
 	AssetNode* GetNode(std::string name); //get node from name
 	int FindNode(AssetNode* node, std::vector<AssetNode*> list); //get node pos in list (returns -1 if not found)
 	std::string GetNameWithCount(std::string name); //get name with count
 	AssetNode::NodeType GetType(AssetNode* node); //get node type
 	std::vector<AssetNode*> GetParents(AssetNode* node); //get all parents until root
+	void UpdatePath(AssetNode* node, std::string path); //update path
 
-
+	// --- FILES ---
 	AssetNode* GetAllFiles(const char* directory, std::vector<std::string>* filter_ext = nullptr, std::vector<std::string>* ignore_ext = nullptr); //filter if you only want specific extensions or ignore if you want to ignore specific extensions
 	std::string GetFileName(const char* full_path) const; //returns file name (baker_house.fbx)
 	std::string GetExtension(const char* full_path) const; //returns extension (fbx)
@@ -55,6 +59,9 @@ public:
 private:
 	// --- MAIN VARIABLES ---
 	bool is_any_hover = false;
+	AssetNode* rename_node = nullptr; //used for handling selection
+	std::vector<AssetNode*> aux_nodes; //used for cut and copy
+
 	bool is_cut = false;
 	bool is_copy = false;
 

@@ -3,11 +3,7 @@
 #include <vector>
 
 class GameObject;
-//class ResourceFolder;
-//class ResourceScene;
-//class ResourcePrefab;
-//class ResourceTexture;
-//class ResourceScript;
+//class Resource;
 
 class AssetNode
 {

@@ -129,9 +129,9 @@ void Assets::Draw()
 	float spacing = 15.0f;
 	for (uint i = 0; i < current_folder->childs.size(); ++i)
 	{
-		DrawNode(current_folder->childs[i]);
-		if (current_folder->childs[i]->rename)
+		if (!current_folder->childs.empty() && current_folder->childs[i]->rename)
 			spacing = 3.0f;
+		DrawNode(current_folder->childs[i]);
 		if (columns > 0 && (i + 1) % columns != 0)
 			ImGui::SameLine(0.0f, spacing);
 	}
@@ -139,9 +139,9 @@ void Assets::Draw()
 	// Unselect nodes when clicking on empty space
 	if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup) && ImGui::IsMouseClicked(0) && !is_any_hover)
 		UnSelectAll();
-	is_any_hover = false;
-
 	ImGui::EndChild();
+
+	is_any_hover = false;
 }
 
 void Assets::DrawHierarchy(AssetNode* node)
@@ -186,55 +186,51 @@ void Assets::DrawNode(AssetNode* node)
 	ImVec2 pos = ImGui::GetCursorPos();
 	ImGui::Dummy(ImVec2(size,size));
 
-	// Handle Selection
-	if (ImGui::IsItemHovered()) // Hover
+	//Drag and Drop
+	if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_AcceptNoDrawDefaultRect | ImGuiDragDropFlags_SourceAllowNullID)) // Source
 	{
-		is_any_hover = true;
-		if (ImGui::IsMouseClicked(0) && !node->rename) // Left Click
-		{
-			if (!ImGui::GetIO().KeyCtrl)
-				UnSelectAll();
+		ImGui::SetDragDropPayload("AssetNode", &node->name, sizeof(std::string));
 
-			node->selected = !node->selected;
-			//Show in Resources Panel
-		}
-		else if (ImGui::IsMouseClicked(1) && selected_nodes.size() <= 1) // Right Click (select item to show options)
+		if (!selected_nodes.empty())
 		{
+			if (selected_nodes.size() == 1)
+				ImGui::Text(selected_nodes[0]->name.c_str());
+			else
+				ImGui::Text(std::to_string(selected_nodes.size()).c_str());
+		}
+		else
+			ImGui::Text(node->name.c_str());
+
+		if (!node->selected && !selected_nodes.empty() && !ImGui::GetIO().KeyCtrl && !ImGui::GetIO().KeyShift)
 			UnSelectAll();
-			node->selected = true; //change selection state
-		}
-		else if (ImGui::IsMouseDoubleClicked(0)) // Double Click
+		node->selected = true;
+
+		ImGui::EndDragDropSource();
+	}
+	if (ImGui::BeginDragDropTarget() && node->type == AssetNode::NodeType::FOLDER) // Target
+	{
+		if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("AssetNode"))
 		{
-			switch (node->type)
+			for (uint i = 0; i < selected_nodes.size(); ++i)
 			{
-			case AssetNode::NodeType::FOLDER:
-				current_folder = node;
-				break;
-			case AssetNode::NodeType::SCENE:
-				//Load Scene
-				break;
-			case AssetNode::NodeType::SCRIPT:
-				//Open in Editor
-				break;
-			default:
-				break;
+				// Move in Explorer
+				MoveFile(selected_nodes[i]->path.c_str(), std::string(node->path + ("/") + selected_nodes[i]->name).c_str());
+
+				// Update Parent
+				selected_nodes[i]->parent->childs.erase(selected_nodes[i]->parent->childs.begin() + FindNode(selected_nodes[i], selected_nodes[i]->parent->childs)); //erase from parent's child list
+				selected_nodes[i]->parent = node; //set new parent
+				selected_nodes[i]->parent->childs.push_back(selected_nodes[i]); //add node to new parent's child list
+
+				// Update Childs
+				UpdatePath(selected_nodes[i], node->path);
 			}
 		}
-
-		// Show full name
-		ImGui::BeginTooltip();
-		ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-		ImGui::TextUnformatted(node->name.c_str());
-		ImGui::PopTextWrapPos();
-		ImGui::EndTooltip();
-
 		bg_color.w = 0.3f;
+		ImGui::EndDragDropTarget();
 	}
-	if (node->selected) // Color
-	{
-		bg_color.w = 0.5f;
-		border_color.w = 1.0f;
-	}
+
+	// Handle Selection
+	HandleSelection(node);
 
 	// Draw Highlight
 	if (!node->rename)
@@ -266,6 +262,16 @@ void Assets::DrawNode(AssetNode* node)
 		else
 			ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ((icon_size - text_size) / 2));
 		ImGui::Text(text.c_str());
+
+		// Show full name
+		if (ImGui::IsItemHovered() && !ImGui::IsMouseDragging())
+		{
+			ImGui::BeginTooltip();
+			ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+			ImGui::TextUnformatted(node->name.c_str());
+			ImGui::PopTextWrapPos();
+			ImGui::EndTooltip();
+		}
 	}
 	else // Rename
 	{
@@ -379,6 +385,92 @@ void Assets::UnSelectAll()
 	selected_nodes.clear();
 }
 
+AssetNode* Assets::HandleSelection(AssetNode* node)
+{
+	if (ImGui::IsItemHovered()) // Hover
+	{
+		is_any_hover = true;
+
+		if (ImGui::IsMouseClicked(0) && !node->rename) // Left Click
+		{
+			//Show in Resources Panel
+
+			if (rename_node != nullptr) // Quit Rename
+			{
+				rename_node->rename = false;
+				rename_node = nullptr;
+			}
+
+			if (ImGui::GetIO().KeyCtrl) // Multiple Selection (Ctrl)
+			{
+				if (selected_nodes.size() > 1)
+					node->selected = !node->selected;
+				else
+					node->selected = true;
+			}
+			else if (ImGui::GetIO().KeyShift && !selected_nodes.empty()) // Multiple Selection (Shift)
+			{
+				int pos1 = FindNode(node, current_folder->childs);
+				int pos2 = FindNode(selected_nodes.back(), current_folder->childs);
+
+				if (pos1 < pos2)
+				{
+					for (int i = pos1; i < pos2; ++i)
+						current_folder->childs[i]->selected = true;
+				}
+				else
+				{
+					for (int i = pos1; i >= pos2; --i)
+						current_folder->childs[i]->selected = true;
+				}
+			}
+		}
+		if (ImGui::IsMouseReleased(0)) // Single Selection (Left Release)
+		{
+			if (!ImGui::GetIO().KeyCtrl && !ImGui::GetIO().KeyShift && !ImGui::IsMouseDragging())
+			{
+				UnSelectAll();
+				node->selected = true;
+			}
+		}
+		else if (ImGui::IsMouseClicked(1)) // Right Click
+		{
+			if (selected_nodes.size() <= 1 || !node->selected)
+				UnSelectAll();
+			node->selected = true;
+		}
+
+		if (ImGui::IsMouseDoubleClicked(0)) // Double Click
+		{
+			switch (node->type)
+			{
+			case AssetNode::NodeType::FOLDER:
+				current_folder = node;
+				UnSelectAll();
+				break;
+			case AssetNode::NodeType::SCENE:
+				//Load Scene
+				break;
+			case AssetNode::NodeType::SCRIPT:
+				//Open in Editor
+				break;
+			default:
+				break;
+			}
+		}
+
+		bg_color.w = 0.3f;
+	}
+
+	if (node->selected) // Color
+	{
+		bg_color.w = 0.5f;
+		border_color.w = 1.0f;
+	}
+
+	return node;
+}
+
 bool Assets::DrawRightClick()
 {
 	if (ImGui::BeginPopupContextWindow("Assets"))
@@ -386,10 +478,17 @@ bool Assets::DrawRightClick()
 		if (ImGui::BeginMenu("Create")) //create
 		{
 			if (ImGui::MenuItem("Folder")) //folder
-				CreateNode(current_folder->path, nullptr, "Folder");
-
+			{
+				AssetNode* new_node = CreateNode(current_folder->path, nullptr, "Folder");
+				UnSelectAll();
+				new_node->selected = true;
+			}
 			if (ImGui::MenuItem("Script")) //script
-				CreateNode(current_folder->path, nullptr, "Script.scr");
+			{
+				AssetNode* new_node = CreateNode(current_folder->path, nullptr, "Script.scr");
+				UnSelectAll();
+				new_node->selected = true;
+			}
 
 			ImGui::EndMenu();
 		}
@@ -397,12 +496,28 @@ bool Assets::DrawRightClick()
 
 		if (ImGui::MenuItem("Cut", "Ctrl+X", false, !selected_nodes.empty())) //cut
 		{
+			aux_nodes = selected_nodes;
+			is_cut = true;
+			is_copy = false;
 		}
 		if (ImGui::MenuItem("Copy", "Ctrl+C", false, !selected_nodes.empty())) //copy
 		{
+			aux_nodes = selected_nodes;
+			is_copy = true;
+			is_cut = false;
 		}
 		if (ImGui::MenuItem("Paste", "Ctrl+V", false, is_copy || is_cut)) //paste
 		{
+			if (is_cut)
+			{
+				//MoveFile(); //current_folder
+			}
+			else if (is_copy)
+			{
+				//App->file_system->Copy(selected_nodes[i]->path.c_str(), current_folder->path + ("/") + selected_nodes[i]->name);
+				//check for duplicated names
+			}
+
 		}
 		ImGui::Separator();
 
@@ -410,7 +525,10 @@ bool Assets::DrawRightClick()
 			SelectAll();
 
 		if (ImGui::MenuItem("Rename", NULL, false, selected_nodes.size() == 1)) //rename
+		{
 			selected_nodes.front()->rename = true;
+			rename_node = selected_nodes.front();
+		}
 
 		if (ImGui::MenuItem("Delete", "Supr", false, !selected_nodes.empty())) //delete
 		{
@@ -577,6 +695,17 @@ std::vector<AssetNode*> Assets::GetParents(AssetNode* node)
 		aux_node = aux_node->parent;
 	}
 	return parents;
+}
+
+void Assets::UpdatePath(AssetNode* node, std::string path)
+{
+	node->path = path + ("/") + node->name;
+
+	if (!node->childs.empty())
+	{
+		for (uint i = 0; i < node->childs.size(); ++i)
+			UpdatePath(node->childs[i], node->path);
+	}
 }
 
 AssetNode* Assets::GetAllFiles(const char* directory, std::vector<std::string>* filter_ext, std::vector<std::string>* ignore_ext)
