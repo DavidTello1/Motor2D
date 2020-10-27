@@ -34,6 +34,7 @@ Assets::~Assets()
 		delete* it;
 	nodes.clear();
 	selected_nodes.clear();
+	aux_nodes.clear();
 }
 
 void Assets::Draw()
@@ -125,7 +126,7 @@ void Assets::Draw()
 	}
 
 	// Draw Icons
-	int columns = ((int)ImGui::GetWindowWidth() - 8) / (icon_size + 8);
+	int columns = ImGui::GetContentRegionAvailWidth() / (size + 2);
 	float spacing = 15.0f;
 	for (uint i = 0; i < current_folder->childs.size(); ++i)
 	{
@@ -182,7 +183,7 @@ void Assets::DrawNode(AssetNode* node)
 
 	// Dummy
 	static ImGuiContext& g = *GImGui;
-	float size = icon_size + g.FontSize + 11;
+	size = icon_size + g.FontSize + 11;
 	ImVec2 pos = ImGui::GetCursorPos();
 	ImGui::Dummy(ImVec2(size,size));
 
@@ -239,6 +240,9 @@ void Assets::DrawNode(AssetNode* node)
 
 	if (ImGui::IsItemClicked() && node->rename)
 		node->rename = false;
+
+	if (node->cut)
+		ImGui::GetWindowDrawList()->AddRectFilled(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), ImColor(ImVec4(1.0f, 1.0f, 1.0f, 0.2f)));
 
 	if (!node->rename)
 	{
@@ -488,6 +492,9 @@ bool Assets::DrawRightClick()
 			aux_nodes = selected_nodes;
 			is_cut = true;
 			is_copy = false;
+
+			for (uint i = 0; i < aux_nodes.size(); ++i)
+				aux_nodes[i]->cut = true;
 		}
 		if (ImGui::MenuItem("Copy", "Ctrl+C", false, !selected_nodes.empty())) //copy
 		{
@@ -500,16 +507,16 @@ bool Assets::DrawRightClick()
 			if (is_cut)
 			{
 				for (uint i = 0; i < aux_nodes.size(); ++i)
+				{
 					Cut(aux_nodes[i], current_folder);
-				is_cut = false;
+					aux_nodes[i]->cut = false;
+				}
 			}
 			else if (is_copy)
 			{
 				for (uint i = 0; i < aux_nodes.size(); ++i)
 					Copy(aux_nodes[i], current_folder);
-				is_copy = false;
 			}
-			aux_nodes.clear();
 		}
 		ImGui::Separator();
 

@@ -30,6 +30,7 @@ public:
 
 	bool rename = false;
 	bool selected = false;
+	bool cut = false;
 
 	AssetNode* parent = nullptr;
 	std::vector<AssetNode*> childs;

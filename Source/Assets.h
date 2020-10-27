@@ -14,6 +14,7 @@ public:
 	virtual ~Assets();
 
 	void Draw();
+	//void Shortcuts();
 
 	void DrawHierarchy(AssetNode* node);
 	void DrawNode(AssetNode* node);
@@ -83,6 +84,7 @@ private:
 	bool is_ascending_order = true;
 	uint order = 0; // 0 = type, 1 = name, 2 = date
 
+	float size = 0.0f;
 	uint icon_size = BIG_SIZE;
 	ImVec4 bg_color = ImVec4(0.4f, 0.7f, 1.0f, 0.0f);
 	ImVec4 border_color = ImVec4(0.0f, 0.4f, 0.8f, 0.0f);
