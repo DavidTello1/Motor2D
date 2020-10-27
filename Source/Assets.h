@@ -17,7 +17,7 @@ public:
 
 	void DrawHierarchy(AssetNode* node);
 	void DrawNode(AssetNode* node);
-	AssetNode* CreateNode(std::string path, AssetNode* parent = nullptr, std::string name = "");
+	AssetNode* CreateNode(std::string name = "", AssetNode* parent = nullptr);
 	void DeleteNodes(std::vector<AssetNode*> nodes_list);
 	void SelectAll();
 	void UnSelectAll();
@@ -38,6 +38,10 @@ private:
 	AssetNode::NodeType GetType(AssetNode* node); //get node type
 	std::vector<AssetNode*> GetParents(AssetNode* node); //get all parents until root
 	void UpdatePath(AssetNode* node, std::string path); //update path
+
+	void Cut(AssetNode* node, AssetNode* parent); //paste cut nodes
+	void Copy(AssetNode* node, AssetNode* parent); //paste copied nodes
+
 
 	// --- FILES ---
 	AssetNode* GetAllFiles(const char* directory, std::vector<std::string>* filter_ext = nullptr, std::vector<std::string>* ignore_ext = nullptr); //filter if you only want specific extensions or ignore if you want to ignore specific extensions

@@ -212,18 +212,7 @@ void Assets::DrawNode(AssetNode* node)
 		if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("AssetNode"))
 		{
 			for (uint i = 0; i < selected_nodes.size(); ++i)
-			{
-				// Move in Explorer
-				MoveFile(selected_nodes[i]->path.c_str(), std::string(node->path + ("/") + selected_nodes[i]->name).c_str());
-
-				// Update Parent
-				selected_nodes[i]->parent->childs.erase(selected_nodes[i]->parent->childs.begin() + FindNode(selected_nodes[i], selected_nodes[i]->parent->childs)); //erase from parent's child list
-				selected_nodes[i]->parent = node; //set new parent
-				selected_nodes[i]->parent->childs.push_back(selected_nodes[i]); //add node to new parent's child list
-
-				// Update Childs
-				UpdatePath(selected_nodes[i], node->path);
-			}
+				Cut(selected_nodes[i], node);
 		}
 		bg_color.w = 0.3f;
 		ImGui::EndDragDropTarget();
@@ -303,20 +292,20 @@ void Assets::DrawNode(AssetNode* node)
 		selected_nodes.erase(selected_nodes.begin() + position);
 }
 
-AssetNode* Assets::CreateNode(std::string path, AssetNode* parent, std::string name)
+AssetNode* Assets::CreateNode(std::string name, AssetNode* parent)
 {
 	AssetNode* node = new AssetNode();
 
 	if (name == "")
 	{
-		node->name = GetFileName(path.c_str());
+		node->name = GetFileName(parent->path.c_str());
 		if (node->name == "")
-			node->name = path;
+			node->name = parent->path;
 	}
 	else
 		node->name = name;
 	node->name = GetNameWithCount(node->name);
-	node->path = path + std::string("/") + node->name;
+	node->path = parent->path + std::string("/") + node->name;
 	node->type = GetType(node);
 
 	if (node->type == AssetNode::NodeType::FOLDER)
@@ -479,13 +468,13 @@ bool Assets::DrawRightClick()
 		{
 			if (ImGui::MenuItem("Folder")) //folder
 			{
-				AssetNode* new_node = CreateNode(current_folder->path, nullptr, "Folder");
+				AssetNode* new_node = CreateNode("Folder", current_folder);
 				UnSelectAll();
 				new_node->selected = true;
 			}
 			if (ImGui::MenuItem("Script")) //script
 			{
-				AssetNode* new_node = CreateNode(current_folder->path, nullptr, "Script.scr");
+				AssetNode* new_node = CreateNode("Script.scr", current_folder);
 				UnSelectAll();
 				new_node->selected = true;
 			}
@@ -510,14 +499,17 @@ bool Assets::DrawRightClick()
 		{
 			if (is_cut)
 			{
-				//MoveFile(); //current_folder
+				for (uint i = 0; i < aux_nodes.size(); ++i)
+					Cut(aux_nodes[i], current_folder);
+				is_cut = false;
 			}
 			else if (is_copy)
 			{
-				//App->file_system->Copy(selected_nodes[i]->path.c_str(), current_folder->path + ("/") + selected_nodes[i]->name);
-				//check for duplicated names
+				for (uint i = 0; i < aux_nodes.size(); ++i)
+					Copy(aux_nodes[i], current_folder);
+				is_copy = false;
 			}
-
+			aux_nodes.clear();
 		}
 		ImGui::Separator();
 
@@ -706,6 +698,36 @@ void Assets::UpdatePath(AssetNode* node, std::string path)
 		for (uint i = 0; i < node->childs.size(); ++i)
 			UpdatePath(node->childs[i], node->path);
 	}
+}
+
+void Assets::Cut(AssetNode* node, AssetNode* parent)
+{
+	// Move in Explorer
+	MoveFile(node->path.c_str(), std::string(parent->path + ("/") + node->name).c_str());
+
+	// Update Parent
+	node->parent->childs.erase(node->parent->childs.begin() + FindNode(node, node->parent->childs)); //erase from parent's child list
+	node->parent = parent; //set new parent
+	node->parent->childs.push_back(node); //add node to new parent's child list
+
+	// Update Childs
+	UpdatePath(node, parent->path);
+}
+
+void Assets::Copy(AssetNode* node, AssetNode* parent)
+{
+	// Create new Node
+	AssetNode* new_node = CreateNode(node->name, parent);
+
+	// If has childs, copy them too
+	if (!node->childs.empty())
+	{
+		for (uint i = 0; i < node->childs.size(); ++i)
+			Copy(node->childs[i], new_node);
+	}
+
+	// Copy in Explorer
+	App->file_system->Copy(node->path.c_str(), new_node->path.c_str());
 }
 
 AssetNode* Assets::GetAllFiles(const char* directory, std::vector<std::string>* filter_ext, std::vector<std::string>* ignore_ext)
