@@ -58,7 +58,8 @@ public:
 	Configuration();
 	virtual ~Configuration();
 
-	void Draw();
+	void Draw() override;
+	void Shortcuts() override {};
 
 	void DrawApplication();
 	void DrawMemory();

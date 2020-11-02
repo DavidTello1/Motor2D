@@ -107,33 +107,32 @@ void Hierarchy::Shortcuts()
 	if (ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows))
 	{
 		// Delete
-		if (App->input->GetKey(SDL_SCANCODE_DELETE) == KEY_DOWN)
+		if (App->input->Shortcut(SDL_SCANCODE_DELETE, KEY_DOWN))
 		{
 			DeleteNodes(selected_nodes);
 			selected_nodes.clear();
 		}
 
 		// Duplicate
-		if ((App->input->GetKey(SDL_SCANCODE_LCTRL) == KEY_REPEAT && App->input->GetKey(SDL_SCANCODE_D) == KEY_DOWN) ||
-			(App->input->GetKey(SDL_SCANCODE_RCTRL) == KEY_REPEAT && App->input->GetKey(SDL_SCANCODE_D) == KEY_DOWN))
+		if (App->input->Shortcut(SDL_SCANCODE_LCTRL, KEY_REPEAT, SDL_SCANCODE_D, KEY_DOWN) ||
+			App->input->Shortcut(SDL_SCANCODE_RCTRL, KEY_REPEAT, SDL_SCANCODE_D, KEY_DOWN))
 		{
 			DuplicateNodes(selected_nodes);
 		}
 
 		// SelectAll
-		if ((App->input->GetKey(SDL_SCANCODE_LCTRL) == KEY_REPEAT && App->input->GetKey(SDL_SCANCODE_A) == KEY_DOWN) ||
-			(App->input->GetKey(SDL_SCANCODE_RCTRL) == KEY_REPEAT && App->input->GetKey(SDL_SCANCODE_A) == KEY_DOWN))
+		if (App->input->Shortcut(SDL_SCANCODE_LCTRL, KEY_REPEAT, SDL_SCANCODE_A, KEY_DOWN) ||
+			App->input->Shortcut(SDL_SCANCODE_RCTRL, KEY_REPEAT, SDL_SCANCODE_A, KEY_DOWN))
 		{
 			SelectAll();
 		}
 
 		// Find
-		if ((App->input->GetKey(SDL_SCANCODE_LCTRL) == KEY_REPEAT && App->input->GetKey(SDL_SCANCODE_F) == KEY_DOWN) ||
-			(App->input->GetKey(SDL_SCANCODE_RCTRL) == KEY_REPEAT && App->input->GetKey(SDL_SCANCODE_F) == KEY_DOWN))
+		if (App->input->Shortcut(SDL_SCANCODE_LCTRL, KEY_REPEAT, SDL_SCANCODE_F, KEY_DOWN) ||
+			App->input->Shortcut(SDL_SCANCODE_RCTRL, KEY_REPEAT, SDL_SCANCODE_F, KEY_DOWN))
 		{
 			//FindPopup();
 		}
-
 	}
 }
 

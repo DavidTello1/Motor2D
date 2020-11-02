@@ -305,7 +305,7 @@ void ModuleEditor::DrawPanels()
 {
 	for (std::vector<Panel*>::const_iterator it = panels.begin(); it != panels.end(); ++it)
 	{
-		if ((*it)->IsActive())
+		if ((*it)->active)
 		{
 			ImGui::SetNextWindowPos(ImVec2((float)(*it)->pos_x, (float)(*it)->pos_y), ImGuiCond_FirstUseEver);
 			ImGui::SetNextWindowSize(ImVec2((float)(*it)->width, (float)(*it)->height), ImGuiCond_FirstUseEver);

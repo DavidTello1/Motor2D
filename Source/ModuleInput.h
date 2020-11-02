@@ -30,6 +30,9 @@ public:
 	void GetMousePosition(int& x, int& y) const { x = mouse_x; y = mouse_y; }
 	int GetMouseWheel() const { return mouse_wheel; }
 
+	// Shortcut
+	bool Shortcut(SDL_Scancode key, KEY_STATE state, SDL_Scancode key2 = SDL_SCANCODE_UNKNOWN, KEY_STATE state2 = KEY_IDLE, SDL_Scancode key3 = SDL_SCANCODE_UNKNOWN, KEY_STATE state3 = KEY_IDLE);
+
 public:
 	bool quit = false;
 

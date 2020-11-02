@@ -13,15 +13,11 @@ public:
 	Assets();
 	virtual ~Assets();
 
-	void Draw();
-	//void Shortcuts();
+	void Draw() override;
+	void Shortcuts() override {};
 
 	void DrawHierarchy(AssetNode* node);
 	void DrawNode(AssetNode* node);
-	AssetNode* CreateNode(std::string name = "", AssetNode* parent = nullptr);
-	void DeleteNodes(std::vector<AssetNode*> nodes_list);
-	void SelectAll();
-	void UnSelectAll();
 
 	//void ImportAsset(const PathNode& node);
 	//Resource* GetSelectedResource();
@@ -33,24 +29,26 @@ private:
 	void UpdateAssets();
 
 	// --- NODES ---
+	AssetNode* CreateNode(std::string name = "", AssetNode* parent = nullptr);
+	void DeleteNodes(std::vector<AssetNode*> nodes_list);
+
 	AssetNode* GetNode(std::string name); //get node from name
-	int FindNode(AssetNode* node, std::vector<AssetNode*> list); //get node pos in list (returns -1 if not found)
-	std::string GetNameWithCount(std::string name); //get name with count
-	AssetNode::NodeType GetType(AssetNode* node); //get node type
 	std::vector<AssetNode*> GetParents(AssetNode* node); //get all parents until root
+	AssetNode::NodeType GetType(AssetNode* node); //get node type
+	std::string GetNameWithCount(std::string name); //get name with count
+	int FindNode(AssetNode* node, std::vector<AssetNode*> list); //get node pos in list (returns -1 if not found)
 	void UpdatePath(AssetNode* node, std::string path); //update path
 
+	void SelectAll();
+	void UnSelectAll();
 	void Cut(AssetNode* node, AssetNode* parent); //paste cut nodes
 	void Copy(AssetNode* node, AssetNode* parent); //paste copied nodes
-
 
 	// --- FILES ---
 	AssetNode* GetAllFiles(const char* directory, std::vector<std::string>* filter_ext = nullptr, std::vector<std::string>* ignore_ext = nullptr); //filter if you only want specific extensions or ignore if you want to ignore specific extensions
 	std::string GetFileName(const char* full_path) const; //returns file name (baker_house.fbx)
 	std::string GetExtension(const char* full_path) const; //returns extension (fbx)
 	bool CheckExtension(const char* path, std::vector<std::string> extensions) const; //check if extension matches any of the list
-
-	void OrderNodesBy(uint Order) {	order = Order; } //type = 0, name = 1, date = 2
 	
 	//void UpdateFilters(PathNode& node);
 	//void FilterFolders(PathNode& node, PathNode& parent);
@@ -63,10 +61,10 @@ public:
 
 private:
 	// --- MAIN VARIABLES ---
-	bool is_any_hover = false;
 	AssetNode* rename_node = nullptr; //used for handling selection
 	std::vector<AssetNode*> aux_nodes; //used for cut and copy
 
+	bool is_any_hover = false;
 	bool is_cut = false;
 	bool is_copy = false;
 
@@ -81,8 +79,6 @@ private:
 	AssetNode* current_folder = nullptr;
 
 	bool is_list_view = false;
-	bool is_ascending_order = true;
-	uint order = 0; // 0 = type, 1 = name, 2 = date
 
 	float size = 0.0f;
 	uint icon_size = BIG_SIZE;

@@ -41,12 +41,12 @@ void Assets::Draw()
 {
 	//if (timer.ReadSec() > REFRESH_RATE) // Update Assets Hierarchy
 	//{
-	//	UpdateAssets();
+		//UpdateAssets();
 	//	timer.Start();
 	//}
 
 	// --- Child Hierarchy ---
-	ImGui::BeginChild("Hierarchy", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.2f, 0), true, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_HorizontalScrollbar);
+	ImGui::BeginChild("Hierarchy", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.2f, 0), true, ImGuiWindowFlags_MenuBar);
 
 	if (ImGui::BeginMenuBar())
 	{
@@ -66,7 +66,10 @@ void Assets::Draw()
 	}
 
 	//Draw Hierarchy Tree
+	ImGui::BeginChild("HierarchyTree", ImVec2(ImGui::GetWindowContentRegionWidth(), 0), false, ImGuiWindowFlags_HorizontalScrollbar);
 	DrawHierarchy(root);
+	ImGui::EndChild();
+
 	ImGui::EndChild();
 	ImGui::SameLine();
 
@@ -97,7 +100,7 @@ void Assets::Draw()
 
 		//else // Path
 		{
-			if (current_folder->parent != nullptr)
+			if (current_folder->parent != nullptr) //***Create function to get number of parents and then divide path from 0 to next / n(parents) times
 			{
 				std::vector<AssetNode*> parents = GetParents(current_folder);
 				for (int i = parents.size() - 1; i >= 0; --i)
@@ -116,7 +119,7 @@ void Assets::Draw()
 						current_folder = parents[i];
 
 					ImGui::SetCursorPosX(pos);
-					ImGui::TextColored(color, std::string(parents[i]->name).c_str());
+					ImGui::TextColored(color, parents[i]->name.c_str());
 					ImGui::SetCursorPosX(pos2);
 				}
 			}
@@ -126,7 +129,7 @@ void Assets::Draw()
 	}
 
 	// Draw Icons
-	int columns = ImGui::GetContentRegionAvailWidth() / (size + 2);
+	int columns = (int)(ImGui::GetContentRegionAvailWidth() / (size + 2));
 	float spacing = 15.0f;
 	for (uint i = 0; i < current_folder->childs.size(); ++i)
 	{
@@ -160,7 +163,7 @@ void Assets::DrawHierarchy(AssetNode* node)
 	if (current_folder == node)
 		nodeFlags |= ImGuiTreeNodeFlags_Selected;
 
-	bool open = ImGui::TreeNodeEx(node->name.c_str(), nodeFlags, node->name.c_str());
+	bool open = ImGui::TreeNodeEx(node->name.c_str(), nodeFlags);
 
 	if (ImGui::IsItemClicked())
 		current_folder = node;
@@ -231,18 +234,20 @@ void Assets::DrawNode(AssetNode* node)
 
 	// Draw Actual Node
 	ImGui::SetCursorPos(ImVec2(pos.x + (size - icon_size) / 2, pos.y));
-	ImGui::SetNextItemWidth((float)icon_size);
 
 	ImGui::BeginGroup();
 	ImGui::SetCursorPosY(pos.y + 5);
 
-	ImGui::Image((ImTextureID)node->icon, ImVec2((float)icon_size, (float)icon_size), ImVec2(0, 1), ImVec2(1, 0));
+	if (node->cut) // Transparent Image if node is cut
+		ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.5f);
+
+	ImGui::Image((ImTextureID)node->icon, ImVec2((float)icon_size, (float)icon_size), ImVec2(0, 1), ImVec2(1, 0)); // Image
+
+	if (node->cut)
+		ImGui::PopStyleVar();
 
 	if (ImGui::IsItemClicked() && node->rename)
 		node->rename = false;
-
-	if (node->cut)
-		ImGui::GetWindowDrawList()->AddRectFilled(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), ImColor(ImVec4(1.0f, 1.0f, 1.0f, 0.2f)));
 
 	if (!node->rename)
 	{
@@ -563,26 +568,6 @@ bool Assets::DrawRightClick()
 			ImGui::MenuItem("List", NULL, &is_list_view); //list view
 			ImGui::EndMenu();
 		}
-		if (ImGui::BeginMenu("Order")) //order
-		{
-			if (ImGui::MenuItem("Type", NULL, order == 0)) //type
-			{
-			}
-			if (ImGui::MenuItem("Name", NULL, order == 1)) //name
-			{
-			}
-			if (ImGui::MenuItem("Date", NULL, order == 2)) //date
-			{
-			}
-
-			ImGui::Separator();
-			if (ImGui::MenuItem("Ascending", NULL, is_ascending_order)) //ascending order
-				is_ascending_order = !is_ascending_order;
-
-			if (ImGui::MenuItem("Descending", NULL, !is_ascending_order)) //descending order
-				is_ascending_order = !is_ascending_order;
-			ImGui::EndMenu();
-		}
 		if (ImGui::MenuItem("Show in Explorer", NULL, nullptr, selected_nodes.size() == 1)) //show in explorer
 		{
 			TCHAR  buffer[4096] = TEXT("");
@@ -749,39 +734,35 @@ AssetNode* Assets::GetAllFiles(const char* directory, std::vector<std::string>* 
 			node->name = directory;
 		node->type = GetType(node);
 
-		if (App->file_system->IsFolder(directory))
-		{
-			std::vector<std::string> file_list, dir_list;
-			App->file_system->GetFolderContent(directory, file_list, dir_list);
+		std::vector<std::string> file_list, dir_list;
+		App->file_system->GetFolderContent(directory, file_list, dir_list);
 
-			//Adding all child directories
-			for (uint i = 0; i < dir_list.size(); i++)
+		//Adding all child directories
+		for (uint i = 0; i < dir_list.size(); i++)
+		{
+			std::string str = directory + std::string("/") + dir_list[i];
+			AssetNode* child = GetAllFiles(str.c_str(), filter_ext, ignore_ext);
+			node->childs.push_back(child);
+			child->parent = node;
+		}
+
+		//Adding all child files
+		for (uint i = 0; i < file_list.size(); i++)
+		{
+			bool filter = true, discard = false;
+			if (filter_ext != nullptr)
+				filter = CheckExtension(file_list[i].c_str(), *filter_ext); //check if file_ext == filter_ext
+			else if (ignore_ext != nullptr)
+				discard = CheckExtension(file_list[i].c_str(), *ignore_ext); //check if file_ext == ignore_ext
+
+			if (filter == true && discard == false)
 			{
-				std::string str = directory + std::string("/") + dir_list[i];
+				std::string str = directory + std::string("/") + file_list[i];
 				AssetNode* child = GetAllFiles(str.c_str(), filter_ext, ignore_ext);
 				node->childs.push_back(child);
-				child->parent = node;
-			}
-
-			//Adding all child files
-			for (uint i = 0; i < file_list.size(); i++)
-			{
-				bool filter = true, discard = false;
-				if (filter_ext != nullptr)
-					filter = CheckExtension(file_list[i].c_str(), *filter_ext); //check if file_ext == filter_ext
-				else if (ignore_ext != nullptr)
-					discard = CheckExtension(file_list[i].c_str(), *ignore_ext); //check if file_ext == ignore_ext
-
-				if (filter == true && discard == false)
-				{
-					std::string str = directory + std::string("/") + file_list[i];
-					AssetNode* child = GetAllFiles(str.c_str(), filter_ext, ignore_ext);
-					node->childs.push_back(child);
-				}
 			}
 		}
 	}
-
 	if (node != nullptr)
 		nodes.push_back(node);
 
