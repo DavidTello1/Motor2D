@@ -26,7 +26,7 @@ private:
 	// --- MAIN HELPERS ---
 	AssetNode* HandleSelection(AssetNode* node); //selection states
 	bool DrawRightClick();
-	void UpdateAssets();
+	void UpdateAssets(); //update files (called only on return focus)
 
 	// --- NODES ---
 	AssetNode* CreateNode(std::string name = "", AssetNode* parent = nullptr);
@@ -85,4 +85,6 @@ private:
 	ImVec4 bg_color = ImVec4(0.4f, 0.7f, 1.0f, 0.0f);
 	ImVec4 border_color = ImVec4(0.0f, 0.4f, 0.8f, 0.0f);
 
+
+	bool is_engine_focus = true;
 };

@@ -24,7 +24,9 @@ Assets::Assets() : Panel("Assets", ICON_ASSETS)
 	//UpdateFilters(materials);
 	//UpdateFilters(scenes);
 
-	UpdateAssets();
+	std::vector<std::string> ignore_ext;
+	ignore_ext.push_back("meta");
+	root = GetAllFiles("Assets", nullptr, &ignore_ext);
 	current_folder = root;
 }
 
@@ -39,11 +41,8 @@ Assets::~Assets()
 
 void Assets::Draw()
 {
-	//if (timer.ReadSec() > REFRESH_RATE) // Update Assets Hierarchy
-	//{
-		//UpdateAssets();
-	//	timer.Start();
-	//}
+	// Update Files
+	UpdateAssets();
 
 	// --- Child Hierarchy ---
 	ImGui::BeginChild("Hierarchy", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.2f, 0), true, ImGuiWindowFlags_MenuBar);
@@ -592,9 +591,31 @@ bool Assets::DrawRightClick()
 
 void Assets::UpdateAssets()
 {
-	std::vector<std::string> ignore_ext;
-	ignore_ext.push_back("meta");
-	root = GetAllFiles("Assets", nullptr, &ignore_ext);
+	HWND wd = FindWindow(NULL, App->GetAppName());
+	if (wd != GetForegroundWindow() && is_engine_focus)
+	{
+		is_engine_focus = false;
+	}
+	else if (wd == GetForegroundWindow() && !is_engine_focus)
+	{
+		is_engine_focus = true;
+
+		std::string name = current_folder->name;
+		while (!nodes.empty())
+		{
+			delete nodes.back();
+			nodes.pop_back();
+		}
+
+		std::vector<std::string> ignore_ext;
+		ignore_ext.push_back("meta");
+		root = GetAllFiles("Assets", nullptr, &ignore_ext);
+
+		if (current_folder != nullptr)
+			current_folder = GetNode(name);
+		if (current_folder == nullptr)
+			current_folder = root;
+	}
 }
 
 AssetNode* Assets::GetNode(std::string name)
@@ -763,8 +784,10 @@ AssetNode* Assets::GetAllFiles(const char* directory, std::vector<std::string>* 
 			}
 		}
 	}
-	if (node != nullptr)
+	if (node->type != AssetNode::NodeType::NONE)
 		nodes.push_back(node);
+	else
+		LOG("Error retrieving files", 'e');
 
 	return node;
 }
