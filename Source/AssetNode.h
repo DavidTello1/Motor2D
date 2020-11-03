@@ -9,11 +9,14 @@ class AssetNode
 {
 public:
 	enum class NodeType {
-		NONE,
+		NONE = 0,
 		FOLDER,
 		SCENE,
 		PREFAB,
 		TEXTURE,
+		ANIMATION,
+		TILEMAP,
+		AUDIO,
 		SCRIPT
 	};
 

@@ -87,4 +87,5 @@ private:
 
 
 	bool is_engine_focus = true;
+	bool init = false;
 };

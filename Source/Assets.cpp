@@ -15,6 +15,7 @@ ImGuiTextFilter Assets::Searcher;
 // ---------------------------------------------------------
 Assets::Assets() : Panel("Assets", ICON_ASSETS)
 {
+	init = false;
 	width = default_width;
 	height = default_height;
 	pos_x = default_pos_x;
@@ -41,11 +42,36 @@ Assets::~Assets()
 
 void Assets::Draw()
 {
+	// Create Dock Space
+	ImGuiID dock_space = ImGui::GetID("Assets");
+	if (init == false)
+	{
+		init = true;
+
+		ImGui::DockSpace(dock_space);
+
+		ImGuiDockNode* dock_node = ImGui::DockBuilderGetNode(dock_space);
+		if (!dock_node->IsSplitNode())
+		{
+			ImGuiID left_space, right_space;
+			ImGui::DockBuilderSplitNode(dock_space, ImGuiDir_Left, 0.18f, &left_space, &right_space);
+			ImGui::DockBuilderDockWindow("Assets_Hierarchy", left_space);
+			ImGui::DockBuilderGetNode(left_space)->LocalFlags |= ImGuiDockNodeFlags_NoTabBar;
+			ImGui::DockBuilderDockWindow("Assets_Icons", right_space);
+			ImGui::DockBuilderGetNode(right_space)->LocalFlags |= ImGuiDockNodeFlags_NoTabBar;
+		}
+	}
+	else
+	{
+		ImGuiID dock_space = ImGui::GetID("Assets");
+		ImGui::DockSpace(dock_space, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_NoSplit);
+	}
+	
 	// Update Files
 	UpdateAssets();
 
 	// --- Child Hierarchy ---
-	ImGui::BeginChild("Hierarchy", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.2f, 0), true, ImGuiWindowFlags_MenuBar);
+	ImGui::Begin("Assets_Hierarchy", NULL, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoMove);
 
 	if (ImGui::BeginMenuBar())
 	{
@@ -65,15 +91,15 @@ void Assets::Draw()
 	}
 
 	//Draw Hierarchy Tree
-	ImGui::BeginChild("HierarchyTree", ImVec2(ImGui::GetWindowContentRegionWidth(), 0), false, ImGuiWindowFlags_HorizontalScrollbar);
+	ImGui::BeginChild("HierarchyTree", ImVec2(0,0), false, ImGuiWindowFlags_HorizontalScrollbar);
 	DrawHierarchy(root);
 	ImGui::EndChild();
 
-	ImGui::EndChild();
+	ImGui::End();
 	ImGui::SameLine();
 
 	// --- Child Icons ---
-	ImGui::BeginChild("Icons", ImVec2(0, 0), true, ImGuiWindowFlags_MenuBar);
+	ImGui::Begin("Assets_Icons", NULL, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoMove);
 
 	// Allow selection & show options with right click
 	if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup) && ImGui::IsMouseClicked(1))
@@ -134,7 +160,9 @@ void Assets::Draw()
 	{
 		if (!current_folder->childs.empty() && current_folder->childs[i]->rename)
 			spacing = 3.0f;
+
 		DrawNode(current_folder->childs[i]);
+
 		if (columns > 0 && (i + 1) % columns != 0)
 			ImGui::SameLine(0.0f, spacing);
 	}
@@ -142,7 +170,7 @@ void Assets::Draw()
 	// Unselect nodes when clicking on empty space
 	if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup) && ImGui::IsMouseClicked(0) && !is_any_hover)
 		UnSelectAll();
-	ImGui::EndChild();
+	ImGui::End();
 
 	is_any_hover = false;
 }
@@ -253,11 +281,13 @@ void Assets::DrawNode(AssetNode* node)
 		// Text
 		std::string text = node->name;
 		uint text_size = (uint)ImGui::CalcTextSize(text.c_str()).x;
-		uint max_size = (uint)(icon_size - ImGui::CalcTextSize("...").x) / 7;
-		if (text_size > icon_size)
+		uint max_size = (uint)(size - 7 - ImGui::CalcTextSize("...").x) / 7;
+		ImGui::SetCursorPosX(pos.x + 7);
+		
+		if (text_size > size - 14)
 			text = text.substr(0, max_size) + "...";
 		else
-			ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ((icon_size - text_size) / 2));
+			ImGui::SetCursorPosX(pos.x + (size - text_size) / 2);
 		ImGui::Text(text.c_str());
 
 		// Show full name
