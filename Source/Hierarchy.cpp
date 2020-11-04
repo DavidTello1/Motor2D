@@ -18,9 +18,9 @@ Hierarchy::Hierarchy() : Panel("Hierarchy", ICON_HIERARCHY)
 	pos_x = default_pos_x;
 	pos_y = default_pos_y;
 
-	current_scene = CreateNode(HierarchyNode::NodeType::SCENE, nullptr, "Default Scene");
+	flags = ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_NoCollapse;
 
-	flags = ImGuiWindowFlags_HorizontalScrollbar;
+	current_scene = CreateNode(HierarchyNode::NodeType::SCENE, nullptr, "Default Scene");
 }
 
 Hierarchy::~Hierarchy()

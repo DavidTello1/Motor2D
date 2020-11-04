@@ -2,9 +2,9 @@
 #include "Panel.h"
 #include "AssetNode.h"
 
-#define VERY_BIG_SIZE 84
+#define VERY_BIG_SIZE 96
 #define BIG_SIZE 64
-#define MEDIUM_SIZE 50
+#define MEDIUM_SIZE 48
 #define SMALL_SIZE 32
 
 class Assets : public Panel
@@ -14,7 +14,7 @@ public:
 	virtual ~Assets();
 
 	void Draw() override;
-	void Shortcuts() override {};
+	void Shortcuts() override;
 
 	void DrawHierarchy(AssetNode* node);
 	void DrawNode(AssetNode* node);

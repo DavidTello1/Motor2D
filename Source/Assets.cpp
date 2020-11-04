@@ -1,8 +1,9 @@
+#include "Assets.h"
 #include "Application.h"
+#include "ModuleInput.h"
 //#include "ModuleScene.h"
 //#include "ModuleResources.h"
 #include "ModuleFileSystem.h"
-#include "Assets.h"
 
 #include "Imgui/imgui_internal.h"
 #include <windows.h>
@@ -15,20 +16,19 @@ ImGuiTextFilter Assets::Searcher;
 // ---------------------------------------------------------
 Assets::Assets() : Panel("Assets", ICON_ASSETS)
 {
-	init = false;
 	width = default_width;
 	height = default_height;
 	pos_x = default_pos_x;
 	pos_y = default_pos_y;
 
-	//UpdateFilters(models);
-	//UpdateFilters(materials);
-	//UpdateFilters(scenes);
+	flags = ImGuiWindowFlags_NoCollapse;
 
 	std::vector<std::string> ignore_ext;
 	ignore_ext.push_back("meta");
 	root = GetAllFiles("Assets", nullptr, &ignore_ext);
+	
 	current_folder = root;
+	init = false;
 }
 
 Assets::~Assets()
@@ -172,7 +172,77 @@ void Assets::Draw()
 		UnSelectAll();
 	ImGui::End();
 
+	//--- Shortcuts ---
+	Shortcuts();
+
 	is_any_hover = false;
+}
+
+void Assets::Shortcuts()
+{
+	if (ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows))
+	{
+		// Delete
+		if (App->input->Shortcut(SDL_SCANCODE_DELETE, KEY_DOWN) && !selected_nodes.empty())
+		{
+			DeleteNodes(selected_nodes);
+			selected_nodes.clear();
+		}
+
+		// Cut
+		if ((App->input->Shortcut(SDL_SCANCODE_LCTRL, KEY_REPEAT, SDL_SCANCODE_X, KEY_DOWN) ||
+			App->input->Shortcut(SDL_SCANCODE_RCTRL, KEY_REPEAT, SDL_SCANCODE_X, KEY_DOWN)) && !selected_nodes.empty())
+		{
+			aux_nodes = selected_nodes;
+			is_cut = true;
+			is_copy = false;
+
+			for (uint i = 0; i < aux_nodes.size(); ++i)
+				aux_nodes[i]->cut = true;
+		}
+
+		// Copy
+		if ((App->input->Shortcut(SDL_SCANCODE_LCTRL, KEY_REPEAT, SDL_SCANCODE_C, KEY_DOWN) ||
+			App->input->Shortcut(SDL_SCANCODE_RCTRL, KEY_REPEAT, SDL_SCANCODE_C, KEY_DOWN)) && !selected_nodes.empty())
+		{
+			aux_nodes = selected_nodes;
+			is_copy = true;
+			is_cut = false;
+		}
+
+		// Paste
+		if ((App->input->Shortcut(SDL_SCANCODE_LCTRL, KEY_REPEAT, SDL_SCANCODE_V, KEY_DOWN) ||
+			App->input->Shortcut(SDL_SCANCODE_RCTRL, KEY_REPEAT, SDL_SCANCODE_V, KEY_DOWN)) && (is_copy || is_cut))
+		{
+			if (is_cut)
+			{
+				for (uint i = 0; i < aux_nodes.size(); ++i)
+				{
+					Cut(aux_nodes[i], current_folder);
+					aux_nodes[i]->cut = false;
+				}
+			}
+			else if (is_copy)
+			{
+				for (uint i = 0; i < aux_nodes.size(); ++i)
+					Copy(aux_nodes[i], current_folder);
+			}
+		}
+
+		// SelectAll
+		if (App->input->Shortcut(SDL_SCANCODE_LCTRL, KEY_REPEAT, SDL_SCANCODE_A, KEY_DOWN) ||
+			App->input->Shortcut(SDL_SCANCODE_RCTRL, KEY_REPEAT, SDL_SCANCODE_A, KEY_DOWN))
+		{
+			SelectAll();
+		}
+
+		// Search
+		if (App->input->Shortcut(SDL_SCANCODE_LCTRL, KEY_REPEAT, SDL_SCANCODE_F, KEY_DOWN) ||
+			App->input->Shortcut(SDL_SCANCODE_RCTRL, KEY_REPEAT, SDL_SCANCODE_F, KEY_DOWN))
+		{
+			is_search = true;
+		}
+	}
 }
 
 void Assets::DrawHierarchy(AssetNode* node)

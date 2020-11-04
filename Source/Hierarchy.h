@@ -28,8 +28,8 @@ public:
 	Hierarchy();
 	virtual ~Hierarchy();
 
-	void Draw();
-	void Shortcuts();
+	void Draw() override;
+	void Shortcuts() override;
 
 	void DrawNode(HierarchyNode* node);
 	HierarchyNode* CreateNode(HierarchyNode::NodeType type, HierarchyNode* parent = nullptr, std::string name = "");

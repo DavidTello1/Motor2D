@@ -1,7 +1,7 @@
+#include "ModuleEditor.h"
 #include "Application.h"
 #include "ModuleWindow.h"
 #include "ModuleInput.h"
-#include "ModuleEditor.h"
 #include "ModuleRenderer.h"
 //#include "ModuleScene.h"
 #include "Config.h"
@@ -13,6 +13,7 @@
 //#include "Inspector.h"
 //#include "Viewport.h"
 
+#include "Imgui/imgui_internal.h"
 #include "imgui/imgui_impl_sdl.h"
 #include "imgui/imgui_impl_opengl3.h"
 #include <windows.h>
@@ -519,7 +520,7 @@ void ModuleEditor::DockSpace()
 {
 	static bool opt_fullscreen_persistant = true;
 	bool opt_fullscreen = opt_fullscreen_persistant;
-	static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
+	static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_NoWindowMenuButton;
 
 	// We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
 	// because it would be confusing to have two docking targets within each others.
@@ -540,6 +541,7 @@ void ModuleEditor::DockSpace()
 	if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
 		window_flags |= ImGuiWindowFlags_NoBackground;
 
+
 	// Important: note that we proceed even if Begin() returns false (aka window is collapsed).
 	// This is because we want to keep our DockSpace() active. If a DockSpace() is inactive,
 	// all active windows docked into it will lose their parent and become undocked.
@@ -553,8 +555,6 @@ void ModuleEditor::DockSpace()
 		ImGui::PopStyleVar(2);
 
 	// DockSpace
-	ImGuiIO& io = ImGui::GetIO();
-
 	ImGuiID dockspace_id = ImGui::GetID("MainDockSpace");
 	ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
 

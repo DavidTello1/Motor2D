@@ -32,8 +32,6 @@ Console::Console() : Panel("Console", ICON_CONSOLE)
 	memset(InputBuf, 0, sizeof(InputBuf));
 	HistoryPos = -1;
 
-	flags = ImGuiWindowFlags_MenuBar;
-
 	//Booleans
 	AutoScroll = true;
 	ShowDebugLog = true;
@@ -48,6 +46,8 @@ Console::Console() : Panel("Console", ICON_CONSOLE)
 	height = default_height;
 	pos_x = default_pos_x;
 	pos_y = default_pos_y;
+
+	flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoCollapse;
 
 	UpdateFilters();
 }
