@@ -14,6 +14,7 @@ public:
 		SCENE,
 		PREFAB,
 		TEXTURE,
+		MATERIAL,
 		ANIMATION,
 		TILEMAP,
 		AUDIO,
@@ -33,6 +34,7 @@ public:
 
 	bool rename = false;
 	bool selected = false;
+	bool open = false;
 	bool cut = false;
 
 	AssetNode* parent = nullptr;

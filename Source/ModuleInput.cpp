@@ -145,10 +145,10 @@ bool ModuleInput::Shortcut(SDL_Scancode key, KEY_STATE state, SDL_Scancode key2,
 
 	ret = GetKey(key) == state;
 	
-	if (key2 != SDL_SCANCODE_UNKNOWN && state2 != KEY_IDLE)
+	if (ret && key2 != SDL_SCANCODE_UNKNOWN && state2 != KEY_IDLE)
 		ret = GetKey(key2) == state2;
 
-	if (key3 != SDL_SCANCODE_UNKNOWN && state3 != KEY_IDLE)
+	if (ret && key3 != SDL_SCANCODE_UNKNOWN && state3 != KEY_IDLE)
 		ret = GetKey(key3) == state3;
 
 	return ret;
