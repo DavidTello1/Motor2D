@@ -61,8 +61,13 @@ void Assets::Shortcuts()
 	// Delete
 	if (App->input->Shortcut(SDL_SCANCODE_DELETE, KEY_DOWN) && !selected_nodes.empty())
 	{
-		DeleteNodes(selected_nodes);
-		selected_nodes.clear();
+		if (is_delete_popup)
+			is_delete = true;
+		else
+		{
+			DeleteNodes(selected_nodes);
+			selected_nodes.clear();
+		}
 	}
 
 	// Cut
@@ -99,7 +104,8 @@ void Assets::Shortcuts()
 		{
 			for (AssetNode* aux : aux_nodes)
 			{
-				Cut(*aux, *current_folder);
+				if (!IsParentOf(*aux, *current_folder))
+					Cut(*aux, *current_folder);
 				aux->cut = false;
 			}
 		}
@@ -171,11 +177,36 @@ void Assets::ChildHierarchy()
 	}
 
 	//Draw Hierarchy Tree
-	ImGui::BeginChild("HierarchyTree", ImVec2(0, 0), false);
-	ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 2);
-	DrawHierarchy(*root);
-	ImGui::EndChild();
+	ImGui::BeginChild("HierarchyTree", ImVec2(0, 0), true);
 
+	ImVec2 pos = ImGui::GetCursorPos();
+	//ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 2);
+	DrawHierarchy(*root);
+
+	// Scroll
+	ImVec2 scroll = ImGui::GetCurrentWindow()->Scroll;
+	ImVec2 size = ImVec2(ImGui::GetWindowContentRegionMax().x, 18);
+
+	ImGui::SetCursorPos(ImVec2(pos.x + scroll.x - 4, pos.y + scroll.y - 6)); // Top Area
+	ImGui::Dummy(size);
+	if (!is_arrow_hover && ImGui::BeginDragDropTarget())
+	{
+		if (scroll.y >= 1.0f)
+			ImGui::GetCurrentWindow()->Scroll.y -= 1.0f;
+		ImGui::EndDragDropTarget();
+	}
+
+	ImGui::SetCursorPos(ImVec2(pos.x + scroll.x - 4, ImGui::GetWindowHeight() + scroll.y - 25.2f)); //Bottom Area
+	ImGui::Dummy(size);
+	if (!is_arrow_hover && ImGui::BeginDragDropTarget())
+	{
+		if (scroll.y < ImGui::GetCurrentWindow()->ScrollMax.y)
+			ImGui::GetCurrentWindow()->Scroll.y += 1.0f;
+		ImGui::EndDragDropTarget();
+	}
+	is_arrow_hover = false;
+
+	ImGui::EndChild();
 	ImGui::End();
 }
 
@@ -189,6 +220,45 @@ void Assets::ChildIcons()
 
 	// Right Click Options
 	DrawRightClick();
+
+	// Delete Popup
+	if (is_delete && is_delete_popup)
+		ImGui::OpenPopup("Confirm Delete");
+
+	if (ImGui::BeginPopupModal("Confirm Delete", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove))
+	{
+		ImGui::Text(ICON_WARNING);
+		ImGui::SameLine();
+		ImGui::Text("Are you sure you want to delete?");
+		ImGui::Text("This action cannot be undone");
+		ImGui::NewLine();
+
+		static bool check = false;
+		if (ImGui::Checkbox("Do not show this message again", &check))
+			is_delete_popup = !check;
+		ImGui::NewLine();
+
+		float pos = ImGui::GetCursorPosX();
+		ImVec2 size = ImGui::GetContentRegionAvail();
+		if (ImGui::Button("Delete", ImVec2(size.x / 2, 22)))
+		{
+			is_delete = false;
+			DeleteNodes(selected_nodes);
+			selected_nodes.clear();
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::SameLine();
+
+		ImGui::SetCursorPosX(pos + ImGui::GetItemRectSize().x + 1);
+		pos = ImGui::GetCursorPosX();
+		if (ImGui::Button("Cancel", ImVec2(size.x / 2, 22)))
+		{
+			is_delete = false;
+			ImGui::CloseCurrentPopup();
+		}
+
+		ImGui::EndPopup();
+	}
 
 	// Menu Bar
 	if (ImGui::BeginMenuBar())
@@ -261,7 +331,7 @@ void Assets::ChildIcons()
 
 	for (uint i = 0, size = list.size(); i < size; ++i)
 	{
-		if (filter != AssetNode::NodeType::NONE && filter != list[i]->type)
+		if ((filter != AssetNode::NodeType::NONE && filter != list[i]->type) || !Searcher.PassFilter(list[i]->name.c_str()))
 			continue;
 
 		if (!list.empty() && list[i]->rename)
@@ -312,7 +382,10 @@ void Assets::DrawHierarchy(AssetNode& node)
 		if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("AssetNode"))
 		{
 			for (AssetNode* selected_node : selected_nodes)
-				Cut(*selected_node, node);
+			{
+				if (selected_node != &node && !IsParentOf(*selected_node, node))
+					Cut(*selected_node, node);
+			}
 		}
 		ImGui::EndDragDropTarget();
 	}
@@ -323,9 +396,9 @@ void Assets::DrawHierarchy(AssetNode& node)
 	// Indent
 	ImGui::SameLine();
 	if (node.childs.empty())
-		ImGui::SetCursorPosX(pos.x + 16 + 14 * GetNumParents(node));
-	else
 		ImGui::SetCursorPosX(pos.x + 14 * GetNumParents(node));
+	else
+		ImGui::SetCursorPosX(pos.x - 16 + 14 * GetNumParents(node));
 
 	// Arrow
 	pos.x = ImGui::GetCursorPosX();
@@ -340,8 +413,10 @@ void Assets::DrawHierarchy(AssetNode& node)
 			node.open = !node.open;
 
 		if (ImGui::BeginDragDropTarget() && node.type == AssetNode::NodeType::FOLDER)
+		{
 			node.open = true;
-
+			is_arrow_hover = true;
+		}
 		ImGui::SameLine();
 		ImGui::SetCursorPosX(pos.x + 16);
 	}
@@ -471,6 +546,7 @@ void Assets::DrawNode(AssetNode& node)
 				node.name = GetNameWithCount(buffer);
 				std::string new_name = node.path.substr(0, node.path.find_last_of("/") + 1) + node.name;
 				MoveFile(node.path.c_str(), new_name.c_str());
+				node.path = new_name;
 			}
 		}
 		ImGui::SetKeyboardFocusHere(-1);
@@ -624,7 +700,8 @@ bool Assets::DrawRightClick()
 			{
 				for (AssetNode* aux : aux_nodes)
 				{
-					Cut(*aux, *current_folder);
+					if(!IsParentOf(*aux, *current_folder))
+						Cut(*aux, *current_folder);
 					aux->cut = false;
 				}
 			}
@@ -647,8 +724,13 @@ bool Assets::DrawRightClick()
 
 		if (ImGui::MenuItem("Delete", "Supr", false, !selected_nodes.empty())) //delete
 		{
-			DeleteNodes(selected_nodes);
-			selected_nodes.clear();
+			if (is_delete_popup)
+				is_delete = true;
+			else
+			{
+				DeleteNodes(selected_nodes);
+				selected_nodes.clear();
+			}
 		}
 		ImGui::Separator();
 
@@ -711,21 +793,31 @@ void Assets::UpdateAssets()
 	else if (wd == GetForegroundWindow() && !is_engine_focus)
 	{
 		is_engine_focus = true;
+		std::string path = current_folder->path;
 
-		std::string name = current_folder->name;
-		while (!nodes.empty())
+		std::vector<std::string>open_nodes;
+		for (uint i = 0, size = nodes.size(); i < size; ++i)
 		{
-			delete nodes.back();
-			nodes.pop_back();
+			if (nodes[i]->open)
+				open_nodes.push_back(nodes[i]->path);
+			delete nodes[i];
 		}
+		nodes.clear();
 
 		std::vector<std::string> ignore_ext;
 		ignore_ext.push_back("meta");
 		root = GetAllFiles("Assets", nullptr, &ignore_ext);
+
 		root->open = true;
+		for (std::string node_path : open_nodes)
+		{
+			AssetNode* node = GetNode(node_path);
+			if (node)
+				node->open = true;
+		}
 
 		if (current_folder != nullptr)
-			current_folder = GetNode(name);
+			current_folder = GetNode(path);
 		if (current_folder == nullptr)
 			current_folder = root;
 	}
@@ -798,11 +890,11 @@ void Assets::DeleteNodes(std::vector<AssetNode*> nodes_list)
 	nodes_list.clear();
 }
 
-AssetNode* Assets::GetNode(const std::string name) const
+AssetNode* Assets::GetNode(const std::string path) const
 {
 	for (AssetNode* node : nodes)
 	{
-		if (node->name == name)
+		if (node->path == path)
 			return node;
 	}
 	return nullptr;
@@ -882,6 +974,16 @@ std::string Assets::GetNameWithCount(const std::string name) const
 		}
 	}
 	return new_name;
+}
+
+bool Assets::IsParentOf(const AssetNode& node, AssetNode& child) const
+{
+	for (AssetNode* aux : node.childs)
+	{
+		if (aux == &child || (!aux->childs.empty() && IsParentOf(*aux, child)))
+			return true;
+	}
+	return false;
 }
 
 int Assets::FindNode(const AssetNode& node, const std::vector<AssetNode*> list) const

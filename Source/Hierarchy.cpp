@@ -77,8 +77,6 @@ void Hierarchy::Draw()
 	// Top Area
 	ImGui::SetCursorPos(ImVec2(pos.x + scroll.x - 4, pos.y + scroll.y - 8));
 	ImGui::Dummy(size);
-	//const ImRect bb(window->DC.CursorPos, ImVec2(window->DC.CursorPos.x + size.x, window->DC.CursorPos.y + size.y));
-	//window->DrawList->AddRect(bb.Min, bb.Max, ImColor(0.0f, 1.0f, 0.0f, 1.0f));
 	if (ImGui::BeginDragDropTarget())
 	{
 		if (scroll.y >= 1.0f)
@@ -89,8 +87,6 @@ void Hierarchy::Draw()
 	//Bottom Area
 	ImGui::SetCursorPos(ImVec2(pos.x + scroll.x - 4, ImGui::GetWindowHeight() + scroll.y - 58));
 	ImGui::Dummy(size);
-	//const ImRect bb2(window->DC.CursorPos, ImVec2(window->DC.CursorPos.x + size.x, window->DC.CursorPos.y + size.y));
-	//window->DrawList->AddRect(bb2.Min, bb2.Max, ImColor(1.0f, 0.0f, 0.0f, 1.0f));
 	if (ImGui::BeginDragDropTarget())
 	{
 		if (scroll.y < window->ScrollMax.y - 1.0f)

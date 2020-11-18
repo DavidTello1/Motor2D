@@ -35,11 +35,12 @@ private:
 	AssetNode* CreateNode(std::string name = "", AssetNode* parent = nullptr);
 	void DeleteNodes(std::vector<AssetNode*> nodes_list);
 
-	AssetNode* GetNode(const std::string name) const; //get node from name
+	AssetNode* GetNode(const std::string path) const; //get node from name
 	std::vector<AssetNode*> GetParents(AssetNode& node) const; //get all parents until root
 	uint GetNumParents(AssetNode& node) const; //get number of parents
 	AssetNode::NodeType GetType(const AssetNode& node) const; //get node type
 	std::string GetNameWithCount(const std::string name) const; //get name with count
+	bool IsParentOf(const AssetNode& node, AssetNode& child) const; //check if node is child or child of childs of parent
 
 	int FindNode(const AssetNode& node, const std::vector<AssetNode*> list) const; //get node pos in list (returns -1 if not found)
 	void UpdatePath(AssetNode& node, const std::string path) const; //update path
@@ -73,11 +74,14 @@ private:
 	AssetNode* current_folder = nullptr;
 	AssetNode* rename_node = nullptr; //used for handling selection
 
+	bool is_delete_popup = true; //used for showing popup delete
 	bool is_engine_focus = true; //used for updating assets
 	bool is_init = false; //used for dockspace
 	bool is_list_view = false;
 	bool is_search = false;
 	bool is_any_hover = false;
+	bool is_arrow_hover = false; //used for drag&drop scroll (HierarchyChild)
+	bool is_delete = false;
 	bool is_cut = false;
 	bool is_copy = false;
 
