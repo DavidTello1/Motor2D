@@ -23,6 +23,7 @@ Assets::Assets() : Panel("Assets", ICON_ASSETS)
 
 	flags = ImGuiWindowFlags_NoCollapse;
 	is_init = false;
+	filter = AssetNode::NodeType::NONE;
 
 	// Get Files
 	std::vector<std::string> ignore_ext;
@@ -104,7 +105,7 @@ void Assets::Shortcuts()
 		{
 			for (AssetNode* aux : aux_nodes)
 			{
-				if (!IsParentOf(*aux, *current_folder))
+				if (!IsChildOf(*aux, *current_folder))
 					Cut(*aux, *current_folder);
 				aux->cut = false;
 			}
@@ -133,7 +134,9 @@ void Assets::Shortcuts()
 
 void Assets::ChildHierarchy()
 {
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 2));
 	ImGui::Begin("Assets_Hierarchy", NULL, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoMove);
+	ImGui::PopStyleVar();
 
 	// Menu Bar
 	if (ImGui::BeginMenuBar())
@@ -172,15 +175,16 @@ void Assets::ChildHierarchy()
 	// Search Bar
 	if (is_search)
 	{
+		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 2);
 		Searcher.Draw("Search", 180);
 		ImGui::Separator();
 	}
 
 	//Draw Hierarchy Tree
-	ImGui::BeginChild("HierarchyTree", ImVec2(0, 0), true);
+	ImGui::BeginChild("HierarchyTree");
 
 	ImVec2 pos = ImGui::GetCursorPos();
-	//ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 2);
+	ImGui::SetCursorPos(ImVec2(pos.x + 5, pos.y + 3));
 	DrawHierarchy(*root);
 
 	// Scroll
@@ -204,6 +208,9 @@ void Assets::ChildHierarchy()
 			ImGui::GetCurrentWindow()->Scroll.y += 1.0f;
 		ImGui::EndDragDropTarget();
 	}
+
+	if (ImGui::GetScrollY() > ImGui::GetScrollMaxY())
+		ImGui::SetScrollX(ImGui::GetScrollMaxY());
 	is_arrow_hover = false;
 
 	ImGui::EndChild();
@@ -294,25 +301,7 @@ void Assets::ChildIcons()
 			break;
 		case AssetNode::NodeType::NONE: // Path with links
 			if (current_folder->parent != nullptr)
-			{
-				std::vector<AssetNode*> parents = GetParents(*current_folder);
-				for (int i = parents.size() - 1; i >= 0; --i)
-				{
-					ImVec4 color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
-					float pos = ImGui::GetCursorPosX();
-					ImGui::Text(std::string(parents[i]->name + " >").c_str());
-
-					if (ImGui::IsItemHovered())
-						color = ImVec4(0.2f, 0.6f, 1.0f, 1.0f);
-					if (ImGui::IsItemClicked())
-						current_folder = parents[i];
-
-					float pos2 = ImGui::GetCursorPosX();
-					ImGui::SetCursorPosX(pos);
-					ImGui::TextColored(color, parents[i]->name.c_str());
-					ImGui::SetCursorPosX(pos2);
-				}
-			}
+				DrawPath();
 			ImGui::Text(current_folder->name.c_str());
 			break;
 		}
@@ -370,6 +359,7 @@ void Assets::DrawHierarchy(AssetNode& node)
 		{
 			UnSelectAll();
 			current_folder = &node;
+			filter = AssetNode::NodeType::NONE;
 		}
 	}
 	if (current_folder == &node)
@@ -383,7 +373,7 @@ void Assets::DrawHierarchy(AssetNode& node)
 		{
 			for (AssetNode* selected_node : selected_nodes)
 			{
-				if (selected_node != &node && !IsParentOf(*selected_node, node))
+				if (selected_node != &node && !IsChildOf(*selected_node, node))
 					Cut(*selected_node, node);
 			}
 		}
@@ -395,10 +385,7 @@ void Assets::DrawHierarchy(AssetNode& node)
 
 	// Indent
 	ImGui::SameLine();
-	if (node.childs.empty())
-		ImGui::SetCursorPosX(pos.x + 14 * GetNumParents(node));
-	else
-		ImGui::SetCursorPosX(pos.x - 16 + 14 * GetNumParents(node));
+	ImGui::SetCursorPosX(pos.x + 14 * GetNumParents(node));
 
 	// Arrow
 	pos.x = ImGui::GetCursorPosX();
@@ -700,7 +687,7 @@ bool Assets::DrawRightClick()
 			{
 				for (AssetNode* aux : aux_nodes)
 				{
-					if(!IsParentOf(*aux, *current_folder))
+					if(!IsChildOf(*aux, *current_folder))
 						Cut(*aux, *current_folder);
 					aux->cut = false;
 				}
@@ -823,6 +810,120 @@ void Assets::UpdateAssets()
 	}
 }
 
+void Assets::DrawPath()
+{
+	std::vector<AssetNode*> parents = GetParents(*current_folder);
+	std::string path, aux_path;
+	int count = 0, position = 0;
+
+	// path
+	for (int i = parents.size() - 1; i >= 0; --i)
+		path += parents[i]->name + " > ";
+	path += current_folder->name;
+	aux_path = path;
+
+	// check size and get count of parents not shown
+	float size = ImGui::CalcTextSize(path.c_str()).x + 44;
+	float max_size = ImGui::GetWindowWidth() + ImGui::CalcTextSize("<< ").x;
+	if (size > max_size)
+	{
+		int offset = int((size - max_size) / 7);
+		path = path.substr(offset);
+		position = path.find_first_of(">");
+
+		int found = 0;
+		if (position != -1)
+		{
+			while (found - offset != position)
+			{
+				found = aux_path.find(">", found + 1);
+				count++;
+			}
+		}
+
+		// '<<' Button
+		ImVec4 color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+		float pos = ImGui::GetCursorPosX();
+		ImGui::Text("<<");
+
+		bool hovered = false;
+		if (ImGui::IsItemHovered())
+			color = ImVec4(0.2f, 0.6f, 1.0f, 1.0f);
+
+		if (ImGui::IsItemClicked())
+			ImGui::OpenPopup("<<");
+
+		if (ImGui::BeginPopup("<<")) //popup
+		{
+			for (int i = parents.size() - 1, size = parents.size() - count; i >= size; --i)
+			{
+				if (ImGui::MenuItem(parents[i]->name.c_str()))
+					current_folder = parents[i];
+			}
+			ImGui::EndPopup();
+		}
+
+		float pos2 = ImGui::GetCursorPosX();
+		ImGui::SetCursorPosX(pos);
+		ImGui::TextColored(color, "<<");
+		ImGui::SetCursorPosX(pos2);
+	}
+
+	// Buttons
+	if (position != -1)
+	{
+		static uint selected = 0;
+		for (int i = parents.size() - count - 1; i >= 0; --i)
+		{
+			ImVec4 color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+			ImVec4 color2 = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+
+			// Parent Button
+			float pos = ImGui::GetCursorPosX();
+			ImGui::Text(parents[i]->name.c_str());
+
+			if (ImGui::IsItemHovered())
+				color = ImVec4(0.2f, 0.6f, 1.0f, 1.0f);
+			if (ImGui::IsItemClicked())
+				current_folder = parents[i];
+
+			float pos2 = ImGui::GetCursorPosX();
+			ImGui::SetCursorPosX(pos);
+			ImGui::TextColored(color, parents[i]->name.c_str());
+			ImGui::SetCursorPosX(pos2);
+
+			// '>' Button
+			pos = ImGui::GetCursorPosX();
+			ImGui::Text(">");
+
+			if (ImGui::IsItemHovered())
+				color2 = ImVec4(0.2f, 0.6f, 1.0f, 1.0f);
+
+			if (ImGui::IsItemClicked())
+			{
+				ImGui::OpenPopup(">");
+				selected = i;
+			}
+
+			if (i == selected && ImGui::BeginPopup(">")) //popup
+			{
+				for (AssetNode* child : parents[i]->childs)
+				{
+					if (child->type == AssetNode::NodeType::FOLDER &&
+						ImGui::MenuItem(child->name.c_str(), NULL, child == current_folder || FindNode(*child, parents) != -1))
+						current_folder = child;
+				}
+				ImGui::EndPopup();
+			}
+
+			pos2 = ImGui::GetCursorPosX();
+			ImGui::SetCursorPosX(pos);
+			ImGui::TextColored(color2, ">");
+			ImGui::SetCursorPosX(pos2);
+		}
+	}
+}
+
 // --- NODES ---
 AssetNode* Assets::CreateNode(std::string name, AssetNode* parent)
 {
@@ -924,6 +1025,16 @@ uint Assets::GetNumParents(AssetNode& node) const
 	return count;
 }
 
+AssetNode* Assets::GetLastFolder(const AssetNode& node) const
+{
+	for (int i = node.childs.size(); i > 0; --i)
+	{
+		if (node.childs[i]->type == AssetNode::NodeType::FOLDER)
+			return GetLastFolder(*node.childs[i]);
+	}
+	return nullptr;
+}
+
 AssetNode::NodeType Assets::GetType(const AssetNode& node) const
 {
 	std::string extension = GetExtension((&node)->path.c_str());
@@ -976,11 +1087,11 @@ std::string Assets::GetNameWithCount(const std::string name) const
 	return new_name;
 }
 
-bool Assets::IsParentOf(const AssetNode& node, AssetNode& child) const
+bool Assets::IsChildOf(const AssetNode& node, AssetNode& child) const
 {
 	for (AssetNode* aux : node.childs)
 	{
-		if (aux == &child || (!aux->childs.empty() && IsParentOf(*aux, child)))
+		if (aux == &child || (!aux->childs.empty() && IsChildOf(*aux, child)))
 			return true;
 	}
 	return false;

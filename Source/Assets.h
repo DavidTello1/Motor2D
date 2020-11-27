@@ -30,6 +30,7 @@ private:
 	AssetNode* HandleSelection(AssetNode& node); //selection states
 	bool DrawRightClick();
 	void UpdateAssets(); //update files (called only on return focus)
+	void DrawPath(); //draw path with links
 
 	// --- NODES ---
 	AssetNode* CreateNode(std::string name = "", AssetNode* parent = nullptr);
@@ -38,9 +39,10 @@ private:
 	AssetNode* GetNode(const std::string path) const; //get node from name
 	std::vector<AssetNode*> GetParents(AssetNode& node) const; //get all parents until root
 	uint GetNumParents(AssetNode& node) const; //get number of parents
+	AssetNode* GetLastFolder(const AssetNode& node) const; //get last child folder
 	AssetNode::NodeType GetType(const AssetNode& node) const; //get node type
 	std::string GetNameWithCount(const std::string name) const; //get name with count
-	bool IsParentOf(const AssetNode& node, AssetNode& child) const; //check if node is child or child of childs of parent
+	bool IsChildOf(const AssetNode& node, AssetNode& child) const; //check if node is child or child of childs of parent
 
 	int FindNode(const AssetNode& node, const std::vector<AssetNode*> list) const; //get node pos in list (returns -1 if not found)
 	void UpdatePath(AssetNode& node, const std::string path) const; //update path

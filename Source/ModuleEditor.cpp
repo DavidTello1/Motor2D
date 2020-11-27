@@ -316,14 +316,22 @@ void ModuleEditor::DrawPanels()
 			// Configuration
 			if ((*it)->GetName() == "Configuration")
 			{
-				if (ImGui::Begin(name.c_str(), NULL, (*it)->flags))
-					(*it)->Draw();
+				ImGui::Begin(name.c_str(), NULL, (*it)->flags);
+				(*it)->Draw();
+				ImGui::End();
+			}
+			else if ((*it)->GetName() == "Assets") // Assets
+			{
+				ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+				ImGui::Begin(name.c_str(), &(*it)->active, (*it)->flags);
+				ImGui::PopStyleVar();
+				(*it)->Draw();
 				ImGui::End();
 			}
 			else // Other Panels
 			{
-				if (ImGui::Begin(name.c_str(), &(*it)->active, (*it)->flags))
-					(*it)->Draw();
+				ImGui::Begin(name.c_str(), &(*it)->active, (*it)->flags);
+				(*it)->Draw();
 				ImGui::End();
 			}
 
