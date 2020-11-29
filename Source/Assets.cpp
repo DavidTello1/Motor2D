@@ -317,9 +317,7 @@ void Assets::ChildIcons()
 	}
 
 	// Draw Icons
-	int columns = (int)(ImGui::GetContentRegionAvailWidth() / (node_size + 2));
-	float spacing = 15.0f;
-
+	int columns = (int)(ImGui::GetContentRegionAvailWidth() / (node_size + 4));
 	if (filter == AssetNode::NodeType::NONE)
 		current_list = current_folder->childs;
 	else
@@ -327,16 +325,18 @@ void Assets::ChildIcons()
 
 	for (uint i = 0, size = current_list.size(); i < size; ++i)
 	{
-		if ((filter != AssetNode::NodeType::NONE && filter != current_list[i]->type) || !Searcher.PassFilter(current_list[i]->name.c_str()))
+		AssetNode* current_node = current_list[i];
+		if ((filter != AssetNode::NodeType::NONE && filter != current_node->type) || !Searcher.PassFilter(current_node->name.c_str()))
 			continue;
 
-		if (!current_list.empty() && current_list[i]->rename)
-			spacing = 3.0f;
-
-		DrawNode(*current_list[i]);
+		float pos = ImGui::GetCursorPosX();
+		DrawNode(*current_node);
 
 		if (columns > 0 && (i + 1) % columns != 0)
-			ImGui::SameLine(0.0f, spacing);
+		{
+			ImGui::SameLine();
+			ImGui::SetCursorPosX(pos + node_size + 5);
+		}
 	}
 
 	// Unselect nodes when clicking on empty space
@@ -434,7 +434,7 @@ void Assets::DrawNode(AssetNode& node)
 	bg_color.w = 0.0f;
 	border_color.w = 0.0f;
 	static ImGuiContext& g = *GImGui;
-	node_size = icon_size + g.FontSize + 11;
+	node_size = icon_size + 25.0f;
 	ImVec2 pos = ImGui::GetCursorPos();
 
 	// Dummy
