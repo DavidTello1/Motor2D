@@ -39,7 +39,6 @@ private:
 	AssetNode* GetNode(const std::string path) const; //get node from name
 	std::vector<AssetNode*> GetParents(AssetNode& node) const; //get all parents until root
 	uint GetNumParents(AssetNode& node) const; //get number of parents
-	AssetNode* GetLastFolder(const AssetNode& node) const; //get last child folder
 	AssetNode::NodeType GetType(const AssetNode& node) const; //get node type
 	std::string GetNameWithCount(const std::string name) const; //get name with count
 	bool IsChildOf(const AssetNode& node, AssetNode& child) const; //check if node is child or child of childs of parent
@@ -71,6 +70,7 @@ private:
 	std::vector<AssetNode*> nodes;
 	std::vector<AssetNode*> selected_nodes;
 	std::vector<AssetNode*> aux_nodes; //used for cut and copy
+	std::vector<AssetNode*> current_list; //used for selectall and unselectall (can be nodes or current_folder.childs)
 
 	AssetNode* root = nullptr;
 	AssetNode* current_folder = nullptr;

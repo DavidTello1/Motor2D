@@ -30,6 +30,8 @@ Assets::Assets() : Panel("Assets", ICON_ASSETS)
 	ignore_ext.push_back("meta");
 	current_folder = root = GetAllFiles("Assets", nullptr, &ignore_ext);
 	root->open = true;
+
+	current_list = current_folder->childs;
 }
 
 Assets::~Assets()
@@ -45,7 +47,7 @@ Assets::~Assets()
 void Assets::Draw()
 {
 	DockSpace(); // Create Dock Space
-	UpdateAssets(); // Update Files
+	//UpdateAssets(); // Update Files
 
 	ChildHierarchy(); // Child Hierarchy
 	ImGui::SameLine();
@@ -105,7 +107,7 @@ void Assets::Shortcuts()
 		{
 			for (AssetNode* aux : aux_nodes)
 			{
-				if (!IsChildOf(*aux, *current_folder))
+				if (current_folder != aux && !IsChildOf(*aux, *current_folder))
 					Cut(*aux, *current_folder);
 				aux->cut = false;
 			}
@@ -113,7 +115,10 @@ void Assets::Shortcuts()
 		else if (is_copy)
 		{
 			for (AssetNode* aux : aux_nodes)
-				Copy(*aux, *current_folder);
+			{
+				if (current_folder != aux && !IsChildOf(*aux, *current_folder))
+					Copy(*aux, *current_folder);
+			}
 		}
 	}
 
@@ -190,6 +195,9 @@ void Assets::ChildHierarchy()
 	// Scroll
 	ImVec2 scroll = ImGui::GetCurrentWindow()->Scroll;
 	ImVec2 size = ImVec2(ImGui::GetWindowContentRegionMax().x, 18);
+
+	if (ImGui::GetCursorPosY() < scroll.y)
+		ImGui::SetScrollHereY();
 
 	ImGui::SetCursorPos(ImVec2(pos.x + scroll.x - 4, pos.y + scroll.y - 6)); // Top Area
 	ImGui::Dummy(size);
@@ -312,21 +320,20 @@ void Assets::ChildIcons()
 	int columns = (int)(ImGui::GetContentRegionAvailWidth() / (node_size + 2));
 	float spacing = 15.0f;
 
-	std::vector<AssetNode*> list;
 	if (filter == AssetNode::NodeType::NONE)
-		list = current_folder->childs;
+		current_list = current_folder->childs;
 	else
-		list = nodes;
+		current_list = nodes;
 
-	for (uint i = 0, size = list.size(); i < size; ++i)
+	for (uint i = 0, size = current_list.size(); i < size; ++i)
 	{
-		if ((filter != AssetNode::NodeType::NONE && filter != list[i]->type) || !Searcher.PassFilter(list[i]->name.c_str()))
+		if ((filter != AssetNode::NodeType::NONE && filter != current_list[i]->type) || !Searcher.PassFilter(current_list[i]->name.c_str()))
 			continue;
 
-		if (!list.empty() && list[i]->rename)
+		if (!current_list.empty() && current_list[i]->rename)
 			spacing = 3.0f;
 
-		DrawNode(*list[i]);
+		DrawNode(*current_list[i]);
 
 		if (columns > 0 && (i + 1) % columns != 0)
 			ImGui::SameLine(0.0f, spacing);
@@ -577,18 +584,18 @@ AssetNode* Assets::HandleSelection(AssetNode& node)
 			}
 			else if (ImGui::GetIO().KeyShift && !selected_nodes.empty()) // Multiple Selection (Shift)
 			{
-				int pos1 = FindNode(node, current_folder->childs);
-				int pos2 = FindNode(*selected_nodes.back(), current_folder->childs);
+				int pos1 = FindNode(node, current_list);
+				int pos2 = FindNode(*selected_nodes.back(), current_list);
 
 				if (pos1 < pos2)
 				{
 					for (int i = pos1; i < pos2; ++i)
-						current_folder->childs[i]->selected = true;
+						current_list[i]->selected = true;
 				}
 				else
 				{
 					for (int i = pos1; i >= pos2; --i)
-						current_folder->childs[i]->selected = true;
+						current_list[i]->selected = true;
 				}
 			}
 		}
@@ -613,6 +620,7 @@ AssetNode* Assets::HandleSelection(AssetNode& node)
 			{
 			case AssetNode::NodeType::FOLDER:
 				current_folder = &node;
+				filter = AssetNode::NodeType::NONE;
 				UnSelectAll();
 				break;
 			case AssetNode::NodeType::SCENE:
@@ -687,7 +695,7 @@ bool Assets::DrawRightClick()
 			{
 				for (AssetNode* aux : aux_nodes)
 				{
-					if(!IsChildOf(*aux, *current_folder))
+					if (current_folder != aux && !IsChildOf(*aux, *current_folder))
 						Cut(*aux, *current_folder);
 					aux->cut = false;
 				}
@@ -695,7 +703,10 @@ bool Assets::DrawRightClick()
 			else if (is_copy)
 			{
 				for (AssetNode* aux : aux_nodes)
-					Copy(*aux, *current_folder);
+				{
+					if (current_folder != aux && !IsChildOf(*aux, *current_folder))
+						Copy(*aux, *current_folder);
+				}
 			}
 		}
 		ImGui::Separator();
@@ -1025,16 +1036,6 @@ uint Assets::GetNumParents(AssetNode& node) const
 	return count;
 }
 
-AssetNode* Assets::GetLastFolder(const AssetNode& node) const
-{
-	for (int i = node.childs.size(); i > 0; --i)
-	{
-		if (node.childs[i]->type == AssetNode::NodeType::FOLDER)
-			return GetLastFolder(*node.childs[i]);
-	}
-	return nullptr;
-}
-
 AssetNode::NodeType Assets::GetType(const AssetNode& node) const
 {
 	std::string extension = GetExtension((&node)->path.c_str());
@@ -1120,13 +1121,13 @@ void Assets::UpdatePath(AssetNode& node, const std::string path) const
 
 void Assets::SelectAll() const
 {
-	for (AssetNode* node : current_folder->childs)
+	for (AssetNode* node : current_list)
 		node->selected = true;
 }
 
 void Assets::UnSelectAll()
 {
-	for (AssetNode* node : current_folder->childs)
+	for (AssetNode* node : current_list)
 	{
 		node->selected = false;
 		node->rename = false;
@@ -1156,7 +1157,8 @@ void Assets::Copy(AssetNode& node, AssetNode& parent)
 	// If has childs, copy them too
 	if (!node.childs.empty())
 	{
-		for (AssetNode* child : node.childs)
+		std::vector<AssetNode*> childs = node.childs;
+		for (AssetNode* child : childs)
 			Copy(*child, *new_node);
 	}
 
