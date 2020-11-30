@@ -20,7 +20,8 @@ public:
 	void ChildIcons();
 
 	void DrawHierarchy(AssetNode& node);
-	void DrawNode(AssetNode& node);
+	void DrawNodeIcon(AssetNode& node);
+	void DrawNodeList(AssetNode& node);
 
 	//void ImportAsset(const PathNode& node);
 	//Resource* GetSelectedResource();
@@ -81,7 +82,6 @@ private:
 	bool is_init = false; //used for dockspace
 	bool is_list_view = false;
 	bool is_search = false;
-	bool is_any_hover = false;
 	bool is_arrow_hover = false; //used for drag&drop scroll (HierarchyChild)
 	bool is_delete = false;
 	bool is_cut = false;

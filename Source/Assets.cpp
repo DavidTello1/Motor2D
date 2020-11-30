@@ -47,7 +47,7 @@ Assets::~Assets()
 void Assets::Draw()
 {
 	DockSpace(); // Create Dock Space
-	//UpdateAssets(); // Update Files
+	UpdateAssets(); // Update Files
 
 	ChildHierarchy(); // Child Hierarchy
 	ImGui::SameLine();
@@ -55,8 +55,6 @@ void Assets::Draw()
 
 	if (ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows)) // Shortcuts
 		Shortcuts();
-
-	is_any_hover = false;
 }
 
 void Assets::Shortcuts()
@@ -194,12 +192,12 @@ void Assets::ChildHierarchy()
 
 	// Scroll
 	ImVec2 scroll = ImGui::GetCurrentWindow()->Scroll;
-	ImVec2 size = ImVec2(ImGui::GetWindowContentRegionMax().x, 18);
+	ImVec2 size = ImVec2(ImGui::GetWindowContentRegionMax().x, 25);
 
 	if (ImGui::GetCursorPosY() < scroll.y)
 		ImGui::SetScrollHereY();
 
-	ImGui::SetCursorPos(ImVec2(pos.x + scroll.x - 4, pos.y + scroll.y - 6)); // Top Area
+	ImGui::SetCursorPos(ImVec2(pos.x + scroll.x - 4, pos.y + scroll.y)); // Top Area
 	ImGui::Dummy(size);
 	if (!is_arrow_hover && ImGui::BeginDragDropTarget())
 	{
@@ -208,7 +206,7 @@ void Assets::ChildHierarchy()
 		ImGui::EndDragDropTarget();
 	}
 
-	ImGui::SetCursorPos(ImVec2(pos.x + scroll.x - 4, ImGui::GetWindowHeight() + scroll.y - 25.2f)); //Bottom Area
+	ImGui::SetCursorPos(ImVec2(pos.x + scroll.x - 4, ImGui::GetWindowHeight() + scroll.y - 25.0f)); //Bottom Area
 	ImGui::Dummy(size);
 	if (!is_arrow_hover && ImGui::BeginDragDropTarget())
 	{
@@ -329,19 +327,27 @@ void Assets::ChildIcons()
 		if ((filter != AssetNode::NodeType::NONE && filter != current_node->type) || !Searcher.PassFilter(current_node->name.c_str()))
 			continue;
 
-		float pos = ImGui::GetCursorPosX();
-		DrawNode(*current_node);
-
-		if (columns > 0 && (i + 1) % columns != 0)
+		if (is_list_view)
 		{
-			ImGui::SameLine();
-			ImGui::SetCursorPosX(pos + node_size + 5);
+			ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 2);
+			DrawNodeList(*current_node);
+		}
+		else
+		{
+			float pos = ImGui::GetCursorPosX();
+			DrawNodeIcon(*current_node);
+
+			if (columns > 0 && (i + 1) % columns != 0)
+			{
+				ImGui::SameLine();
+				ImGui::SetCursorPosX(pos + node_size + 5);
+			}
 		}
 	}
 
 	// Unselect nodes when clicking on empty space
 	if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup | ImGuiHoveredFlags_AllowWhenBlockedByActiveItem) && 
-		ImGui::IsMouseClicked(0) && !is_any_hover)
+		ImGui::IsMouseClicked(0) && !ImGui::IsAnyItemHovered())
 		UnSelectAll();
 
 	ImGui::End();
@@ -406,7 +412,7 @@ void Assets::DrawHierarchy(AssetNode& node)
 		if (ImGui::IsItemClicked())
 			node.open = !node.open;
 
-		if (ImGui::BeginDragDropTarget() && node.type == AssetNode::NodeType::FOLDER)
+		if (!node.open && ImGui::BeginDragDropTarget() && node.type == AssetNode::NodeType::FOLDER)
 		{
 			node.open = true;
 			is_arrow_hover = true;
@@ -429,11 +435,10 @@ void Assets::DrawHierarchy(AssetNode& node)
 	}
 }
 
-void Assets::DrawNode(AssetNode& node)
+void Assets::DrawNodeIcon(AssetNode& node)
 {
 	bg_color.w = 0.0f;
 	border_color.w = 0.0f;
-	static ImGuiContext& g = *GImGui;
 	node_size = icon_size + 25.0f;
 	ImVec2 pos = ImGui::GetCursorPos();
 
@@ -544,11 +549,129 @@ void Assets::DrawNode(AssetNode& node)
 			}
 		}
 		ImGui::SetKeyboardFocusHere(-1);
-
-		if (ImGui::IsItemHovered())
-			is_any_hover = true;
 	}
 	ImGui::EndGroup();
+
+	// Update Selected Nodes List
+	int position = FindNode(node, selected_nodes);
+	if (node.selected && position == -1)
+		selected_nodes.push_back(&node);
+	else if (!node.selected && position != -1)
+		selected_nodes.erase(selected_nodes.begin() + position);
+}
+
+void Assets::DrawNodeList(AssetNode& node)
+{
+	ImVec4 text_color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+	bg_color.w = 0.0f;
+	border_color.w = 0.0f;
+	ImVec2 pos = ImGui::GetCursorPos();
+	ImVec2 size = ImVec2(ImGui::GetContentRegionAvailWidth(), 20);
+	bool tooltip = true;
+
+	// Dummy
+	ImGui::Dummy(size);
+
+	//Drag and Drop
+	if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_AcceptNoDrawDefaultRect | ImGuiDragDropFlags_SourceAllowNullID)) // Source
+	{
+		ImGui::SetDragDropPayload("AssetNode", &node.name, sizeof(std::string));
+
+		if (!selected_nodes.empty()) // Popup text
+		{
+			if (selected_nodes.size() == 1)
+				ImGui::Text(selected_nodes[0]->name.c_str());
+			else
+				ImGui::Text(std::to_string(selected_nodes.size()).c_str());
+		}
+		else
+			ImGui::Text(node.name.c_str());
+
+		if (!node.selected && !selected_nodes.empty() && !ImGui::GetIO().KeyCtrl && !ImGui::GetIO().KeyShift) // Selection
+			UnSelectAll();
+		node.selected = true;
+
+		ImGui::EndDragDropSource();
+	}
+	if (ImGui::BeginDragDropTarget() && node.type == AssetNode::NodeType::FOLDER) // Target
+	{
+		if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("AssetNode"))
+		{
+			for (AssetNode* selected_node : selected_nodes)
+				Cut(*selected_node, node);
+		}
+		bg_color.w = 0.3f;
+		ImGui::EndDragDropTarget();
+	}
+
+	// Handle Selection
+	HandleSelection(node);
+
+	// Draw Highlight
+	if (!node.rename)
+	{
+		ImGui::GetWindowDrawList()->AddRectFilled(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), ImColor(bg_color), 3.0f);
+		ImGui::GetWindowDrawList()->AddRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), ImColor(border_color), 3.0f);
+	}
+
+	// Draw Actual Node
+	ImGui::SetCursorPos(ImVec2(pos.x + (node_size - icon_size) / 2, pos.y));
+
+	ImGui::BeginGroup();
+	ImGui::SetCursorPosY(pos.y + 3);
+
+	if (node.cut)
+		text_color = ImVec4(0.6f, 0.6f, 0.6f, 1.0f);
+
+	if (!node.rename)
+	{
+		// Text
+		std::string text = node.name;
+		uint text_size = (uint)ImGui::CalcTextSize(text.c_str()).x;
+		int max_size = (int)(size.x - 7 - ImGui::CalcTextSize("...").x) / 7;
+		ImGui::SetCursorPosX(pos.x + 7);
+
+		if (max_size > 0 && text_size > size.x - 14)
+			text = text.substr(0, max_size) + "...";
+		else if (max_size <= 0)
+			text = "...";
+		else
+			tooltip = false;
+
+		ImGui::TextColored(text_color, text.c_str());
+	}
+	else // Rename
+	{
+		char buffer[128];
+		sprintf_s(buffer, 128, "%s", node.name.c_str());
+
+		ImGui::SetCursorPosX(pos.x);
+		if (ImGui::InputText("##RenameAsset", buffer, IM_ARRAYSIZE(buffer), ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll))
+		{
+			if (strchr(buffer, '(') != nullptr || strchr(buffer, ')') != nullptr)
+				LOG("Error renaming asset, character not valid '()'", 'e')
+			else
+			{
+				node.rename = false;
+				node.name = GetNameWithCount(buffer);
+				std::string new_name = node.path.substr(0, node.path.find_last_of("/") + 1) + node.name;
+				MoveFile(node.path.c_str(), new_name.c_str());
+				node.path = new_name;
+			}
+		}
+		ImGui::SetKeyboardFocusHere(-1);
+	}
+	ImGui::EndGroup();
+
+	// Show full name
+	if (tooltip && ImGui::IsItemHovered() && !ImGui::IsMouseDragging())
+	{
+		ImGui::BeginTooltip();
+		ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+		ImGui::TextUnformatted(node.name.c_str());
+		ImGui::PopTextWrapPos();
+		ImGui::EndTooltip();
+	}
 
 	// Update Selected Nodes List
 	int position = FindNode(node, selected_nodes);
@@ -563,8 +686,6 @@ AssetNode* Assets::HandleSelection(AssetNode& node)
 {
 	if (ImGui::IsItemHovered()) // Hover
 	{
-		is_any_hover = true;
-
 		if (ImGui::IsMouseClicked(0) && !node.rename) // Left Click
 		{
 			//Show in Resources Panel
@@ -734,6 +855,9 @@ bool Assets::DrawRightClick()
 
 		if (ImGui::BeginMenu("View")) //view
 		{
+			ImGui::MenuItem("List", NULL, &is_list_view); //list view
+			ImGui::Separator();
+
 			if (ImGui::MenuItem("Very Big Icons", NULL, icon_size == VERY_BIG_SIZE && !is_list_view)) //very big
 			{
 				icon_size = VERY_BIG_SIZE;
@@ -754,9 +878,6 @@ bool Assets::DrawRightClick()
 				icon_size = SMALL_SIZE;
 				is_list_view = false;
 			}
-			ImGui::Separator();
-
-			ImGui::MenuItem("List", NULL, &is_list_view); //list view
 			ImGui::EndMenu();
 		}
 		if (ImGui::MenuItem("Show in Explorer", NULL, nullptr, selected_nodes.size() == 1)) //show in explorer
@@ -851,6 +972,8 @@ void Assets::DrawPath()
 				count++;
 			}
 		}
+		else
+			count = parents.size();
 
 		// '<<' Button
 		ImVec4 color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
