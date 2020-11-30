@@ -358,7 +358,7 @@ void Assets::DrawHierarchy(AssetNode& node)
 	static ImGuiContext& g = *GImGui;
 	static ImGuiWindow* window = g.CurrentWindow;
 	static ImVec4* colors = ImGui::GetStyle().Colors;
-	ImVec2 size = ImVec2(ImGui::GetWindowContentRegionMax().x, 12);
+	ImVec2 size = ImVec2(ImGui::GetWindowContentRegionMax().x, 14);
 	ImVec4 color = colors[ImGuiCol_WindowBg];
 	ImVec2 pos = window->DC.CursorPos;
 	ImRect bg(ImVec2(pos.x - 10, pos.y - g.Style.FramePadding.y), ImVec2(pos.x + size.x + ImGui::GetScrollX(), pos.y + size.y + 2));
@@ -401,7 +401,8 @@ void Assets::DrawHierarchy(AssetNode& node)
 	ImGui::SetCursorPosX(pos.x + 14 * GetNumParents(node));
 
 	// Arrow
-	pos.x = ImGui::GetCursorPosX();
+	pos = ImGui::GetCursorPos();
+	ImGui::SetCursorPosY(pos.y - 1);
 	if (!node.childs.empty())
 	{
 		if (node.open)
@@ -618,7 +619,7 @@ void Assets::DrawNodeList(AssetNode& node)
 	ImGui::SetCursorPos(ImVec2(pos.x + (node_size - icon_size) / 2, pos.y));
 
 	ImGui::BeginGroup();
-	ImGui::SetCursorPosY(pos.y + 3);
+	ImGui::SetCursorPosY(pos.y + 4);
 
 	if (node.cut)
 		text_color = ImVec4(0.6f, 0.6f, 0.6f, 1.0f);
@@ -626,18 +627,22 @@ void Assets::DrawNodeList(AssetNode& node)
 	if (!node.rename)
 	{
 		// Text
+		ImVec4 icon_color = GetIconColor(node.type);
+		std::string icon = GetIconList(node.type);
 		std::string text = node.name;
-		uint text_size = (uint)ImGui::CalcTextSize(text.c_str()).x;
+		uint text_size = (uint)ImGui::CalcTextSize(std::string(icon + " " + text).c_str()).x;
 		int max_size = (int)(size.x - 7 - ImGui::CalcTextSize("...").x) / 7;
 		ImGui::SetCursorPosX(pos.x + 7);
 
-		if (max_size > 0 && text_size > size.x - 14)
+		if (max_size >= 3 && text_size > size.x - 14)
 			text = text.substr(0, max_size) + "...";
-		else if (max_size <= 0)
+		else if (max_size < 3)
 			text = "...";
 		else
 			tooltip = false;
 
+		ImGui::TextColored(icon_color, icon.c_str());
+		ImGui::SameLine();
 		ImGui::TextColored(text_color, text.c_str());
 	}
 	else // Rename
@@ -1209,6 +1214,64 @@ std::string Assets::GetNameWithCount(const std::string name) const
 		}
 	}
 	return new_name;
+}
+
+std::string Assets::GetIconList(const AssetNode::NodeType type) const
+{
+	switch (type)
+	{
+	case AssetNode::NodeType::FOLDER:
+		return ICON_FOLDER;
+	case AssetNode::NodeType::SCENE:
+		return ICON_SCENE;
+	case AssetNode::NodeType::PREFAB:
+		return ICON_PREFAB;
+	case AssetNode::NodeType::TEXTURE:
+		return ICON_TEXTURE;
+	case AssetNode::NodeType::MATERIAL:
+		return ICON_SHADER;
+	case AssetNode::NodeType::ANIMATION:
+		return ICON_ANIMATION;
+	case AssetNode::NodeType::TILEMAP:
+		return ICON_TILEMAP;
+	case AssetNode::NodeType::AUDIO:
+		return ICON_AUDIO;
+	case AssetNode::NodeType::SCRIPT:
+		return ICON_SCRIPT;
+	case AssetNode::NodeType::NONE:
+		return "";
+	default:
+		return "";
+	}
+}
+
+ImVec4 Assets::GetIconColor(const AssetNode::NodeType type) const
+{
+	switch (type)
+	{
+	case AssetNode::NodeType::FOLDER:
+		return ImVec4(0.9f, 0.6f, 0.0f, 1.0f); //orange
+	case AssetNode::NodeType::SCENE:
+		return ImVec4(1.0f, 1.0f, 1.0f, 1.0f); //white
+	case AssetNode::NodeType::PREFAB:
+		return ImVec4(0.2f, 1.0f, 1.0f, 1.0f); //blue
+	case AssetNode::NodeType::TEXTURE:
+		return ImVec4(1.0f, 1.0f, 1.0f, 1.0f); //
+	case AssetNode::NodeType::MATERIAL:
+		return ImVec4(1.0f, 1.0f, 1.0f, 1.0f); //
+	case AssetNode::NodeType::ANIMATION:
+		return ImVec4(1.0f, 1.0f, 1.0f, 1.0f); //
+	case AssetNode::NodeType::TILEMAP:
+		return ImVec4(1.0f, 1.0f, 1.0f, 1.0f); //
+	case AssetNode::NodeType::AUDIO:
+		return ImVec4(1.0f, 1.0f, 1.0f, 1.0f); //
+	case AssetNode::NodeType::SCRIPT:
+		return ImVec4(1.0f, 1.0f, 1.0f, 1.0f); //
+	case AssetNode::NodeType::NONE:
+		return ImVec4(1.0f, 1.0f, 1.0f, 1.0f); //
+	default:
+		return ImVec4(1.0f, 1.0f, 1.0f, 1.0f); //
+	}
 }
 
 bool Assets::IsChildOf(const AssetNode& node, AssetNode& child) const

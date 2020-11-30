@@ -42,8 +42,10 @@ private:
 	uint GetNumParents(AssetNode& node) const; //get number of parents
 	AssetNode::NodeType GetType(const AssetNode& node) const; //get node type
 	std::string GetNameWithCount(const std::string name) const; //get name with count
-	bool IsChildOf(const AssetNode& node, AssetNode& child) const; //check if node is child or child of childs of parent
+	std::string GetIconList(const AssetNode::NodeType type) const; //get icon for list view mode
+	ImVec4 GetIconColor(const AssetNode::NodeType type) const; //get icon color for list view mode
 
+	bool IsChildOf(const AssetNode& node, AssetNode& child) const; //check if node is child or child of childs of parent
 	int FindNode(const AssetNode& node, const std::vector<AssetNode*> list) const; //get node pos in list (returns -1 if not found)
 	void UpdatePath(AssetNode& node, const std::string path) const; //update path
 
