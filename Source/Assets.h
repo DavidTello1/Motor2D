@@ -89,7 +89,7 @@ private:
 	bool is_cut = false;
 	bool is_copy = false;
 
-	static ImGuiTextFilter Searcher;
+	static ImGuiTextFilter searcher;
 	AssetNode::NodeType filter = AssetNode::NodeType::NONE;
 
 	float node_size = 0.0f;

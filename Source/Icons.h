@@ -35,6 +35,7 @@
 #define ICON_SHOW u8"\uf027"
 #define ICON_ARROW_OPEN u8"\uf028"
 #define ICON_ARROW_CLOSED u8"\uf029"
+#define ICON_GEOMETRY u8"\uf024"
 #define ICON_VERBOSE u8"\uf030"
 #define ICON_DEBUG u8"\uf031"
 #define ICON_WARNING u8"\uf032"

@@ -7,41 +7,16 @@
 
 #include "mmgr/mmgr.h"
 
-//Variables
-char 				Console::InputBuf[256];
-ImVector<char*>		Console::Items;
-ImVector<char*>		Console::History;
-int					Console::HistoryPos;    // -1: new line, 0..History.Size-1 browsing history.
-ImGuiTextFilter		Console::Filter;
-ImGuiTextFilter		Console::Searcher;
-bool				Console::AutoScroll;
-bool				Console::ShowVerboseLog;
-bool				Console::ShowGeometryLog;
-bool				Console::ShowDebugLog;
-bool				Console::ShowWarningLog;
-bool				Console::EnableFileName;
-bool				Console::ScrollToBottom;
-bool				Console::ShowSearch;
-bool				Console::ClearOnPlay;
+char Console::input_buffer[256];
+ImVector<char*> Console::items;
+ImVector<char*> Console::history;
+int Console::history_pos;    // -1: new line, 0..History.Size-1 browsing history.
+ImGuiTextFilter Console::filter;
+ImGuiTextFilter Console::searcher;
 
-//Constructor
+// ---------------------------------------------------------
 Console::Console() : Panel("Console", ICON_CONSOLE)
 {
-	LOG("Init Console");
-	ClearLog();
-	memset(InputBuf, 0, sizeof(InputBuf));
-	HistoryPos = -1;
-
-	//Booleans
-	AutoScroll = true;
-	ShowDebugLog = true;
-	ShowGeometryLog = true;
-	ShowVerboseLog = true;
-	ShowWarningLog = true;
-	EnableFileName = false;
-	ScrollToBottom = false;
-
-	//Panel size & pos
 	width = default_width;
 	height = default_height;
 	pos_x = default_pos_x;
@@ -49,37 +24,23 @@ Console::Console() : Panel("Console", ICON_CONSOLE)
 
 	flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoCollapse;
 
+	ClearLog();
+	memset(input_buffer, 0, sizeof(input_buffer));
+	history_pos = -1;
+
 	UpdateFilters();
 }
 
-//Destructor
 Console::~Console()
 {
-	LOG("Closing Console")
 	ClearLog();
-	for (int i = 0; i < History.Size; i++)
-		free(History[i]);
+	for (int i = 0; i < history.Size; i++)
+		free(history[i]);
 }
 
-//Update Console Filters
-void Console::UpdateFilters()
-{
-	char filters_buffer[256] = " ";
-
-	if (!ShowDebugLog)	  strcat_s(filters_buffer, 256, "-[Debug],");
-	if (!ShowGeometryLog) strcat_s(filters_buffer, 256, "-[Geometry],");
-	if (!ShowVerboseLog)  strcat_s(filters_buffer, 256, "-[Verbose],");
-	if (!ShowWarningLog)  strcat_s(filters_buffer, 256, "-[Warning],");
-
-	Filter.Clear();
-	sprintf_s(Filter.InputBuf, 256, "%s", filters_buffer);
-	Filter.Build();
-}
-
-//Draw Console Panel
 void Console::Draw()
 {
-	static bool copy_to_clipboard = false;
+	static bool is_copy = false;
 
 	// Shortcuts
 	Shortcuts();
@@ -87,56 +48,44 @@ void Console::Draw()
 	// Menu Bar
 	if (ImGui::BeginMenuBar())
 	{
-		if (ImGui::BeginMenu("Options"))
-		{
-			ImGui::PushItemFlag(ImGuiItemFlags_SelectableDontClosePopup, true);
-
-			copy_to_clipboard = ImGui::MenuItem("Copy");
-			if (ImGui::MenuItem("Clear")) { ClearLog(); }
-
-			ImGui::Separator();
-
-			ImGui::MenuItem("Clear on Play", NULL, &ClearOnPlay);
-			ImGui::MenuItem("Auto-scroll", NULL, &AutoScroll);
-			ImGui::MenuItem("Enable file name", NULL, &EnableFileName);
-
-			ImGui::PopItemFlag();
-			ImGui::EndMenu();
-		}
-
 		if (ImGui::BeginMenu("Filters"))
 		{
 			ImGui::PushItemFlag(ImGuiItemFlags_SelectableDontClosePopup, true);
 
-			if (ImGui::MenuItem("Debug", NULL, &ShowDebugLog)) UpdateFilters();
-			if (ImGui::MenuItem("Verbose", NULL, &ShowVerboseLog)) UpdateFilters();
-			if (ImGui::MenuItem("Geometry", NULL, &ShowGeometryLog)) UpdateFilters();
-			if (ImGui::MenuItem("Warning", NULL, &ShowWarningLog)) UpdateFilters();
+			if (ImGui::MenuItem("Debug", NULL, &is_debug)) UpdateFilters();
+			if (ImGui::MenuItem("Verbose", NULL, &is_verbose)) UpdateFilters();
+			if (ImGui::MenuItem("Geometry", NULL, &is_geometry)) UpdateFilters();
+			if (ImGui::MenuItem("Warning", NULL, &is_warning)) UpdateFilters();
 
 			ImGui::PopItemFlag();
 			ImGui::EndMenu();
 		}
 
-		ImGui::MenuItem("Search", NULL, &ShowSearch);
+		ImGui::MenuItem("Search", NULL, &is_search);
 		ImGui::EndMenuBar();
 	}
 
 	// Search
-	if (ShowSearch)
+	if (is_search)
 	{
-		Searcher.Draw("Search", 180);
+		searcher.Draw("Search", 180);
 		ImGui::Separator();
 	}
 
 	// Log Child
 	const float footer_height_to_reserve = ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing(); // 1 separator, 1 input text
-	ImGui::BeginChild("ScrollingRegion", ImVec2(0, -footer_height_to_reserve), false, ImGuiWindowFlags_HorizontalScrollbar); // Leave room for 1 separator + 1 InputText
+	ImGui::BeginChild("ScrollingRegion", ImVec2(0, -footer_height_to_reserve)); // Leave room for 1 separator + 1 InputText
 	
 	// Right Click Options
 	if (ImGui::BeginPopupContextWindow())
 	{
-		copy_to_clipboard = ImGui::Selectable("Copy", false, 0, ImVec2(60,14));
-		if (ImGui::Selectable("Clear", false, 0, ImVec2(60, 14))) ClearLog();
+		is_copy = ImGui::MenuItem("Copy", "Ctrl + C");
+		if (ImGui::MenuItem("Clear")) ClearLog();
+
+		ImGui::Separator();
+		ImGui::MenuItem("Clear on Play", NULL, &is_clear_on_play);
+		ImGui::MenuItem("Auto-scroll", NULL, &is_auto_scroll);
+
 		ImGui::EndPopup();
 	}
 
@@ -157,30 +106,30 @@ void Console::Draw()
 	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(4, 1));
 
 	// Start Copying to Clipboard
-	if (copy_to_clipboard)
+	if (is_copy)
 		ImGui::LogToClipboard();
 
 	// Actual drawing of logs
-	for (int i = 0; i < Items.Size; i++)
+	for (int i = 0; i < items.Size; i++)
 	{
-		const char* item = Items[i];
-		if (!Filter.PassFilter(item) || !Searcher.PassFilter(item))
+		const char* item = items[i];
+		if (!filter.PassFilter(item) || !searcher.PassFilter(item))
 			continue;
 
 		// Normally you would store more information in your item (e.g. make Items[] an array of structure, store color/type etc.)
-		if (strstr(item, "[Error]"))
+		if (strstr(item, ICON_ERROR))
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.4f, 0.4f, 1.0f)); //red
 
-		else if (strstr(item, "[Warning]"))
+		else if (strstr(item, ICON_WARNING))
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.75f, 0.0f, 1.0f)); //yellow
 
-		else if (strstr(item, "[Geometry]"))
+		else if (strstr(item, ICON_GEOMETRY))
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.4f, 1.0f, 0.4f, 1.0f)); //green
 
-		else if (strstr(item, "[Verbose]"))
+		else if (strstr(item, ICON_VERBOSE))
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.2f, 0.4f, 1.0f, 1.0f)); //blue
 
-		else if (strstr(item, "[Debug]"))
+		else if (strstr(item, ICON_DEBUG))
 			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f)); //white
 
 		else if (strncmp(item, "# ", 2) == 0)
@@ -191,26 +140,20 @@ void Console::Draw()
 	}
 
 	// Finish Copying to Clipboard
-	if (copy_to_clipboard)
+	if (is_copy)
 	{
 		ImGui::LogFinish();
 		LOG("Copied to clipboard", 'd');
-		copy_to_clipboard = false;
+		is_copy = false;
 	}
 
 	// Scroll
-	if (ScrollToBottom || (AutoScroll && ImGui::GetScrollY() >= ImGui::GetScrollMaxY()))
+	if (is_scroll_to_bottom || (is_auto_scroll && ImGui::GetScrollY() >= ImGui::GetScrollMaxY()))
 		ImGui::SetScrollHereY(1.0f);
-	ScrollToBottom = false;
+	is_scroll_to_bottom = false;
 
 	ImGui::PopStyleVar();
 	ImGui::EndChild();
-
-	//// Auto-focus on window apparition
-	//bool reclaim_focus = false;
-	//ImGui::SetItemDefaultFocus();
-	//if (reclaim_focus)
-	//	ImGui::SetKeyboardFocusHere(-1); // Auto focus previous widget
 }
 
 void Console::Shortcuts()
@@ -220,9 +163,50 @@ void Console::Shortcuts()
 		if ((App->input->GetKey(SDL_SCANCODE_LCTRL) == KEY_REPEAT || App->input->GetKey(SDL_SCANCODE_RCTRL) == KEY_REPEAT)
 			&& App->input->GetKey(SDL_SCANCODE_F) == KEY_DOWN)
 		{
-			ShowSearch = !ShowSearch;
+			is_search = !is_search;
 		}
 	}
+}
+
+void Console::UpdateFilters()
+{
+	char filters_buffer[256] = " ";
+
+	if (!is_debug)	  strcat_s(filters_buffer, 256, ICON_DEBUG);
+	if (!is_geometry) strcat_s(filters_buffer, 256, ICON_GEOMETRY);
+	if (!is_verbose)  strcat_s(filters_buffer, 256, ICON_VERBOSE);
+	if (!is_warning)  strcat_s(filters_buffer, 256, ICON_WARNING);
+
+	filter.Clear();
+	sprintf_s(filter.InputBuf, 256, "%s", filters_buffer);
+	filter.Build();
+}
+
+// --- LOGS ---
+char* Console::Strdup(const char* str)
+{
+	size_t len = strlen(str) + 1;
+	void* buf = malloc(len);
+	IM_ASSERT(buf);
+	return (char*)memcpy(buf, (const void*)str, len);
+}
+
+void Console::AddLog(const char* fmt, ...) IM_FMTARGS(2)
+{
+	char buf[1024];
+	va_list args;
+	va_start(args, fmt);
+	vsnprintf(buf, IM_ARRAYSIZE(buf), fmt, args);
+	buf[IM_ARRAYSIZE(buf) - 1] = 0;
+	va_end(args);
+	items.push_back(Strdup(buf));
+}
+
+void Console::ClearLog()
+{
+	for (int i = 0; i < items.Size; ++i)
+		free(items[i]);
+	items.clear();
 }
 
 // Log Function
@@ -252,21 +236,13 @@ void log(const char file[], int line, const char* format, ...)
 
 	//--- Console log system
 	//Adding log string distinguishment in front of the log itself
-	if (char_type == 'g')		sprintf_s(log_type, 4096, "%s ", GEOMETRY_LOG_STRING);
-	else if (char_type == 'd')	sprintf_s(log_type, 4096, "%s ", DEBUG_LOG_STRING);
-	else if (char_type == 'w')	sprintf_s(log_type, 4096, "%s ", WARNING_LOG_STRING);
-	else if (char_type == 'e')	sprintf_s(log_type, 4096, "%s ", ERROR_LOG_STRING);
-	else						sprintf_s(log_type, 4096, "%s ", VERBOSE_LOG_STRING);
+	if (char_type == 'g')		sprintf_s(log_type, 4096, "%s ", ICON_GEOMETRY);
+	else if (char_type == 'd')	sprintf_s(log_type, 4096, "%s ", ICON_DEBUG);
+	else if (char_type == 'w')	sprintf_s(log_type, 4096, "%s ", ICON_WARNING);
+	else if (char_type == 'e')	sprintf_s(log_type, 4096, "%s ", ICON_ERROR);
+	else						sprintf_s(log_type, 4096, "%s ", ICON_VERBOSE);
 
-	if (Console::EnableFileName)
-	{
-		// 92 stands for '\' character
-		const char* short_file = strrchr(file, 92);
-
-		sprintf_s(final_log, 4096, "%s%s(%d) : %s", log_type, short_file + 1, line, tmp_string);
-	}
-	else
-		sprintf_s(final_log, 4096, "%s%s", log_type, tmp_string);
+	sprintf_s(final_log, 4096, "%s%s", log_type, tmp_string);
 
 	Console::AddLog(final_log);
 }

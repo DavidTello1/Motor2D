@@ -11,7 +11,7 @@
 
 #include "mmgr/mmgr.h"
 
-ImGuiTextFilter Assets::Searcher;
+ImGuiTextFilter Assets::searcher;
 
 // ---------------------------------------------------------
 Assets::Assets() : Panel("Assets", ICON_ASSETS)
@@ -179,7 +179,7 @@ void Assets::ChildHierarchy()
 	if (is_search)
 	{
 		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 2);
-		Searcher.Draw("Search", 180);
+		searcher.Draw("Search", 180);
 		ImGui::Separator();
 	}
 
@@ -324,7 +324,7 @@ void Assets::ChildIcons()
 	for (uint i = 0, size = current_list.size(); i < size; ++i)
 	{
 		AssetNode* current_node = current_list[i];
-		if ((filter != AssetNode::NodeType::NONE && filter != current_node->type) || !Searcher.PassFilter(current_node->name.c_str()))
+		if ((filter != AssetNode::NodeType::NONE && filter != current_node->type) || !searcher.PassFilter(current_node->name.c_str()))
 			continue;
 
 		if (is_list_view)
@@ -547,6 +547,9 @@ void Assets::DrawNodeIcon(AssetNode& node)
 				std::string new_name = node.path.substr(0, node.path.find_last_of("/") + 1) + node.name;
 				MoveFile(node.path.c_str(), new_name.c_str());
 				node.path = new_name;
+			
+				for (AssetNode* child : node.childs)
+					UpdatePath(*child, node.path);
 			}
 		}
 		ImGui::SetKeyboardFocusHere(-1);
@@ -662,6 +665,9 @@ void Assets::DrawNodeList(AssetNode& node)
 				std::string new_name = node.path.substr(0, node.path.find_last_of("/") + 1) + node.name;
 				MoveFile(node.path.c_str(), new_name.c_str());
 				node.path = new_name;
+
+				for (AssetNode* child : node.childs)
+					UpdatePath(*child, node.path);
 			}
 		}
 		ImGui::SetKeyboardFocusHere(-1);
