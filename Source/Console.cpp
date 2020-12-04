@@ -147,12 +147,18 @@ void Console::Draw()
 	{
 		ImGui::LogFinish();
 		LOG("Copied to clipboard", 'd');
+
+		App->new_logs = 0;
+		ImGui::TextUnformatted("Copied to clipboard");
+		if (is_auto_scroll)
+			ImGui::SetScrollHereY();
+
 		is_copy = false;
 	}
 
-	//// Scroll
-	//if (is_auto_scroll && is_new_message)
-	//	ImGui::SetScrollHereY(1.0f);
+	// Scroll
+	if (is_auto_scroll && App->new_logs > 0)
+		ImGui::SetScrollHereY();
 
 	ImGui::PopStyleVar();
 	ImGui::EndChild();

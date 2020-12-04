@@ -339,8 +339,8 @@ void ModuleEditor::DrawPanels()
 					sprintf_s(console_name, "Console###Console");
 
 				ImGui::Begin(std::string(panels[i]->GetIcon() + std::string(" ") + console_name).c_str(), &panels[i]->active, panels[i]->flags);
-				if (ImGui::IsWindowFocused()) App->new_logs = 0;
 				panels[i]->Draw();
+				if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)) App->new_logs = 0;
 				ImGui::End();
 			}
 			else // Other Panels
