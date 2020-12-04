@@ -10,6 +10,7 @@
 //#include "ModuleResources.h"
 #include "Config.h"
 
+#include <windows.h>
 #include "MathGeoLib/include/Algorithm/Random/LCG.h"
 
 #include "mmgr/mmgr.h"
@@ -18,6 +19,8 @@ using namespace std;
 
 Application::Application()
 {
+	new_logs = 0;
+	dt = 0.0f;
 	frames = 0;
 	last_frame_ms = -1;
 	last_fps = -1;
@@ -27,26 +30,25 @@ Application::Application()
 
 	modules.push_back(file_system = new ModuleFileSystem(ASSETS_FOLDER));
 	modules.push_back(window = new ModuleWindow());
+	modules.push_back(input = new ModuleInput());
 	//modules.push_back(resources = new ModuleResources());
 	//modules.push_back(tex = new ModuleTextures());
 	//modules.push_back(camera = new ModuleCamera3D());
 	//modules.push_back(scene_base = new ModuleSceneBase());
 	modules.push_back(scene = new ModuleScene());
-	modules.push_back(editor = new ModuleEditor());
-	modules.push_back(input = new ModuleInput());
 	//modules.push_back(audio = new ModuleAudio(true));
 	//modules.push_back(ai = new ModuleAI());
 	//modules.push_back(level = new ModuleLevelManager());
 	//modules.push_back(programs = new ModulePrograms(true));
 	modules.push_back(renderer = new ModuleRenderer());
-	//modules.push_back(renderer3D = new ModuleRenderer3D());
+	modules.push_back(editor = new ModuleEditor());
 }
 
 // ---------------------------------------------
 Application::~Application()
 {
-	for (list<Module*>::iterator it = modules.begin(); it != modules.end(); ++it)
-		RELEASE(*it);
+	for (Module* mod : modules)
+		RELEASE(mod);
 	
 	RELEASE(random);
 }
@@ -63,17 +65,15 @@ bool Application::Init()
 	ReadConfig(config.GetSection("App"));
 
 	// We init everything, even if not enabled
-	for (list<Module*>::iterator it = modules.begin(); it != modules.end() && ret; ++it)
-	{
-		ret = (*it)->Init(&(config.GetSection((*it)->GetName())));
-	}
+	for (Module* mod : modules)
+		ret = mod->Init(&(config.GetSection(mod->GetName())));
 
 	// Another round, just before starting the Updates. Only called for "active" modules
 	// we send the configuration again in case a module needs it
-	for (list<Module*>::iterator it = modules.begin(); it != modules.end() && ret; ++it)
+	for (Module* mod : modules)
 	{
-		if ((*it)->IsActive() == true)
-			ret = (*it)->Start(&(config.GetSection((*it)->GetName())));
+		if (mod->IsActive() == true)
+			ret = mod->Start(&(config.GetSection(mod->GetName())));
 	}
 
 	RELEASE_ARRAY(buffer);
@@ -93,17 +93,17 @@ bool Application::Update()
 	bool ret = true;
 	PrepareUpdate();
 
-	for (list<Module*>::iterator it = modules.begin(); it != modules.end() && ret == true; ++it)
-		if ((*it)->IsActive() == true)
-			ret = (*it)->PreUpdate(dt);
+	for (Module* mod : modules)
+		if (mod->IsActive() == true)
+			ret = mod->PreUpdate(dt);
 
-	for (list<Module*>::iterator it = modules.begin(); it != modules.end() && ret == true; ++it)
-		if ((*it)->IsActive() == true)
-			ret = (*it)->Update(dt);
+	for (Module* mod : modules)
+		if (mod->IsActive() == true)
+			ret = mod->Update(dt);
 
-	for (list<Module*>::iterator it = modules.begin(); it != modules.end() && ret == true; ++it)
-		if ((*it)->IsActive() == true)
-			ret = (*it)->PostUpdate(dt);
+	for (Module* mod : modules)
+		if (mod->IsActive() == true)
+			ret = mod->PostUpdate(dt);
 
 	FinishUpdate();
 	return ret;
@@ -138,9 +138,9 @@ bool Application::CleanUp()
 {
 	bool ret = true;
 
-	for (list<Module*>::reverse_iterator it = modules.rbegin(); it != modules.rend() && ret; ++it)
-		if ((*it)->IsActive() == true)
-			ret = (*it)->CleanUp();
+	for (uint i = 0; i < modules.size(); i++)
+		if (modules[i]->IsActive() == true)
+			ret = modules[i]->CleanUp(); 
 
 	return ret;
 }
@@ -218,11 +218,11 @@ void Application::LoadPrefs(bool default)
 			ReadConfig(config.GetSection("App"));
 
 			Config section;
-			for (list<Module*>::iterator it = modules.begin(); it != modules.end(); ++it)
+			for (Module* mod : modules)
 			{
-				section = config.GetSection((*it)->GetName());
+				section = config.GetSection(mod->GetName());
 				//if (section.IsValid())
-				(*it)->Load(&section);
+				mod->Load(&section);
 			}
 		}
 
@@ -237,11 +237,30 @@ void Application::SavePrefs() const
 
 	SaveConfig(config.AddSection("App"));
 
-	for (list<Module*>::const_iterator it = modules.begin(); it != modules.end(); ++it)
-		(*it)->Save(&config.AddSection((*it)->GetName()));
+	for (Module* mod : modules)
+		mod->Save(&config.AddSection(mod->GetName()));
 
 	char *buf;
 	uint size = config.Save(&buf, "Saved engine configuration");
 	if (App->file_system->Save(SETTINGS_FOLDER "config.json", buf, size) > 0) {}
 	RELEASE_ARRAY(buf);
+}
+
+// ---------------------------------------------
+void Application::AddLog(const char* icon, const char* time, const char* message)
+{
+	if (logs.size() > MAX_LOG_SIZE)
+		logs.erase(logs.begin());
+
+	logs.push_back({ icon, time, message });
+
+	new_logs++;
+}
+
+void Application::ClearLog()
+{
+	logs.erase(logs.begin(), logs.end());
+	logs.clear();
+
+	new_logs = 0;
 }

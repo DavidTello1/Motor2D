@@ -364,6 +364,7 @@ void Assets::DrawHierarchy(AssetNode& node)
 	ImRect bg(ImVec2(pos.x - 10, pos.y - g.Style.FramePadding.y), ImVec2(pos.x + size.x + ImGui::GetScrollX(), pos.y + size.y + 2));
 	
 	// Selectable
+	pos = ImGui::GetCursorPos();
 	ImGui::Dummy(size);
 	if (ImGui::IsItemHovered())
 	{

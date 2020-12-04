@@ -4,7 +4,13 @@
 
 #include "MathGeoLib/include/MathGeoLibFwd.h"
 #include <string>
-#include <list>
+#include <vector>
+
+#define MAX_LOG_SIZE 1000
+
+struct Log {
+	std::string icon, time, message;
+};
 
 class Module;
 class ModuleWindow;
@@ -43,7 +49,9 @@ public:
 	void LoadPrefs(bool default = false);
 	void SavePrefs() const;
 
-	std::string GetLog() { return log; }
+	void AddLog(const char* icon, const char* time, const char* message);
+	void ClearLog();
+	std::vector<Log> GetLog() { return logs; }
 	math::LCG& Random() { return *random; }
 
 private:
@@ -52,6 +60,7 @@ private:
 
 public:
 	math::LCG* random = nullptr;
+	uint new_logs;
 
 	ModuleWindow* window;
 	ModuleInput* input;
@@ -73,8 +82,9 @@ private:
 	int		last_fps;
 	int		capped_ms;
 
-	std::list<Module*> modules;
-	std::string log;
+	std::vector<Module*> modules;
+	std::vector<Log> logs;
+
 	std::string app_name;
 	std::string organization_name;
 };

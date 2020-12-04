@@ -304,34 +304,49 @@ void ModuleEditor::DrawMenuBar()
 
 void ModuleEditor::DrawPanels()
 {
-	for (std::vector<Panel*>::const_iterator it = panels.begin(); it != panels.end(); ++it)
+	for (uint i = 0; i <panels.size(); ++i)
 	{
-		if ((*it)->active)
+		if (panels[i]->active)
 		{
-			ImGui::SetNextWindowPos(ImVec2((float)(*it)->pos_x, (float)(*it)->pos_y), ImGuiCond_FirstUseEver);
-			ImGui::SetNextWindowSize(ImVec2((float)(*it)->width, (float)(*it)->height), ImGuiCond_FirstUseEver);
+			ImGui::SetNextWindowPos(ImVec2((float)panels[i]->pos_x, (float)panels[i]->pos_y), ImGuiCond_FirstUseEver);
+			ImGui::SetNextWindowSize(ImVec2((float)panels[i]->width, (float)panels[i]->height), ImGuiCond_FirstUseEver);
 
-			std::string name = std::string((*it)->GetIcon()) + std::string(" ") + std::string((*it)->GetName());
+			std::string name = std::string(panels[i]->GetIcon()) + std::string(" ") + std::string(panels[i]->GetName());
 
 			// Configuration
-			if ((*it)->GetName() == "Configuration")
+			if (panels[i]->GetName() == "Configuration")
 			{
-				ImGui::Begin(name.c_str(), NULL, (*it)->flags);
-				(*it)->Draw();
+				ImGui::Begin(name.c_str(), NULL, panels[i]->flags);
+				panels[i]->Draw();
 				ImGui::End();
 			}
-			else if ((*it)->GetName() == "Assets") // Assets
+			else if (panels[i]->GetName() == "Assets") // Assets
 			{
 				ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
-				ImGui::Begin(name.c_str(), &(*it)->active, (*it)->flags);
+				ImGui::Begin(name.c_str(), &panels[i]->active, panels[i]->flags);
 				ImGui::PopStyleVar();
-				(*it)->Draw();
+				panels[i]->Draw();
+				ImGui::End();
+			}
+			else if (i == 1) // Console
+			{
+				static char console_name[128];
+				if (App->new_logs > 99)
+					sprintf_s(console_name, "Console (99+)###Console");
+				else if (App->new_logs > 0)
+					sprintf_s(console_name, "Console (%d)###Console", App->new_logs);
+				else
+					sprintf_s(console_name, "Console###Console");
+
+				ImGui::Begin(std::string(panels[i]->GetIcon() + std::string(" ") + console_name).c_str(), &panels[i]->active, panels[i]->flags);
+				if (ImGui::IsWindowFocused()) App->new_logs = 0;
+				panels[i]->Draw();
 				ImGui::End();
 			}
 			else // Other Panels
 			{
-				ImGui::Begin(name.c_str(), &(*it)->active, (*it)->flags);
-				(*it)->Draw();
+				ImGui::Begin(name.c_str(), &panels[i]->active, panels[i]->flags);
+				panels[i]->Draw();
 				ImGui::End();
 			}
 
