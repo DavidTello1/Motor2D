@@ -13,7 +13,7 @@ ImGuiTextFilter Console::filter;
 ImGuiTextFilter Console::searcher;
 
 // ---------------------------------------------------------
-Console::Console() : Panel("###Console", ICON_CONSOLE)
+Console::Console() : Panel("###Console", ICON_CONSOLE, 1)
 {
 	width = default_width;
 	height = default_height;
@@ -60,6 +60,7 @@ void Console::Draw()
 	// Search
 	if (is_search)
 	{
+		ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX() - 1, ImGui::GetCursorPosY() - 4));
 		searcher.Draw("Search", 180);
 		ImGui::Separator();
 	}

@@ -11,7 +11,7 @@
 #include "mmgr/mmgr.h"
 
 // ---------------------------------------------------------
-Hierarchy::Hierarchy() : Panel("Hierarchy", ICON_HIERARCHY)
+Hierarchy::Hierarchy() : Panel("Hierarchy", ICON_HIERARCHY, 2)
 {
 	width = default_width;
 	height = default_height;

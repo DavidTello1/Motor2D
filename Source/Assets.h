@@ -88,6 +88,7 @@ private:
 	bool is_delete = false;
 	bool is_cut = false;
 	bool is_copy = false;
+	bool is_rename_flag = true;
 
 	static ImGuiTextFilter searcher;
 	AssetNode::NodeType filter = AssetNode::NodeType::NONE;

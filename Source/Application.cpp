@@ -28,6 +28,8 @@ Application::Application()
 	fps_counter = 0;
 	random = new math::LCG();
 
+	logs.reserve(MAX_LOG_SIZE + 1);
+
 	modules.push_back(file_system = new ModuleFileSystem(ASSETS_FOLDER));
 	modules.push_back(window = new ModuleWindow());
 	modules.push_back(input = new ModuleInput());

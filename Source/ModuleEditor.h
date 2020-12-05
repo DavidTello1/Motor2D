@@ -37,7 +37,7 @@ public:
 	void Draw();
 
 	// Panels
-	Panel* GetPanel(const char* name);
+	Panel* GetPanel(uint ID);
 
 	// Style
 	void ChangeStyle(uint new_style);
@@ -66,6 +66,7 @@ public:
 	Assets* panel_assets = nullptr;
 	//Inspector* panel_inspector = nullptr;
 	//Viewport* panel_viewport = nullptr;
+	//Game* panel_game = nullptr;
 
 	bool is_auto_select = false;
 	bool is_about = false;

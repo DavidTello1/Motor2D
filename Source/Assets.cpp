@@ -14,7 +14,7 @@
 ImGuiTextFilter Assets::searcher;
 
 // ---------------------------------------------------------
-Assets::Assets() : Panel("Assets", ICON_ASSETS)
+Assets::Assets() : Panel("Assets", ICON_ASSETS, 3)
 {
 	width = default_width;
 	height = default_height;
@@ -178,7 +178,7 @@ void Assets::ChildHierarchy()
 	// Search Bar
 	if (is_search)
 	{
-		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 2);
+		ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX() + 7, ImGui::GetCursorPosY() + 2));
 		searcher.Draw("Search", 180);
 		ImGui::Separator();
 	}
@@ -539,11 +539,9 @@ void Assets::DrawNodeIcon(AssetNode& node)
 		ImGui::SetNextItemWidth(node_size);
 		if (ImGui::InputText("##RenameAsset", buffer, IM_ARRAYSIZE(buffer), ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll))
 		{
-			if (strchr(buffer, '(') != nullptr || strchr(buffer, ')') != nullptr)
-				LOG("Error renaming asset, character not valid '()'", 'e')
-			else
+			node.rename = false;
+			if (buffer != node.name)
 			{
-				node.rename = false;
 				node.name = GetNameWithCount(buffer);
 				std::string new_name = node.path.substr(0, node.path.find_last_of("/") + 1) + node.name;
 				MoveFile(node.path.c_str(), new_name.c_str());
@@ -553,7 +551,11 @@ void Assets::DrawNodeIcon(AssetNode& node)
 					UpdatePath(*child, node.path);
 			}
 		}
-		ImGui::SetKeyboardFocusHere(-1);
+		if (ImGui::IsItemClicked() || is_rename_flag)
+		{
+			is_rename_flag = false;
+			ImGui::SetKeyboardFocusHere(-1);
+		}
 	}
 	ImGui::EndGroup();
 
@@ -657,11 +659,9 @@ void Assets::DrawNodeList(AssetNode& node)
 		ImGui::SetCursorPosX(pos.x);
 		if (ImGui::InputText("##RenameAsset", buffer, IM_ARRAYSIZE(buffer), ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll))
 		{
-			if (strchr(buffer, '(') != nullptr || strchr(buffer, ')') != nullptr)
-				LOG("Error renaming asset, character not valid '()'", 'e')
-			else
+			node.rename = false;
+			if (buffer != node.name)
 			{
-				node.rename = false;
 				node.name = GetNameWithCount(buffer);
 				std::string new_name = node.path.substr(0, node.path.find_last_of("/") + 1) + node.name;
 				MoveFile(node.path.c_str(), new_name.c_str());
@@ -671,7 +671,11 @@ void Assets::DrawNodeList(AssetNode& node)
 					UpdatePath(*child, node.path);
 			}
 		}
-		ImGui::SetKeyboardFocusHere(-1);
+		if (ImGui::IsItemClicked() || is_rename_flag)
+		{
+			is_rename_flag = false;
+			ImGui::SetKeyboardFocusHere(-1);
+		}
 	}
 	ImGui::EndGroup();
 
@@ -849,6 +853,7 @@ bool Assets::DrawRightClick()
 
 		if (ImGui::MenuItem("Rename", NULL, false, selected_nodes.size() == 1)) //rename
 		{
+			is_rename_flag = true;
 			selected_nodes.front()->rename = true;
 			rename_node = selected_nodes.front();
 		}
@@ -1345,7 +1350,8 @@ void Assets::Cut(AssetNode& node, AssetNode& parent) const
 void Assets::Copy(AssetNode& node, AssetNode& parent)
 {
 	// Create new Node
-	AssetNode* new_node = CreateNode(node.name, &parent);
+	std::string new_name = node.name + " - copy";
+	AssetNode* new_node = CreateNode(new_name, &parent);
 
 	// If has childs, copy them too
 	if (!node.childs.empty())

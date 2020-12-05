@@ -267,12 +267,11 @@ void ModuleEditor::DrawMenuBar()
 		// Windows
 		if (ImGui::BeginMenu("Windows"))
 		{
-			ImGui::MenuItem("Configuration", NULL, &GetPanel("Configuration")->active);
+			ImGui::MenuItem("Configuration", NULL, &GetPanel(0)->active);
 			ImGui::Separator();
-			ImGui::MenuItem("Console", NULL, &GetPanel("Console")->active);
-			ImGui::MenuItem("Hierarchy", NULL, &GetPanel("Hierarchy")->active);
-			ImGui::MenuItem("Assets", NULL, &GetPanel("Assets")->active);
-			//ImGui::MenuItem("Inspector", NULL, &GetPanel("Inspector")->active);
+			ImGui::MenuItem("Console", NULL, &GetPanel(1)->active);
+			ImGui::MenuItem("Hierarchy", NULL, &GetPanel(2)->active);
+			ImGui::MenuItem("Assets", NULL, &GetPanel(3)->active);
 
 			ImGui::EndMenu();
 		}
@@ -474,12 +473,12 @@ void ModuleEditor::Shortcuts()
 	}
 }
 
-Panel* ModuleEditor::GetPanel(const char* name)
+Panel* ModuleEditor::GetPanel(uint ID)
 {
-	for (std::vector<Panel*>::iterator it = panels.begin(); it != panels.end(); ++it)
+	for (Panel* panel : panels)
 	{
-		if ((*it)->GetName() == name)
-			return (*it);
+		if (panel->GetID() == ID)
+			return panel;
 	}
 	return nullptr;
 }
