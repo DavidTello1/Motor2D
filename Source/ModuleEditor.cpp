@@ -317,6 +317,9 @@ void ModuleEditor::DrawPanels()
 			{
 				ImGui::Begin(name.c_str(), NULL, panels[i]->flags);
 				panels[i]->Draw();
+				if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows))
+					focused_panel = panels[i];
+
 				ImGui::End();
 			}
 			else if (panels[i]->GetName() == "Assets") // Assets
@@ -325,6 +328,9 @@ void ModuleEditor::DrawPanels()
 				ImGui::Begin(name.c_str(), &panels[i]->active, panels[i]->flags);
 				ImGui::PopStyleVar();
 				panels[i]->Draw();
+				if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows))
+					focused_panel = panels[i];
+
 				ImGui::End();
 			}
 			else if (i == 1) // Console
@@ -339,13 +345,19 @@ void ModuleEditor::DrawPanels()
 
 				ImGui::Begin(std::string(panels[i]->GetIcon() + std::string(" ") + console_name).c_str(), &panels[i]->active, panels[i]->flags);
 				panels[i]->Draw();
-				if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)) App->new_logs = 0;
+				if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows))
+				{
+					focused_panel = panels[i];
+					App->new_logs = 0;
+				}
 				ImGui::End();
 			}
 			else // Other Panels
 			{
 				ImGui::Begin(name.c_str(), &panels[i]->active, panels[i]->flags);
 				panels[i]->Draw();
+				if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows))
+					focused_panel = panels[i];
 				ImGui::End();
 			}
 
@@ -360,6 +372,7 @@ void ModuleEditor::DrawPanels()
 			//	App->scene->is_selecting = false;
 			//	focused_panel = *it;
 			//}
+
 		}
 	}
 }

@@ -152,7 +152,10 @@ bool ModuleFileSystem::Remove(const char* file)
 			return true;
 		}
 		else
-			LOG("File System error while trying to delete [%s]: ", file, PHYSFS_getLastError(), 'e');
+		{
+			const char* error = PHYSFS_getLastError();
+			LOG("File System error while trying to delete [%s]: %s", file, error, 'e');
+		}
 	}
 	return false;
 }
@@ -213,7 +216,8 @@ bool ModuleFileSystem::AddPath(const char* path_or_zip)
 {
 	if (PHYSFS_mount(path_or_zip, nullptr, 1) == 0)
 	{
-		LOG("File System error while adding a path or zip: %s\n", PHYSFS_getLastError(), 'e');
+		const char* error = PHYSFS_getLastError();
+		LOG("File System error while adding a path or zip: %s\n", error, 'e');
 		return false;
 	}
 

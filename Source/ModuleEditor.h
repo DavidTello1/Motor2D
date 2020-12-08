@@ -60,6 +60,7 @@ private:
 public:
 	uint style = 0;
 
+	Panel* focused_panel = nullptr;
 	Configuration* panel_configuration = nullptr;
 	Console* panel_console = nullptr;
 	Hierarchy* panel_hierarchy = nullptr;

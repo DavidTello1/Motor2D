@@ -32,6 +32,9 @@ Console::~Console()
 
 void Console::Draw()
 {
+	pos_x = ImGui::GetWindowPos().x;
+	pos_y = ImGui::GetWindowPos().y;
+
 	static bool is_copy = false;
 
 	// Shortcuts

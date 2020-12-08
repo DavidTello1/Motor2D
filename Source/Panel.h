@@ -20,7 +20,7 @@ public:
 public:
 	bool active = true;
 	ImGuiWindowFlags flags = ImGuiWindowFlags_None;
-	int width = 0, height = 0, pos_x = 0, pos_y = 0;
+	float width = 0, height = 0, pos_x = 0, pos_y = 0;
 
 private:
 	const char* name;

@@ -11,7 +11,7 @@ class Assets : public Panel
 {
 public:
 	Assets();
-	virtual ~Assets();
+	~Assets();
 
 	void Draw() override;
 	void Shortcuts() override;

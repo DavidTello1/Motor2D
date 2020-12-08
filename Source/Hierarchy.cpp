@@ -33,6 +33,9 @@ Hierarchy::~Hierarchy()
 
 void Hierarchy::Draw()
 {
+	pos_x = ImGui::GetWindowPos().x;
+	pos_y = ImGui::GetWindowPos().y;
+
 	static ImGuiContext& g = *GImGui;
 	static ImGuiWindow* window = g.CurrentWindow;
 

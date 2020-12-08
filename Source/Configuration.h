@@ -41,11 +41,10 @@ struct hardware_info {
 	float vram_mb_reserved = 0.f;
 };
 
-enum Index {
+enum class Index {
 	APPLICATION = 0,
 	MEMORY,
 	HARDWARE,
-	SOFTWARE,
 	WINDOW,
 	INPUT_DRAW,
 	FILESYSTEM,
@@ -56,20 +55,21 @@ class Configuration : public Panel
 {
 public:
 	Configuration();
-	virtual ~Configuration();
+	~Configuration();
 
 	void Draw() override;
 	void Shortcuts() override {};
 
+	void AddFPS(float fps, float ms);
+
+private:
 	void DrawApplication();
 	void DrawMemory();
 	void DrawHardware();
-	void DrawSoftware();
 	void DrawWindow();
 	void DrawInput();
 	void DrawFileSystem();
-
-	void AddFPS(float fps, float ms);
+	void DrawResources();
 
 	void GetHardware();
 	const hardware_info& GetHardwareInfo() const;
@@ -81,18 +81,20 @@ public:
 	static const uint default_pos_y = 100;
 
 private:
-	ImGuiTextBuffer input_buf;
-	bool need_scroll = false;
 	std::vector<float> fps_log;
 	std::vector<float> ms_log;
 
 	mutable hardware_info info_hw;
 
+	Index curr_index = Index::APPLICATION;
 	bool show_application = true;
 	bool show_hardware = false;
 	bool show_window = false;
 	bool show_input = false;
 	bool show_filesystem = false;
 
-	Index curr_index = Index::APPLICATION;
+	bool is_changes = false;
+	bool is_reset = true;
+
+	//Resource* selected_resource = nullptr;
 };

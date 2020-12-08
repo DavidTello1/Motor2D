@@ -1,6 +1,7 @@
 #include "Assets.h"
 #include "Application.h"
 #include "ModuleInput.h"
+#include "ModuleEditor.h"
 //#include "ModuleScene.h"
 //#include "ModuleResources.h"
 #include "ModuleFileSystem.h"
@@ -46,15 +47,28 @@ Assets::~Assets()
 
 void Assets::Draw()
 {
+	pos_x = ImGui::GetWindowPos().x;
+	pos_y = ImGui::GetWindowPos().y;
+
 	DockSpace(); // Create Dock Space
 	UpdateAssets(); // Update Files
 
 	ChildHierarchy(); // Child Hierarchy
 	ImGui::SameLine();
 	ChildIcons(); // Child Icons
-
+	
+	static bool focus = false;
 	if (ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows)) // Shortcuts
+	{
+		if (focus == false)
+		{
+			ImGui::SetWindowFocus();
+			focus = true;
+		}
 		Shortcuts();
+	}
+	else
+		focus = false;
 }
 
 void Assets::Shortcuts()
@@ -1130,7 +1144,8 @@ void Assets::DeleteNodes(std::vector<AssetNode*> nodes_list)
 			DeleteNodes(node->childs);
 
 		// Delete node data
-		App->file_system->Remove(node->path.c_str());
+		std::string full_path = App->file_system->GetBasePath() + node->path;
+		App->file_system->Remove(full_path.c_str());
 		pos = FindNode(*node, nodes);
 		if (pos != -1)
 		{
@@ -1361,8 +1376,11 @@ void Assets::Copy(AssetNode& node, AssetNode& parent)
 			Copy(*child, *new_node);
 	}
 
-	// Copy in Explorer
-	App->file_system->Copy(node.path.c_str(), new_node->path.c_str());
+	//// Copy in Explorer
+	//std::string full_path = App->file_system->GetBasePath() + node.path;
+	//std::string full_newpath = App->file_system->GetBasePath() + new_node->path;
+
+	//App->file_system->Copy(full_path.c_str(), full_newpath.c_str());
 }
 
 // --- FILES ---

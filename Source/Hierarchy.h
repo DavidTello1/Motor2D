@@ -26,7 +26,7 @@ class Hierarchy : public Panel
 {
 public:
 	Hierarchy();
-	virtual ~Hierarchy();
+	~Hierarchy();
 
 	void Draw() override;
 	void Shortcuts() override;
