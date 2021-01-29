@@ -17,6 +17,13 @@ class ModuleInput;
 class ModuleRenderer;
 class ModuleFileSystem;
 
+class Config;
+
+struct Layout {
+	const char* name;
+	Config& config;
+};
+
 struct hardware_info {
 	float ram_gb = 0.f;
 	uint cpu_count = 0;
@@ -81,6 +88,9 @@ public:
 	static const uint default_pos_y = 100;
 
 private:
+	Layout* current_layout = nullptr;
+	std::vector<Layout*> layouts;
+
 	std::vector<float> fps_log;
 	std::vector<float> ms_log;
 

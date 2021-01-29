@@ -61,8 +61,8 @@ bool Application::Init()
 	bool ret = true;
 	char* buffer = nullptr;
 
+	// Load Config
 	file_system->Load(SETTINGS_FOLDER "config.json", &buffer);
-
 	Config config((const char*)buffer);
 	ReadConfig(config.GetSection("App"));
 

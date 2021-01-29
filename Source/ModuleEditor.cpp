@@ -46,8 +46,8 @@ bool ModuleEditor::Init(Config* config)
 	LOG("Loading ImGui");
 	ImGui_ImplOpenGL3_Init();
 
-	// Set style
-	Load(config);
+	// Style
+	ImGui::StyleColorsNew();
 
 	// Create panels
 	panels.push_back(panel_configuration = new Configuration());
@@ -120,13 +120,10 @@ bool ModuleEditor::CleanUp()
 
 void ModuleEditor::Save(Config* config) const
 {
-	config->AddUInt("Style", style);
 }
 
 void ModuleEditor::Load(Config* config)
 {
-	style = config->GetUInt("Style", Style::DARK);
-	ChangeStyle(style);
 }
 
 // Drawing of the FULL gui (first gets drawn the Menus, then panels)
@@ -494,20 +491,6 @@ Panel* ModuleEditor::GetPanel(uint ID)
 			return panel;
 	}
 	return nullptr;
-}
-
-void ModuleEditor::ChangeStyle(uint new_style)
-{
-	style = new_style;
-
-	if (style == Style::BLACK)
-		ImGui::StyleColorsNew();
-
-	else if (style == Style::CLASSIC)
-		ImGui::StyleColorsClassic();
-
-	else if (style == Style::DARK)
-		ImGui::StyleColorsDark();
 }
 
 void ModuleEditor::CreateLink(const char* text, const char* url, bool bullet)

@@ -1144,8 +1144,7 @@ void Assets::DeleteNodes(std::vector<AssetNode*> nodes_list)
 			DeleteNodes(node->childs);
 
 		// Delete node data
-		std::string full_path = App->file_system->GetBasePath() + node->path;
-		App->file_system->Remove(full_path.c_str());
+		App->file_system->Remove(node->path.c_str());
 		pos = FindNode(*node, nodes);
 		if (pos != -1)
 		{

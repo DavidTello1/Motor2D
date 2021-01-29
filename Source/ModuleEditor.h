@@ -11,13 +11,6 @@ class Assets;
 //class Inspector;
 //class Viewport;
 
-enum Style {
-	BLACK = 0,
-	CLASSIC,
-	DARK,
-	NUM_STYLES //used for getting size
-};
-
 class ModuleEditor : public Module
 {
 public:
@@ -39,10 +32,6 @@ public:
 	// Panels
 	Panel* GetPanel(uint ID);
 
-	// Style
-	void ChangeStyle(uint new_style);
-	uint GetStyle() { return style; }
-
 	// Utilities
 	void CreateLink(const char* text, const char* url, bool bullet = false);
 	void LogFPS(float fps, float ms);
@@ -58,8 +47,6 @@ private:
 	void DockSpace();
 
 public:
-	uint style = 0;
-
 	Panel* focused_panel = nullptr;
 	Configuration* panel_configuration = nullptr;
 	Console* panel_console = nullptr;

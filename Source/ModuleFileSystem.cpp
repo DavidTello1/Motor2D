@@ -146,7 +146,7 @@ bool ModuleFileSystem::Remove(const char* file)
 {
 	if (file != nullptr) //check if file is valid
 	{
-		if (PHYSFS_delete(file) == 0) //delete file
+		if (PHYSFS_delete(file) != 0) //delete file
 		{
 			LOG("File deleted: [%s]", file, 'd');
 			return true;

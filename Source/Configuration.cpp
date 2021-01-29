@@ -135,8 +135,6 @@ void Configuration::Draw()
 
 void Configuration::DrawApplication()
 {
-	//ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10);
-
 	// App name
 	static char app_name[120];
 	strcpy_s(app_name, 120, App->GetAppName());
@@ -150,40 +148,86 @@ void Configuration::DrawApplication()
 		App->SetOrganizationName(org_name);
 	ImGui::NewLine();
 
-	// Style
-	const char* items[] = { "Black", "Classic", "Dark" };
-	int item_current = (int)App->editor->GetStyle();
-	ImGui::PushItemWidth(80);
-	ImGui::Combo("Style", &item_current, items, IM_ARRAYSIZE(items));
-	App->editor->ChangeStyle(item_current);
-
-	// AutoSelect Windows
-	ImGui::Checkbox("Auto-Select windows", &App->editor->is_auto_select);
-	ImGui::NewLine();
-
-	// Preferences
-	ImGui::Text("Preferences:");
-	if (ImGui::Button("Reset"))
-	{
-		LOG("Setting Default Configuration", 'v');
-		App->LoadPrefs(true);
-	}
+	// Limit Framerate
+	ImGui::Text("Limit Framerate:");
 	ImGui::SameLine();
-	if (ImGui::Button("Save"))
-	{
-		LOG("Saving Configuration", 'v');
-		App->LoadPrefs(true);
-	}
+	ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "%i", App->GetFramerateLimit());
+	static int max_fps = App->GetFramerateLimit();
+	ImGui::PushItemWidth(190);
+	if (ImGui::SliderInt("Max FPS", &max_fps, 0, 120))
+		App->SetFramerateLimit(max_fps);
+	ImGui::SameLine(0.0f, 20.0f);
+
+	// VSync
+	static bool vsync = App->renderer->GetVSync();
+	if (ImGui::Checkbox("Vertical Sync", &vsync))
+		App->renderer->SetVSync(vsync);
+
+	// Plot Framerate
+	static char title[25];
+	sprintf_s(title, 25, "Framerate %.1f", fps_log[fps_log.size() - 1]);
+	ImGui::PlotHistogram("##framerate", &fps_log[0], fps_log.size(), 0, title, 0.0f, 100.0f, ImVec2(310, 100));
+	sprintf_s(title, 25, "Milliseconds %0.1f", ms_log[ms_log.size() - 1]);
+	ImGui::PlotHistogram("##milliseconds", &ms_log[0], ms_log.size(), 0, title, 0.0f, 40.0f, ImVec2(310, 100));
+	ImGui::NewLine();
+	//// Preferences
+	//ImGui::Text("Preferences:");
+	//if (ImGui::Button("Reset"))
+	//{
+	//	LOG("Setting Default Configuration", 'v');
+	//	App->LoadPrefs(true);
+	//}
+	//ImGui::SameLine();
+	//if (ImGui::Button("Save"))
+	//{
+	//	LOG("Saving Configuration", 'v');
+	//	App->SavePrefs(true);
+	//}
 
 	// Layout
 	ImGui::Text("Layout:");
+	ImGui::SameLine();
+	ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "Default");
+	//if (current_layout)
+	//{
+	//	ImGui::SameLine();
+	//	ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), current_layout->name);
+	//}
 
+	static bool is_save_layout = false;
+	ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 7);
+	if (ImGui::Button("Save Preferences")) 
+		is_save_layout = true;
+	ImGui::SameLine(0.0f, 3.0f);
+	ImGui::Button(ICON_ARROW_OPEN);
+
+	if (is_save_layout)
+	{
+		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 2);
+		char buffer[180] = "New Layout";
+		ImGui::SetNextItemWidth(145);
+		ImGui::InputText("##LayoutName", buffer, 180);
+
+		ImGui::SameLine(0.0f, 3.0f);
+		if (ImGui::Button("Add"))
+		{
+			is_save_layout = false;
+
+			//Layout* new_layout = new Layout();
+			//new_layout->config = App->SavePrefs();
+			//new_layout->name = buffer;
+
+			//layouts.push_back(new_layout);
+		}
+	}
+
+	//ImGui::BeginChild("Layout List", ImVec2(0, ImGui::GetContentRegionAvail().y - 30), true);
+
+	//ImGui::End();
 }
 
 void Configuration::DrawMemory()
 {
-	//ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10);
-
 	// Get Stats
 	sMStats stats = m_getMemoryStatistics();
 	static int speed = 0;
@@ -204,6 +248,7 @@ void Configuration::DrawMemory()
 
 	// Plot Graph
 	ImGui::PlotHistogram("##memory", &memory[0], memory.size(), 0, "Memory Consumption", 0.0f, (float)stats.peakReportedMemory * 1.2f, ImVec2(310, 100));
+	ImGui::NewLine();
 
 	// Stats Data
 	IMGUI_PRINT("Total Reported Mem:", "%u", stats.totalReportedMemory);
@@ -222,8 +267,6 @@ void Configuration::DrawMemory()
 
 void Configuration::DrawHardware()
 {
-	//ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10);
-
 	IMGUI_PRINT("CPUs:", "%u", info_hw.cpu_count);
 	ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 10);
 	IMGUI_PRINT("Cache:", "%ukb", info_hw.l1_cachekb);
@@ -273,8 +316,6 @@ void Configuration::DrawHardware()
 
 void Configuration::DrawWindow()
 {
-	//ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10);
-
 	// Width & Height
 	uint min_w, min_h, max_w, max_h;
 	App->window->GetMaxMinSize(min_w, min_h, max_w, max_h);
@@ -311,6 +352,12 @@ void Configuration::DrawWindow()
 	ImGui::Text("Height");
 	ImGui::NewLine();
 
+	// Refresh Rate
+	ImGui::Text("Refresh rate:");
+	ImGui::SameLine();
+	ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "%u", App->window->GetRefreshRate());
+	ImGui::NewLine();
+
 	// Window Options
 	static bool fullscreen = App->window->IsFullscreen();
 	static bool resizable = App->window->IsResizable();
@@ -332,35 +379,6 @@ void Configuration::DrawWindow()
 
 	if (ImGui::Checkbox("Full Desktop", &full_desktop))
 		App->window->SetFullScreenDesktop(full_desktop);
-	ImGui::NewLine();
-
-	// Refresh Rate
-	ImGui::Text("Refresh rate:");
-	ImGui::SameLine();
-	ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "%u", App->window->GetRefreshRate());
-
-	// VSync
-	static bool vsync = App->renderer->GetVSync();
-	if (ImGui::Checkbox("Vertical Sync", &vsync))
-		App->renderer->SetVSync(vsync);
-	ImGui::NewLine();
-
-	// Limit Framerate
-	ImGui::Text("Limit Framerate:");
-	ImGui::SameLine();
-	ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "%i", App->GetFramerateLimit());
-	static int max_fps = App->GetFramerateLimit();
-	ImGui::PushItemWidth(200);
-	if (ImGui::SliderInt("Max FPS", &max_fps, 0, 120))
-		App->SetFramerateLimit(max_fps);
-
-	// Plot Framerate
-	static char title[25];
-	sprintf_s(title, 25, "Framerate %.1f", fps_log[fps_log.size() - 1]);
-	ImGui::PlotHistogram("##framerate", &fps_log[0], fps_log.size(), 0, title, 0.0f, 100.0f, ImVec2(310, 100));
-	sprintf_s(title, 25, "Milliseconds %0.1f", ms_log[ms_log.size() - 1]);
-	ImGui::PlotHistogram("##milliseconds", &ms_log[0], ms_log.size(), 0, title, 0.0f, 40.0f, ImVec2(310, 100));
-
 }
 
 void Configuration::DrawInput()
@@ -397,35 +415,42 @@ void Configuration::DrawInput()
 	ImGui::Text("y");
 
 	// Mouse Wheel
-	static int wheel = App->input->GetMouseWheel();
+	int wheel = App->input->GetMouseWheel();
 	ImGui::Text("Mouse Wheel:");
 	ImGui::SameLine();
 	ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "%i", wheel);
 	ImGui::NewLine();
 
 	// Focused Panel
-	const char* panel_name = "None";
+	ImGui::Text("Focused Panel:");
 	if (App->editor->focused_panel)
 	{
-		panel_name = App->editor->focused_panel->GetName();
+		const char* panel_name = App->editor->focused_panel->GetName();
 		if (panel_name == "###Console")
 			panel_name = "Console";
+
+		ImGui::SameLine();
+		ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), panel_name);
 	}
-	IMGUI_PRINT("Focused Panel:", "%s", panel_name);
 
 	// Local Mouse Position
 	App->input->GetMousePosition(mouse_x, mouse_y);
 	ImGui::Text("Local Mouse Position:");
-	ImGui::SameLine();
-	ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "%i", mouse_x - App->editor->focused_panel->pos_x);
-	ImGui::SameLine();
-	ImGui::SetCursorPosX(ImGui::GetCursorPosX() - 5);
-	ImGui::Text("x");
-	ImGui::SameLine();
-	ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "%i", mouse_y - App->editor->focused_panel->pos_y);
-	ImGui::SameLine();
-	ImGui::SetCursorPosX(ImGui::GetCursorPosX() - 5);
-	ImGui::Text("y");
+	if (App->editor->focused_panel)
+	{
+		float local_pos_x = mouse_x - App->editor->focused_panel->pos_x;
+		float local_pos_y = mouse_y - App->editor->focused_panel->pos_y;
+		ImGui::SameLine();
+		ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "%.f", local_pos_x);
+		ImGui::SameLine();
+		ImGui::SetCursorPosX(ImGui::GetCursorPosX() - 5);
+		ImGui::Text("x");
+		ImGui::SameLine();
+		ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "%.f", local_pos_y);
+		ImGui::SameLine();
+		ImGui::SetCursorPosX(ImGui::GetCursorPosX() - 5);
+		ImGui::Text("y");
+	}
 	ImGui::NewLine();
 
 	// Input Log
@@ -438,8 +463,6 @@ void Configuration::DrawInput()
 
 void Configuration::DrawFileSystem()
 {
-	//ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10);
-
 	// Paths
 	ImGui::Text("Base Path:");
 	ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 0.0f, 1.0f));
@@ -464,37 +487,60 @@ void Configuration::DrawFileSystem()
 
 void Configuration::DrawResources()
 {
-	//ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10);
-
-	uint image = 0;
-	const char* name = "...";
-	uint uid = 0;
-	uint size = 0;
-	uint times_loaded = 0;
-	const char* original_file = "...";
-	const char* exported_file = "...";
-
 	// Selected Resource
+	uint image = 0;
+	//if (selected_resource)
+	//	image = selected_resource->texture;
 	ImGui::Image((ImTextureID)image, ImVec2(120,120), ImVec2(0, 1), ImVec2(1, 0)); // Image
 	ImGui::SameLine();
 
 	ImVec2 pos = ImGui::GetCursorPos();
-	IMGUI_PRINT("Name:", "%s", name);
+	ImGui::Text("Name:");
+	//if (selected_resource)
+	//{
+	//	ImGui::SameLine();
+	//	ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), selected_resource->name);
+	//}
+
 	ImGui::SetCursorPos(ImVec2(pos.x, pos.y + 20));
+	ImGui::Text("UID:");
+	//if (selected_resource)
+	//{
+	//	ImGui::SameLine();
+	//	ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), selected_resource->UID);
+	//}
 
-	IMGUI_PRINT("UID:", "%d", uid);
 	ImGui::SetCursorPos(ImVec2(pos.x, pos.y + 40));
+	ImGui::Text("Size:");
+	//if (selected_resource)
+	//{
+	//	ImGui::SameLine();
+	//	ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), selected_resource->size);
+	//}
 
-	IMGUI_PRINT("Size:", "%d", size);
 	ImGui::SetCursorPos(ImVec2(pos.x, pos.y + 60));
+	ImGui::Text("Times Loaded:");
+	//if (selected_resource)
+	//{
+	//	ImGui::SameLine();
+	//	ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), selected_resource->times_loaded);
+	//}
 
-	IMGUI_PRINT("Times Loaded:", "%d", times_loaded);
 	ImGui::SetCursorPos(ImVec2(pos.x, pos.y + 80));
+	ImGui::Text("Original File:");
+	//if (selected_resource)
+	//{
+	//	ImGui::SameLine();
+	//	ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), selected_resource->original_file);
+	//}
 
-	IMGUI_PRINT("Original File:", "%s", original_file);
 	ImGui::SetCursorPos(ImVec2(pos.x, pos.y + 100));
-
-	IMGUI_PRINT("Exported File:", "%s", exported_file);
+	ImGui::Text("Exported File:");
+	//if (selected_resource)
+	//{
+	//	ImGui::SameLine();
+	//	ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), selected_resource->exported_file);
+	//}
 
 	// Resources List
 	ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10);
