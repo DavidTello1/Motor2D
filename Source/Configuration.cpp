@@ -8,18 +8,25 @@
 #include "ModuleEditor.h"
 #include "ModuleFileSystem.h"
 
+#include "Assets.h"
+
+#include "Imgui/imgui_internal.h"
 #include "gpudetect/DeviceId.h"
-#include "glew/include/GL/glew.h"
+#include "Glew/include/glew.h"
 //#include "Devil/include/IL/il.h"
 
 #include "mmgr/mmgr.h"
 
-Configuration::Configuration() : Panel("Configuration", ICON_CONFIGURATION, 0), fps_log(FPS_LOG_SIZE), ms_log(FPS_LOG_SIZE)
+Configuration::Configuration() : Panel("Configuration", ICON_CONFIGURATION, 1), fps_log(FPS_LOG_SIZE), ms_log(FPS_LOG_SIZE)
 {
 	width = default_width;
 	height = default_height;
 	pos_x = default_pos_x;
 	pos_y = default_pos_y;
+
+	current_layout = "Default";
+	selected_layout = current_layout;
+	layouts = GetLayouts();
 
 	active = true; //***CHANGE TO FALSE
 	flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDocking;
@@ -43,6 +50,7 @@ void Configuration::Draw()
 	static int selected = 0;
 	if (ImGui::Selectable("Application", selected == 0)) {
 		curr_index = Index::APPLICATION;
+		layouts = GetLayouts();
 		selected = 0;
 	}
 	else if (ImGui::Selectable("Memory", selected == 1)) {
@@ -66,8 +74,8 @@ void Configuration::Draw()
 		selected = 5;
 	}
 	else if (ImGui::Selectable("Resources", selected == 6)) {
-	curr_index = Index::RESOURCES;
-	selected = 6;
+		curr_index = Index::RESOURCES;
+		selected = 6;
 	}
 	ImGui::PopStyleVar();
 	ImGui::EndChild();
@@ -106,33 +114,38 @@ void Configuration::Draw()
 	static ImVec2 size = ImGui::GetContentRegionAvail();
 	static float pos = 0.0f;
 
+	ImGui::SetCursorPos(ImVec2(size.x / 3, float(height - 57))); // accept
 	pos = ImGui::GetCursorPosX();
-	ImGui::SetCursorPosY(float(height - 57));
 	if (ImGui::Button("Accept", ImVec2(size.x / 3, 22)))
-		ImGui::CloseCurrentPopup();
-	ImGui::SameLine();
-
-	ImGui::SetCursorPosX(pos + ImGui::GetItemRectSize().x + 1);
-	pos = ImGui::GetCursorPosX();
-	if (ImGui::Button("Cancel", ImVec2(size.x / 3, 22)))
 	{
-		App->LoadPrefs();
+		LOG("Saved Configuration", 'v');
+		App->SavePrefs(current_layout.c_str());
 		active = false;
 		ImGui::CloseCurrentPopup();
 	}
 	ImGui::SameLine();
 
-	ImGui::SetCursorPosX(pos + ImGui::GetItemRectSize().x + 1);
-	if (ImGui::Button("Apply", ImVec2(size.x / 3, 22)))
+	ImGui::SetCursorPosX(pos + ImGui::GetItemRectSize().x + 1); // cancel
+	pos = ImGui::GetCursorPosX();
+	if (ImGui::Button("Cancel", ImVec2(size.x / 3, 22))) 
 	{
-		LOG("Saved Configuration", 'v');
-		App->SavePrefs();
+		App->LoadPrefs(current_layout.c_str());
+		active = false;
 		ImGui::CloseCurrentPopup();
 	}
 
 	ImGui::EndChild();
 }
 
+void Configuration::Save(Config* config) const
+{
+}
+
+void Configuration::Load(Config* config)
+{
+}
+
+//--- DRAWS ---
 void Configuration::DrawApplication()
 {
 	// App name
@@ -152,7 +165,7 @@ void Configuration::DrawApplication()
 	ImGui::Text("Limit Framerate:");
 	ImGui::SameLine();
 	ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "%i", App->GetFramerateLimit());
-	static int max_fps = App->GetFramerateLimit();
+	int max_fps = App->GetFramerateLimit();
 	ImGui::PushItemWidth(190);
 	if (ImGui::SliderInt("Max FPS", &max_fps, 0, 120))
 		App->SetFramerateLimit(max_fps);
@@ -169,61 +182,98 @@ void Configuration::DrawApplication()
 	ImGui::PlotHistogram("##framerate", &fps_log[0], fps_log.size(), 0, title, 0.0f, 100.0f, ImVec2(310, 100));
 	sprintf_s(title, 25, "Milliseconds %0.1f", ms_log[ms_log.size() - 1]);
 	ImGui::PlotHistogram("##milliseconds", &ms_log[0], ms_log.size(), 0, title, 0.0f, 40.0f, ImVec2(310, 100));
-	ImGui::NewLine();
-	//// Preferences
-	//ImGui::Text("Preferences:");
-	//if (ImGui::Button("Reset"))
-	//{
-	//	LOG("Setting Default Configuration", 'v');
-	//	App->LoadPrefs(true);
-	//}
-	//ImGui::SameLine();
-	//if (ImGui::Button("Save"))
-	//{
-	//	LOG("Saving Configuration", 'v');
-	//	App->SavePrefs(true);
-	//}
 
 	// Layout
+	ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 5);
 	ImGui::Text("Layout:");
 	ImGui::SameLine();
-	ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "Default");
-	//if (current_layout)
+	ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), current_layout.c_str());
+
+	ImGui::BeginChild("Layout List", ImVec2(ImGui::GetContentRegionAvail().x / 2, ImGui::GetContentRegionAvail().y - 30), true);
+	for (std::string layout : layouts)
+	{
+		if (ImGui::Selectable(layout.c_str(), selected_layout == layout))
+			selected_layout = layout;
+	}
+	ImGui::EndChild();
+
+	ImGui::SameLine();
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+	ImGui::BeginChild("Layout Options", ImVec2(0, ImGui::GetContentRegionAvail().y - 30));
+	static bool is_save_layout = false;
+	static float size = ImGui::GetContentRegionAvail().x;
+
+	float pos = ImGui::GetCursorPosX();
+	if (ImGui::Button("Load", ImVec2(size / 3, 0)))
+	{
+		if (App->LoadPrefs(selected_layout.c_str()))
+			current_layout = selected_layout;
+		layouts = GetLayouts();
+	}
+
+	//if (selected_layout == "Default")
 	//{
-	//	ImGui::SameLine();
-	//	ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), current_layout->name);
+	//	ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+	//	ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
+	//}
+	ImGui::SameLine();
+	ImGui::SetCursorPosX(pos + ImGui::GetItemRectSize().x + 1);
+	pos = ImGui::GetCursorPosX();
+	if (ImGui::Button("Save", ImVec2(size / 3, 0)))
+	{
+		App->SavePrefs(selected_layout.c_str());
+		current_layout = selected_layout;
+		layouts = GetLayouts();
+	}
+
+	ImGui::SameLine();
+	ImGui::SetCursorPosX(pos + ImGui::GetItemRectSize().x + 1);
+	pos = ImGui::GetCursorPosX();
+	if (ImGui::Button("Delete", ImVec2(size / 3, 0)))
+	{
+		App->file_system->Remove(std::string(SETTINGS_FOLDER + selected_layout + ".json").c_str());
+
+		if (selected_layout == current_layout)
+			current_layout = selected_layout = "Default";
+		layouts = GetLayouts();
+	}
+	//else if (selected_layout == "Default")
+	//{
+	//	ImGui::PopItemFlag();
+	//	ImGui::PopStyleVar();
 	//}
 
-	static bool is_save_layout = false;
-	ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 7);
-	if (ImGui::Button("Save Preferences")) 
+	ImGui::Separator();
+	static char buffer[180];
+	if (ImGui::Button("New Layout"))
+	{
 		is_save_layout = true;
-	ImGui::SameLine(0.0f, 3.0f);
-	ImGui::Button(ICON_ARROW_OPEN);
+		strcpy_s(buffer, 180, "New Layout");
+	}
 
 	if (is_save_layout)
 	{
 		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 2);
-		char buffer[180] = "New Layout";
-		ImGui::SetNextItemWidth(145);
-		ImGui::InputText("##LayoutName", buffer, 180);
-
-		ImGui::SameLine(0.0f, 3.0f);
-		if (ImGui::Button("Add"))
+		ImGui::SetNextItemWidth(size * 2 / 3);
+		if (ImGui::InputText("##LayoutName", buffer, 180, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll))
 		{
+			App->SavePrefs(buffer);
+			current_layout = selected_layout = buffer;
+			layouts = GetLayouts();
 			is_save_layout = false;
+		}		
 
-			//Layout* new_layout = new Layout();
-			//new_layout->config = App->SavePrefs();
-			//new_layout->name = buffer;
-
-			//layouts.push_back(new_layout);
+		ImGui::SameLine(0.0f, 1.0f);
+		if (ImGui::Button("Add", ImVec2(size / 3, 0)))
+		{
+			App->SavePrefs(buffer);
+			current_layout = selected_layout = buffer;
+			layouts = GetLayouts();
+			is_save_layout = false;
 		}
 	}
-
-	//ImGui::BeginChild("Layout List", ImVec2(0, ImGui::GetContentRegionAvail().y - 30), true);
-
-	//ImGui::End();
+	ImGui::EndChild();
+	ImGui::PopStyleVar();
 }
 
 void Configuration::DrawMemory()
@@ -319,8 +369,8 @@ void Configuration::DrawWindow()
 	// Width & Height
 	uint min_w, min_h, max_w, max_h;
 	App->window->GetMaxMinSize(min_w, min_h, max_w, max_h);
-	static int width = (int)App->window->GetWidth();
-	static int height = (int)App->window->GetHeight();
+	int width = (int)App->window->GetWidth();
+	int height = (int)App->window->GetHeight();
 	ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 0.0f, 1.0f));
 	ImGui::SetNextItemWidth(200);
 	if (ImGui::DragInt("##Width", &width, 1, min_w, max_w))
@@ -622,4 +672,24 @@ const hardware_info& Configuration::GetHardwareInfo() const
 	}
 
 	return info_hw;
+}
+
+std::vector<std::string> Configuration::GetLayouts()
+{
+	layouts.clear();
+	if (App->file_system->Exists(SETTINGS_FOLDER))
+	{
+		std::vector<std::string> file_list, dir_list;
+		App->file_system->GetFolderContent(SETTINGS_FOLDER, file_list, dir_list);
+
+		for (std::string file : file_list)
+		{
+			if (App->editor->panel_assets->GetExtension(file.c_str()) == "json")
+			{
+				std::string name = file.substr(0, file.find("."));
+				layouts.push_back(name);
+			}
+		}
+	}
+	return layouts;
 }

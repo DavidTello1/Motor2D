@@ -12,6 +12,9 @@ public:
 	void Draw() override;
 	void Shortcuts() override;
 
+	void Save(Config* config) const override;
+	void Load(Config* config) override;
+
 public:
 	static const uint default_width = 1400;
 	static const uint default_height = 220;

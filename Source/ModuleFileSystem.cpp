@@ -130,6 +130,9 @@ uint ModuleFileSystem::Save(const char* file, const void* buffer, unsigned int s
 			else if (overwrite == false) //if is new file
 				LOG("New file created [%s%s] of %u bytes", PHYSFS_getWriteDir(), file, size, 'd');
 
+			if (PHYSFS_close(fs_file) == 0) //close file
+				LOG("File System error while closing file %s: %s", file, PHYSFS_getLastError(), 'e');
+
 			return written;
 		}
 

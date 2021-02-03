@@ -60,9 +60,12 @@ bool Application::Init()
 {
 	bool ret = true;
 	char* buffer = nullptr;
+	bool config_exists = true;
 
 	// Load Config
-	file_system->Load(SETTINGS_FOLDER "config.json", &buffer);
+	if (file_system->Load(SETTINGS_FOLDER "Default.json", &buffer) == 0)
+		config_exists = false;
+
 	Config config((const char*)buffer);
 	ReadConfig(config.GetSection("App"));
 
@@ -77,6 +80,9 @@ bool Application::Init()
 		if (mod->IsActive() == true)
 			ret = mod->Start(&(config.GetSection(mod->GetName())));
 	}
+
+	if (!config_exists)
+		SavePrefs("Default");
 
 	RELEASE_ARRAY(buffer);
 	return ret;
@@ -189,8 +195,8 @@ void Application::SetFramerateLimit(uint max_framerate)
 // ---------------------------------------------
 void Application::ReadConfig(const Config& config)
 {
-	app_name = config.GetString("Name", "Davos Game Engine");
-	organization_name = config.GetString("Organization", "");
+	SetAppName(config.GetString("Name", "Davos Game Engine"));
+	SetOrganizationName(config.GetString("Organization", ""));
 	SetFramerateLimit(config.GetInt("MaxFramerate", 0));
 }
 
@@ -203,13 +209,12 @@ void Application::SaveConfig(Config& config) const
 }
 
 // ---------------------------------------------
-void Application::LoadPrefs(bool default)
+bool Application::LoadPrefs(const char* name)
 {
+	bool ret = false;
 	char* buffer = nullptr;
-	if (default)
-		file_system->Load(SETTINGS_FOLDER "default_config.json", &buffer);
-	else
-		file_system->Load(SETTINGS_FOLDER "config.json", &buffer);
+	std::string filename = SETTINGS_FOLDER + std::string(name) + ".json";
+	file_system->Load(filename.c_str(), &buffer);
 
 	if (buffer != nullptr)
 	{
@@ -226,17 +231,18 @@ void Application::LoadPrefs(bool default)
 				//if (section.IsValid())
 				mod->Load(&section);
 			}
+			ret = true;
 		}
-
 		RELEASE_ARRAY(buffer);
 	}
+	return ret;
 }
 
 // ---------------------------------------------
-void Application::SavePrefs() const
+bool Application::SavePrefs(const char* name) const
 {
+	bool ret = false;
 	Config config;
-
 	SaveConfig(config.AddSection("App"));
 
 	for (Module* mod : modules)
@@ -244,8 +250,12 @@ void Application::SavePrefs() const
 
 	char *buf;
 	uint size = config.Save(&buf, "Saved engine configuration");
-	if (App->file_system->Save(SETTINGS_FOLDER "config.json", buf, size) > 0) {}
+	std::string filename = SETTINGS_FOLDER + std::string(name) + ".json";
+	if (App->file_system->Save(filename.c_str(), buf, size) > 0)
+		ret = true;
+
 	RELEASE_ARRAY(buf);
+	return ret;
 }
 
 // ---------------------------------------------

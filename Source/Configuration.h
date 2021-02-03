@@ -3,6 +3,8 @@
 
 #include <vector>
 
+#define MAX_LAYOUTS 10
+
 #define FPS_LOG_SIZE 100
 
 #define IMGUI_PRINT(field, format, ...) \
@@ -18,11 +20,6 @@ class ModuleRenderer;
 class ModuleFileSystem;
 
 class Config;
-
-struct Layout {
-	const char* name;
-	Config& config;
-};
 
 struct hardware_info {
 	float ram_gb = 0.f;
@@ -67,6 +64,9 @@ public:
 	void Draw() override;
 	void Shortcuts() override {};
 
+	void Save(Config* config) const override;
+	void Load(Config* config) override;
+
 	void AddFPS(float fps, float ms);
 
 private:
@@ -81,6 +81,8 @@ private:
 	void GetHardware();
 	const hardware_info& GetHardwareInfo() const;
 
+	std::vector<std::string> GetLayouts();
+
 public:
 	static const uint default_width = 650;
 	static const uint default_height = 500;
@@ -88,8 +90,9 @@ public:
 	static const uint default_pos_y = 100;
 
 private:
-	Layout* current_layout = nullptr;
-	std::vector<Layout*> layouts;
+	std::string current_layout = "Default";
+	std::string selected_layout = "Default";
+	std::vector<std::string> layouts;
 
 	std::vector<float> fps_log;
 	std::vector<float> ms_log;
@@ -102,9 +105,6 @@ private:
 	bool show_window = false;
 	bool show_input = false;
 	bool show_filesystem = false;
-
-	bool is_changes = false;
-	bool is_reset = true;
 
 	//Resource* selected_resource = nullptr;
 };

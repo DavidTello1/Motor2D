@@ -3,9 +3,11 @@
 #include "ModuleWindow.h"
 #include "ModuleInput.h"
 #include "ModuleRenderer.h"
+#include "ModuleFileSystem.h"
 //#include "ModuleScene.h"
 #include "Config.h"
 
+#include "Toolbar.h"
 #include "Configuration.h"
 #include "Console.h"
 #include "Hierarchy.h"
@@ -37,6 +39,15 @@ bool ModuleEditor::Init(Config* config)
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
+	io.IniFilename = NULL;
+
+	ini = config->GetString("ini", "error");
+	ini_size = config->GetUInt("ini_size", 0);
+
+	if (ini == "error" || ini_size == 0.0f)
+		LOG("Error loading ini file", 'e')
+	else
+		ImGui::LoadIniSettingsFromMemory(ini.c_str(), ini_size);
 
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable keyboard controls
 	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
@@ -50,6 +61,7 @@ bool ModuleEditor::Init(Config* config)
 	ImGui::StyleColorsNew();
 
 	// Create panels
+	panels.push_back(panel_toolbar = new Toolbar());
 	panels.push_back(panel_configuration = new Configuration());
 	panels.push_back(panel_console = new Console());
 	panels.push_back(panel_hierarchy = new Hierarchy());
@@ -62,6 +74,14 @@ bool ModuleEditor::Init(Config* config)
 
 bool ModuleEditor::Start(Config* config)
 {
+	// Window Classes
+	frameWindowClass = new ImGuiWindowClass();
+	frameWindowClass->ClassId = 1;
+	frameWindowClass->DockNodeFlagsOverrideSet |= ImGuiDockNodeFlags_NoSplit;
+
+	normalWindowClass = new ImGuiWindowClass();
+	normalWindowClass->ClassId = 2;
+
 	// Icon Font
 	ImGuiIO& io = ImGui::GetIO();
 	io.Fonts->AddFontDefault();
@@ -81,6 +101,18 @@ bool ModuleEditor::PreUpdate(float dt)
 {
 	//// Start the frame
 	//panel_viewport->PreUpdate();
+
+	if (ini_change)
+	{
+		ImGui::LoadIniSettingsFromMemory(ini.c_str(), ini_size);
+		ImGui::GetIO().WantSaveIniSettings = false;
+		ini_change = false;
+	}
+
+	ImGui_ImplOpenGL3_NewFrame();
+	ImGui_ImplSDL2_NewFrame(App->window->GetWindow());
+	ImGui::NewFrame();
+
 	return true;
 }
 
@@ -120,24 +152,84 @@ bool ModuleEditor::CleanUp()
 
 void ModuleEditor::Save(Config* config) const
 {
+	size_t ini_data_size = 0;
+	ImGui::GetIO().WantSaveIniSettings = true;
+	const char* ini_data = ImGui::SaveIniSettingsToMemory(&ini_data_size);
+	config->AddString("ini", ini_data);
+	config->AddUInt("ini_size", ini_data_size);
+
+	for (Panel* panel : panels)
+	{
+		config->AddBool("active", panel->active);
+		panel->Save(&config->AddSection(panel->GetName()));
+	}
 }
 
 void ModuleEditor::Load(Config* config)
 {
+	ini = config->GetString("ini", "error");
+	ini_size = config->GetUInt("ini_size", 0);
+	if (ini == "error" || ini_size == 0.0f)
+		LOG("Error loading ini file", 'e')
+	else
+	{
+		ini_change = true;
+		App->file_system->Save("imgui.ini", ini.data(), ini_size);
+		ImGui::SaveIniSettingsToDisk("imgui.ini");
+	}
+
+	for (Panel* panel : panels)
+	{
+		panel->active = config->GetBool("active", false);
+		panel->Load(&config->GetSection(panel->GetName()));
+	}
 }
 
 // Drawing of the FULL gui (first gets drawn the Menus, then panels)
 void ModuleEditor::Draw()
 {
-	ImGui_ImplOpenGL3_NewFrame();
-	ImGui_ImplSDL2_NewFrame(App->window->GetWindow());
-	ImGui::NewFrame();
-
 	// Draw functions
-	DockSpace();
+	ImGuiViewport* viewport = ImGui::GetMainViewport();
+	ImGui::SetNextWindowPos(ImVec2(viewport->Pos.x, viewport->Pos.y + TOOLBAR_SIZE + MENUBAR_SIZE));
+	ImGui::SetNextWindowSize(ImVec2(viewport->Size.x, viewport->Size.y - TOOLBAR_SIZE - MENUBAR_SIZE));
+	ImGui::SetNextWindowViewport(viewport->ID);
+
+	ImGuiWindowFlags window_flags = 0 | ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse |
+		ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+	ImGui::Begin("DockSpace", NULL, window_flags);
+	ImGuiID main_dockspace = ImGui::GetID("MyDockspace");
+	float menuBarHeight = ImGui::GetCurrentWindow()->MenuBarHeight();
+
+	ImGui::DockSpace(main_dockspace);
+	ImGui::End();
+	ImGui::PopStyleVar(3);
+
+	//ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+	//ImGui::SetNextWindowClass(frameWindowClass);
+	//ImGui::Begin("DockSpace", 0, window_flags);
+	//ImGui::PopStyleVar();
+
+	//// DockSpace
+	//ImGuiID dockspace = ImGui::GetID("MainDockSpace");
+	//ImGui::DockSpace(dockspace, ImVec2(0.0f, 0.0f), 0, frameWindowClass);
+
 	DrawMenuBar();
 	DrawAbout();
 	DrawPanels();
+
+	//ImGuiDockNode* node = ImGui::DockBuilderGetNode(dockspace);
+	//if (!node->IsSplitNode())
+	//{
+	//	ImGuiID top, main_space;
+	//	ImGui::DockBuilderSplitNode(dockspace, ImGuiDir_Up, 0.1f, &top, &main_space);
+	//	ImGui::DockBuilderDockWindow(panel_toolbar->GetName(), top);
+	//	ImGui::DockBuilderGetNode(top)->LocalFlags |= ImGuiDockNodeFlags_NoCloseButton | ImGuiDockNodeFlags_NoSplit | ImGuiDockNodeFlags_NoDocking;
+	//}
+	//ImGui::End();
 
 	// Shortcuts
 	Shortcuts();
@@ -264,11 +356,11 @@ void ModuleEditor::DrawMenuBar()
 		// Windows
 		if (ImGui::BeginMenu("Windows"))
 		{
-			ImGui::MenuItem("Configuration", NULL, &GetPanel(0)->active);
+			ImGui::MenuItem("Configuration", NULL, &GetPanel(1)->active);
 			ImGui::Separator();
-			ImGui::MenuItem("Console", NULL, &GetPanel(1)->active);
-			ImGui::MenuItem("Hierarchy", NULL, &GetPanel(2)->active);
-			ImGui::MenuItem("Assets", NULL, &GetPanel(3)->active);
+			ImGui::MenuItem("Console", NULL, &GetPanel(2)->active);
+			ImGui::MenuItem("Hierarchy", NULL, &GetPanel(3)->active);
+			ImGui::MenuItem("Assets", NULL, &GetPanel(4)->active);
 
 			ImGui::EndMenu();
 		}
@@ -319,7 +411,25 @@ void ModuleEditor::DrawPanels()
 
 				ImGui::End();
 			}
-			else if (panels[i]->GetName() == "Assets") // Assets
+			else if (panels[i]->GetName() == "Toolbar")
+			{
+				ImGuiViewport* viewport = ImGui::GetMainViewport();
+				ImGui::SetNextWindowPos(ImVec2(viewport->Pos.x, viewport->Pos.y + MENUBAR_SIZE));
+				ImGui::SetNextWindowSize(ImVec2(viewport->Size.x, TOOLBAR_SIZE));
+				ImGui::SetNextWindowViewport(viewport->ID);
+
+				ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10.0f, 5.0f));
+				ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+				ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+				ImGui::Begin(name.c_str(), NULL, panels[i]->flags);
+				ImGui::PopStyleVar(3);
+				panels[i]->Draw();
+				if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows))
+					focused_panel = panels[i];
+
+				ImGui::End();
+			}
+ 			else if (panels[i]->GetName() == "Assets") // Assets
 			{
 				ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
 				ImGui::Begin(name.c_str(), &panels[i]->active, panels[i]->flags);
@@ -330,7 +440,7 @@ void ModuleEditor::DrawPanels()
 
 				ImGui::End();
 			}
-			else if (i == 1) // Console
+			else if (i == 2) // Console
 			{
 				static char console_name[128];
 				if (App->new_logs > 99)
@@ -532,49 +642,4 @@ void ModuleEditor::LogFPS(float fps, float ms)
 {
 	if (panel_configuration != nullptr)
 		panel_configuration->AddFPS(fps, ms);
-}
-
-void ModuleEditor::DockSpace()
-{
-	static bool opt_fullscreen_persistant = true;
-	bool opt_fullscreen = opt_fullscreen_persistant;
-	static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_NoWindowMenuButton;
-
-	// We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
-	// because it would be confusing to have two docking targets within each others.
-	ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
-	if (opt_fullscreen)
-	{
-		ImGuiViewport* viewport = ImGui::GetMainViewport();
-		ImGui::SetNextWindowPos(viewport->Pos);
-		ImGui::SetNextWindowSize(viewport->Size);
-		ImGui::SetNextWindowViewport(viewport->ID);
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-		window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
-		window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
-	}
-
-	// When using ImGuiDockNodeFlags_PassthruCentralNode, DockSpace() will render our background and handle the pass-thru hole, so we ask Begin() to not render a background.
-	if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
-		window_flags |= ImGuiWindowFlags_NoBackground;
-
-
-	// Important: note that we proceed even if Begin() returns false (aka window is collapsed).
-	// This is because we want to keep our DockSpace() active. If a DockSpace() is inactive,
-	// all active windows docked into it will lose their parent and become undocked.
-	// We cannot preserve the docking relationship between an active window and an inactive docking, otherwise
-	// any change of dockspace/settings would lead to windows being stuck in limbo and never being visible.
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-	ImGui::Begin("DockSpace", 0, window_flags);
-	ImGui::PopStyleVar();
-
-	if (opt_fullscreen)
-		ImGui::PopStyleVar(2);
-
-	// DockSpace
-	ImGuiID dockspace_id = ImGui::GetID("MainDockSpace");
-	ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
-
-	ImGui::End();
 }

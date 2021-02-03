@@ -15,7 +15,7 @@
 ImGuiTextFilter Assets::searcher;
 
 // ---------------------------------------------------------
-Assets::Assets() : Panel("Assets", ICON_ASSETS, 3)
+Assets::Assets() : Panel("Assets", ICON_ASSETS, 4)
 {
 	width = default_width;
 	height = default_height;
@@ -147,6 +147,14 @@ void Assets::Shortcuts()
 	{
 		is_search = !is_search;
 	}
+}
+
+void Assets::Save(Config* config) const
+{
+}
+
+void Assets::Load(Config* config)
+{
 }
 
 void Assets::ChildHierarchy()
@@ -535,7 +543,7 @@ void Assets::DrawNodeIcon(AssetNode& node)
 		ImGui::Text(text.c_str());
 
 		// Show full name
-		if (ImGui::IsItemHovered() && !ImGui::IsMouseDragging())
+		if (ImGui::IsItemHovered() && !ImGui::IsMouseDragging(0))
 		{
 			ImGui::BeginTooltip();
 			ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
@@ -694,7 +702,7 @@ void Assets::DrawNodeList(AssetNode& node)
 	ImGui::EndGroup();
 
 	// Show full name
-	if (tooltip && ImGui::IsItemHovered() && !ImGui::IsMouseDragging())
+	if (tooltip && ImGui::IsItemHovered() && !ImGui::IsMouseDragging(0))
 	{
 		ImGui::BeginTooltip();
 		ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
@@ -752,7 +760,7 @@ AssetNode* Assets::HandleSelection(AssetNode& node)
 		}
 		if (ImGui::IsMouseReleased(0)) // Single Selection (Left Release)
 		{
-			if (!ImGui::GetIO().KeyCtrl && !ImGui::GetIO().KeyShift && !ImGui::IsMouseDragging() && !node.rename)
+			if (!ImGui::GetIO().KeyCtrl && !ImGui::GetIO().KeyShift && !ImGui::IsMouseDragging(0) && !node.rename)
 			{
 				UnSelectAll();
 				node.selected = true;

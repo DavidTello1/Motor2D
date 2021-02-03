@@ -46,8 +46,8 @@ public:
 	void ReadConfig(const Config& config);
 	void SaveConfig(Config& config) const;
 
-	void LoadPrefs(bool default = false);
-	void SavePrefs() const;
+	bool LoadPrefs(const char* name);
+	bool SavePrefs(const char* name) const;
 
 	void AddLog(const char* icon, const char* time, const char* message);
 	void ClearLog();

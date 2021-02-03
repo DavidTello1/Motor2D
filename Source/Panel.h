@@ -4,6 +4,8 @@
 
 #include "Imgui/imgui.h"
 
+class Config;
+
 class Panel
 {
 public:
@@ -16,6 +18,9 @@ public:
 
 	virtual void Draw() = 0;
 	virtual void Shortcuts() = 0;
+
+	virtual void Save(Config* config) const {}
+	virtual void Load(Config* config) {}
 
 public:
 	bool active = true;

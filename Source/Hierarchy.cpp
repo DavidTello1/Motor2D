@@ -11,7 +11,7 @@
 #include "mmgr/mmgr.h"
 
 // ---------------------------------------------------------
-Hierarchy::Hierarchy() : Panel("Hierarchy", ICON_HIERARCHY, 2)
+Hierarchy::Hierarchy() : Panel("Hierarchy", ICON_HIERARCHY, 3)
 {
 	width = default_width;
 	height = default_height;
@@ -133,6 +133,14 @@ void Hierarchy::Shortcuts()
 			//FindPopup();
 		}
 	}
+}
+
+void Hierarchy::Save(Config* config) const
+{
+}
+
+void Hierarchy::Load(Config* config)
+{
 }
 
 void Hierarchy::DrawNode(HierarchyNode* node)
@@ -616,7 +624,7 @@ HierarchyNode* Hierarchy::HandleSelection(HierarchyNode* node, bool is_hovered)
 		}
 		else if (ImGui::IsMouseReleased(0)) // Single selection
 		{
-			if (!ImGui::GetIO().KeyCtrl && !ImGui::GetIO().KeyShift && !ImGui::IsMouseDragging())
+			if (!ImGui::GetIO().KeyCtrl && !ImGui::GetIO().KeyShift && !ImGui::IsMouseDragging(0))
 				UnSelectAll();
 		}
 		else if (ImGui::IsMouseClicked(1) && selected_nodes.size() <= 1 && node->type != HierarchyNode::NodeType::SCENE) // Right Click (select item to show options)

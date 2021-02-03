@@ -5,7 +5,7 @@
 #include "Config.h"
 //#include "Viewport.h"
 
-#include "glew/include/GL/glew.h"
+#include "Glew/include/glew.h"
 #include "SDL/include/SDL_opengl.h"
 #include "Imgui/imgui.h"
 

@@ -34,9 +34,6 @@ public:
 	SDL_Window* GetWindow() const { return window; }
 	uint GetWidth() const { return screen_width; }
 	uint GetHeight() const { return screen_height; }
-	void SetTitle(const char* title) { SDL_SetWindowTitle(window, title); }
-	void SetWidth(uint width) { SDL_SetWindowSize(window, width, GetHeight()); screen_width = width; }
-	void SetHeigth(uint height) { SDL_SetWindowSize(window, GetWidth(), height); screen_height = height; }
 	uint GetRefreshRate() const;
 	void GetMaxMinSize(uint& min_width, uint& min_height, uint& max_width, uint& max_height) const;
 
@@ -44,25 +41,31 @@ public:
 	bool IsResizable() const { return resizable; }
 	bool IsBorderless() const { return borderless; }
 	bool IsFullscreenDesktop() const { return fullscreen_desktop; }
-	float GetBrightness() const { return SDL_GetWindowBrightness(window); }
+	bool IsMaximized() const { return maximized; }
 	//const char* GetIcon() const { return icon_file.c_str(); }
+
+	void SetTitle(const char* title) { SDL_SetWindowTitle(window, title); }
+	void SetWidth(uint width) { SDL_SetWindowSize(window, width, GetHeight()); screen_width = width; }
+	void SetHeigth(uint height) { SDL_SetWindowSize(window, GetWidth(), height); screen_height = height; }
+	void UpdateSize(uint width, uint height) { screen_width = width; screen_height = height; }
 
 	void SetFullscreen(bool set);
 	void SetResizable(bool set);
 	void SetBorderless(bool set);
 	void SetFullScreenDesktop(bool set);
-	void SetBrightness(float set);
+	void SetMaximized(bool set);
 	//void SetIcon(const char* file);
 
 private:
 	SDL_Window* window = nullptr; 	//The window we'll be rendering to
 	SDL_Surface* screen_surface = nullptr; 	//The surface contained by the window
 
-	uint screen_width = DEFAULT_SCREEN_WIDTH;
-	uint screen_height = DEFAULT_SCREEN_HEIGHT;
+	int screen_width = DEFAULT_SCREEN_WIDTH;
+	int screen_height = DEFAULT_SCREEN_HEIGHT;
 	bool fullscreen = false;
 	bool resizable = false;
 	bool borderless = false;
 	bool fullscreen_desktop = false;
+	bool maximized = false;
 	std::string icon_file;
 };

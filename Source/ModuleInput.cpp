@@ -1,5 +1,6 @@
 #include "Application.h"
 #include "ModuleInput.h"
+#include "ModuleWindow.h"
 
 #include "ImGui/imgui.h"
 #include "imGui/imgui_impl_sdl.h"
@@ -121,11 +122,34 @@ bool ModuleInput::PreUpdate(float dt)
 		case SDL_QUIT:
 			quit = true;
 			break;
-
-		//case SDL_WINDOWEVENT:
-		//	if (e.window.event == SDL_WINDOWEVENT_RESIZED)
-		//		App->renderer3D->OnResize(e.window.data1, e.window.data2);
-		//	break;
+			
+		case SDL_WINDOWEVENT:
+			static bool flag = false;
+			if (e.window.event == SDL_WINDOWEVENT_MAXIMIZED && App->window->IsMaximized() == false)
+			{
+				App->window->SetMaximized(true);
+				flag = true;
+			}
+			else if (e.window.event == SDL_WINDOWEVENT_SIZE_CHANGED)
+			{
+				if (SDL_GetWindowFlags(App->window->GetWindow()) & SDL_WINDOW_MAXIMIZED)
+				{
+					if (flag)
+						flag = false;
+					else
+					{
+						if (App->window->IsMaximized() == true)
+							App->window->SetMaximized(false);
+					}
+				}
+				else
+				{
+					App->window->UpdateSize(e.window.data1, e.window.data2);
+					if (App->window->IsMaximized() == true)	
+						App->window->SetMaximized(false);
+				}
+			}
+			break;
 		}
 	}
 	return true;

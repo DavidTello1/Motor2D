@@ -1,7 +1,7 @@
 #pragma once
 #include "Globals.h"
 
-#include "glew\include\GL\glew.h" //for vbo (GLuint)
+#include "Glew\include\glew.h" //for vbo (GLuint)
 #include "MathGeoLib/include/MathBuildConfig.h" //for float4x4 & aabb
 #include "MathGeoLib/include/MathGeoLib.h" //for float4x4 & aabb
 //#include <vector>

@@ -31,6 +31,9 @@ public:
 	void Draw() override;
 	void Shortcuts() override;
 
+	void Save(Config* config) const override;
+	void Load(Config* config) override;
+
 	void DrawNode(HierarchyNode* node);
 	HierarchyNode* CreateNode(HierarchyNode::NodeType type, HierarchyNode* parent = nullptr, std::string name = "");
 	void DeleteNodes(std::vector<HierarchyNode*> nodes_list, bool reorder = true);

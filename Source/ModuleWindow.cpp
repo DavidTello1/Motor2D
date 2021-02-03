@@ -39,10 +39,11 @@ bool ModuleWindow::Init(Config* config)
 		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
 
 		//Init window options
-		fullscreen = config->GetBool("Fullscreen", true);
+		fullscreen = config->GetBool("Fullscreen", false);
 		resizable = config->GetBool("Resizable", true);
 		borderless = config->GetBool("Borderless", false);
 		fullscreen_desktop = config->GetBool("Fullscreen Desktop", false);
+		maximized = config->GetBool("Maximized", false);
 
 		if (fullscreen == true)
 			flags |= SDL_WINDOW_FULLSCREEN;
@@ -55,6 +56,9 @@ bool ModuleWindow::Init(Config* config)
 
 		if (fullscreen_desktop == true)
 			flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
+
+		if (maximized == true)
+			flags |= SDL_WINDOW_MAXIMIZED;
 
 		window = SDL_CreateWindow(App->GetAppName(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, screen_width, screen_height, flags);
 
@@ -77,8 +81,6 @@ bool ModuleWindow::Start(Config* config)
 	//std::string icon_file = config->GetString("Icon", "");
 	//if (icon_file.size() > 1)
 	//	SetIcon(icon_file.c_str());
-
-	SetBrightness(config->GetFloat("Brightness", 1.0f));
 
 	// Force to trigger a chain of events to refresh aspect ratios	
 	SDL_SetWindowSize(window, screen_width, screen_height);
@@ -103,21 +105,28 @@ bool ModuleWindow::CleanUp()
 void ModuleWindow::Save(Config* config) const
 {
 	//config->AddString("Icon", icon_file.c_str());
-	config->AddFloat("Brightness", GetBrightness());
 	config->AddUInt("Width", GetWidth());
 	config->AddUInt("Height", this->GetHeight());
 	config->AddBool("Fullscreen", IsFullscreen());
 	config->AddBool("Resizable", IsResizable());
 	config->AddBool("Borderless", IsBorderless());
 	config->AddBool("Fullscreen Desktop", IsFullscreenDesktop());
+	config->AddBool("Maximized", IsMaximized());
 }
 
 void ModuleWindow::Load(Config* config)
 {
 	//SetIcon(config->GetString("Icon", ""));
-	SetBrightness(config->GetFloat("Brightness", 1.0f));
-	SetWidth(config->GetUInt("Width", 1280));
-	SetHeigth(config->GetUInt("Height", 1024));
+	SetMaximized(config->GetBool("Maximized", false));
+
+	if (IsMaximized())
+		UpdateSize(config->GetUInt("Width", 1280), config->GetUInt("Height", 1024));
+	else
+	{
+		SetWidth(config->GetUInt("Width", 1280));
+		SetHeigth(config->GetUInt("Height", 1024));
+	}
+
 	SetFullscreen(config->GetBool("Fullscreen", false));
 	SetResizable(config->GetBool("Resizable", false));
 	SetBorderless(config->GetBool("Borderless", false));
@@ -209,11 +218,16 @@ void ModuleWindow::SetFullScreenDesktop(bool set)
 	}
 }
 
-void ModuleWindow::SetBrightness(float set)
+void ModuleWindow::SetMaximized(bool set)
 {
-	CAP(set);
-	if (SDL_SetWindowBrightness(window, set) != 0)
-		LOG("Could not change window brightness: %s\n", SDL_GetError(), 'e');
+	if (set != maximized)
+	{
+		maximized = set;
+		if (maximized == true)
+			SDL_MaximizeWindow(window);
+		else
+			SDL_RestoreWindow(window);
+	}
 }
 
 //void ModuleWindow::SetIcon(const char * file)

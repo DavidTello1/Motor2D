@@ -3,13 +3,19 @@
 
 #include <vector>
 
+#define TOOLBAR_SIZE 42
+#define MENUBAR_SIZE 19
+
 class Panel;
+class Toolbar;
 class Configuration;
 class Console;
 class Hierarchy;
 class Assets;
 //class Inspector;
 //class Viewport;
+
+struct ImGuiWindowClass;
 
 class ModuleEditor : public Module
 {
@@ -44,10 +50,9 @@ private:
 	void ConfirmExit();
 	void Shortcuts();
 
-	void DockSpace();
-
 public:
 	Panel* focused_panel = nullptr;
+	Toolbar* panel_toolbar = nullptr;
 	Configuration* panel_configuration = nullptr;
 	Console* panel_console = nullptr;
 	Hierarchy* panel_hierarchy = nullptr;
@@ -60,6 +65,13 @@ public:
 	bool is_about = false;
 
 private:
+	bool ini_change = false;
+	std::string ini;
+	uint ini_size = 0;
+
+	ImGuiWindowClass* frameWindowClass = nullptr;
+	ImGuiWindowClass* normalWindowClass = nullptr;
+
 	std::vector<Panel*> panels;
 
 	bool close = false;

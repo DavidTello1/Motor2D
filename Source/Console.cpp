@@ -13,7 +13,7 @@ ImGuiTextFilter Console::filter;
 ImGuiTextFilter Console::searcher;
 
 // ---------------------------------------------------------
-Console::Console() : Panel("###Console", ICON_CONSOLE, 1)
+Console::Console() : Panel("###Console", ICON_CONSOLE, 2)
 {
 	width = default_width;
 	height = default_height;
@@ -179,6 +179,15 @@ void Console::Shortcuts()
 		}
 	}
 }
+
+void Console::Save(Config* config) const
+{
+}
+
+void Console::Load(Config* config)
+{
+}
+
 
 // Log Function
 void log(const char file[], int line, const char* format, ...)

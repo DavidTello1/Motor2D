@@ -16,6 +16,9 @@ public:
 	void Draw() override;
 	void Shortcuts() override;
 
+	void Save(Config* config) const override;
+	void Load(Config* config) override;
+
 	void ChildHierarchy();
 	void ChildIcons();
 
@@ -23,6 +26,9 @@ public:
 	void DrawNodeIcon(AssetNode& node);
 	void DrawNodeList(AssetNode& node);
 
+	std::string GetFileName(const char* full_path) const; //returns file name (baker_house.fbx)
+	std::string GetExtension(const char* full_path) const; //returns extension (fbx)
+	bool CheckExtension(const char* path, std::vector<std::string> extensions) const; //check if extension matches any of the list
 	//void ImportAsset(const PathNode& node);
 	//Resource* GetSelectedResource();
 
@@ -56,9 +62,6 @@ private:
 
 	// --- FILES ---
 	AssetNode* GetAllFiles(const char* directory, std::vector<std::string>* filter_ext = nullptr, std::vector<std::string>* ignore_ext = nullptr); //filter if you only want specific extensions or ignore if you want to ignore specific extensions
-	std::string GetFileName(const char* full_path) const; //returns file name (baker_house.fbx)
-	std::string GetExtension(const char* full_path) const; //returns extension (fbx)
-	bool CheckExtension(const char* path, std::vector<std::string> extensions) const; //check if extension matches any of the list
 	
 	// --- OTHERS ---
 	void DockSpace();
