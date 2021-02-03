@@ -160,7 +160,7 @@ void ModuleEditor::Save(Config* config) const
 
 	for (Panel* panel : panels)
 	{
-		config->AddBool("active", panel->active);
+		config->AddBool(std::string("active" + std::string(panel->GetName())).c_str(), panel->active);
 		panel->Save(&config->AddSection(panel->GetName()));
 	}
 }
@@ -180,7 +180,7 @@ void ModuleEditor::Load(Config* config)
 
 	for (Panel* panel : panels)
 	{
-		panel->active = config->GetBool("active", false);
+		panel->active = config->GetBool(std::string("active" + std::string(panel->GetName())).c_str(), false);
 		panel->Load(&config->GetSection(panel->GetName()));
 	}
 }
@@ -404,6 +404,7 @@ void ModuleEditor::DrawPanels()
 			// Configuration
 			if (panels[i]->GetName() == "Configuration")
 			{
+				ImGui::SetNextWindowPos(ImVec2(panel_configuration->default_pos_x, panel_configuration->default_pos_y), ImGuiCond_Appearing);
 				ImGui::Begin(name.c_str(), NULL, panels[i]->flags);
 				panels[i]->Draw();
 				if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows))

@@ -400,6 +400,11 @@ void Configuration::DrawWindow()
 	ImGui::PopStyleColor();
 	ImGui::SameLine();
 	ImGui::Text("Height");
+
+	bool maximized = App->window->IsMaximized();
+
+	if (ImGui::Checkbox("Maximized", &maximized))
+		App->window->SetMaximized(maximized);
 	ImGui::NewLine();
 
 	// Refresh Rate
