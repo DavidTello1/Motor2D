@@ -63,15 +63,12 @@ public:
 
 	bool is_auto_select = false;
 	bool is_about = false;
-
-private:
 	bool ini_change = false;
+
 	std::string ini;
 	uint ini_size = 0;
 
-	ImGuiWindowClass* frameWindowClass = nullptr;
-	ImGuiWindowClass* normalWindowClass = nullptr;
-
+private:
 	std::vector<Panel*> panels;
 
 	bool close = false;

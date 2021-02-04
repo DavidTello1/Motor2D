@@ -68,6 +68,7 @@ public:
 	void Load(Config* config) override;
 
 	void AddFPS(float fps, float ms);
+	std::vector<std::string> GetLayouts();
 
 private:
 	void DrawApplication();
@@ -80,8 +81,6 @@ private:
 
 	void GetHardware();
 	const hardware_info& GetHardwareInfo() const;
-
-	std::vector<std::string> GetLayouts();
 
 public:
 	static const uint default_width = 650;

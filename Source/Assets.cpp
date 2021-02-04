@@ -6,6 +6,8 @@
 //#include "ModuleResources.h"
 #include "ModuleFileSystem.h"
 
+#include "Configuration.h"
+
 #include "Imgui/imgui_internal.h"
 #include <windows.h>
 #include <ShlObj_core.h>
@@ -978,6 +980,9 @@ void Assets::UpdateAssets()
 			current_folder = GetNode(path);
 		if (current_folder == nullptr)
 			current_folder = root;
+
+		// Update Layouts (Configuration Panel)
+		App->editor->panel_configuration->GetLayouts();
 	}
 }
 

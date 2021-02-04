@@ -82,7 +82,32 @@ bool Application::Init()
 	}
 
 	if (!config_exists)
+	{
 		SavePrefs("Default");
+
+		bool ini_exists = App->file_system->Exists("imgui.ini");
+		if (!ini_exists)
+		{
+			std::string ini = "[Window][DockSpace]\nPos = 0, 61\nSize = 1536, 740\nCollapsed = 0\n\n[Window][Console]\nPos = 0, 560\nSize = 1400, 220\nCollapsed = 0\nDockId = 0x00000003, 0\n\n[Window][Hierarchy]\nPos = 0, 19\nSize = 258, 539\nCollapsed = 0\nDockId = 0x00000004, 0\n\n[Window][Debug##Default]\nPos = 60, 60\nSize = 400, 400\nCollapsed = 0\n\n[Window][Dear ImGui Metrics]\nPos = 60, 60\nSize = 338, 239\nCollapsed = 0\n\n[Window][Dear ImGui Demo]\nPos = 650, 20\nSize = 550, 680\nCollapsed = 0\n\n[Window][Configuration]\nPos = 360, 100\nSize = 650, 500\nCollapsed = 0\n\n[Window][Console]\nPos = 0, 560\nSize = 1400, 220\nCollapsed = 0\n\n[Window][Configuration]\nPos = 360, 100\nSize = 650, 500\nCollapsed = 0\n\n[Window][Hierarchy]\nPos = 0, 20\nSize = 265, 540\nCollapsed = 0\n\n[Window][ Console]\nPos = 0, 560\nSize = 1400, 220\nCollapsed = 0\n\n[Window][ Hierarchy]\nPos = 0, 20\nSize = 265, 540\nCollapsed = 0\n\n[Window][ Configuration]\nPos = 360, 100\nSize = 650, 500\nCollapsed = 0\n\n[Window][ Console]\nPos = 0, 566\nSize = 1400, 214\nCollapsed = 0\nDockId = 0x578CAA54, 0\n\n[Window][ Configuration]\nPos = 67, 90\nSize = 650, 500\nCollapsed = 0\n\n[Window][ Hierarchy]\nPos = 0, 61\nSize = 224, 496\nCollapsed = 0\nDockId = 0x00000006, 0\n\n[Window][ Assets]\nPos = 0, 559\nSize = 1536, 242\nCollapsed = 0\nDockId = 0x00000002, 1\n\n[Window][Assets_Hierarchy]\nPos = 0, 578\nSize = 248, 223\nCollapsed = 0\nDockId = 0x00000009\n\n[Window][Assets_Icons]\nPos = 250, 578\nSize = 1286, 223\nCollapsed = 0\nDockId = 0x0000000A\n\n[Window][###Console]\nPos = 0, 559\nSize = 1536, 242\nCollapsed = 0\nDockId = 0x00000002, 0\n\n[Window][ Toolbar]\nPos = 57, 156\nSize = 1152, 79\nCollapsed = 0\n\n[Window][Toolbar]\nSize = 1152, 62\nCollapsed = 0\nDockId = 0x0000000B\n\n[Docking][Data]\nDockSpace     ID = 0x006DCF07 Window = 0x58EF55FC Pos = 0, 578 Size = 1536, 223 Split = X\n  DockNode    ID = 0x00000009 Parent = 0x006DCF07 SizeRef = 248, 179 NoTabBar = 1 Selected = 0x684F8E27\n  DockNode    ID = 0x0000000A Parent = 0x006DCF07 SizeRef = 1134, 179 CentralNode = 1 NoTabBar = 1 Selected = 0xB99294EB\nDockSpace     ID = 0x578CAA54 Pos = 0, 0 Size = 1152, 648 Split = Y\n  DockNode    ID = 0x00000001 Parent = 0x578CAA54 SizeRef = 1400, 539 Split = X\n    DockNode  ID = 0x00000004 Parent = 0x00000001 SizeRef = 258, 539 Selected = 0x788BAA0D\n    DockNode  ID = 0x00000005 Parent = 0x00000001 SizeRef = 1140, 539 CentralNode = 1\n  DockNode    ID = 0x00000003 Parent = 0x578CAA54 SizeRef = 1400, 220 Selected = 0xF9BEF62A\nDockSpace     ID = 0xC82E6A9B Window = 0x9A404470 Pos = 0, 61 Size = 1536, 740 Split = Y\n  DockNode    ID = 0x00000008 Parent = 0xC82E6A9B SizeRef = 1152, 389 Split = X\n    DockNode  ID = 0x00000006 Parent = 0x00000008 SizeRef = 224, 581 Selected = 0x18083233\n    DockNode  ID = 0x00000007 Parent = 0x00000008 SizeRef = 926, 581 CentralNode = 1\n  DockNode    ID = 0x00000002 Parent = 0xC82E6A9B SizeRef = 1152, 190 Selected = 0x58EF55FC\nDockSpace     ID = 0xEC501347 Pos = 0, 0 Size = 1152, 648 Split = Y\n  DockNode    ID = 0x0000000B Parent = 0xEC501347 SizeRef = 1152, 62 NoCloseButton = 1\n  DockNode    ID = 0x0000000C Parent = 0xEC501347 SizeRef = 1152, 565 CentralNode = 1\n\n";
+			uint ini_size = 2751;
+			//App->file_system->Save("imgui.ini", ini.data(), ini_size);
+
+			file_system->Load(SETTINGS_FOLDER "Default.json", &buffer);
+			Config config((const char*)buffer);
+			config.GetSection(editor->GetName()).AddString("ini", ini.c_str());
+			config.GetSection(editor->GetName()).AddUInt("ini_size", ini_size);
+
+			char* buf;
+			uint size = config.Save(&buf, "Saved engine configuration");
+			std::string filename = SETTINGS_FOLDER + std::string("Default.json");
+			if (App->file_system->Save(filename.c_str(), buf, size) > 0)
+				ret = true;
+
+			RELEASE_ARRAY(buf);
+
+			editor->Load(&config.GetSection(editor->GetName()));
+		}
+	}
 
 	RELEASE_ARRAY(buffer);
 	return ret;

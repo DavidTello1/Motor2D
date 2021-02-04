@@ -45,9 +45,17 @@ bool ModuleEditor::Init(Config* config)
 	ini_size = config->GetUInt("ini_size", 0);
 
 	if (ini == "error" || ini_size == 0.0f)
-		LOG("Error loading ini file", 'e')
+	{
+		LOG("Error loading ini file", 'e');
+		if (App->file_system->Exists("imgui.ini"))
+			ImGui::LoadIniSettingsFromDisk("imgui.ini");
+	}
 	else
+	{
 		ImGui::LoadIniSettingsFromMemory(ini.c_str(), ini_size);
+		if (!App->file_system->Exists("imgui.ini"))
+			App->file_system->Save("imgui.ini", ini.data(), ini_size);
+	}
 
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable keyboard controls
 	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
@@ -74,14 +82,6 @@ bool ModuleEditor::Init(Config* config)
 
 bool ModuleEditor::Start(Config* config)
 {
-	// Window Classes
-	frameWindowClass = new ImGuiWindowClass();
-	frameWindowClass->ClassId = 1;
-	frameWindowClass->DockNodeFlagsOverrideSet |= ImGuiDockNodeFlags_NoSplit;
-
-	normalWindowClass = new ImGuiWindowClass();
-	normalWindowClass->ClassId = 2;
-
 	// Icon Font
 	ImGuiIO& io = ImGui::GetIO();
 	io.Fonts->AddFontDefault();
@@ -105,7 +105,6 @@ bool ModuleEditor::PreUpdate(float dt)
 	if (ini_change)
 	{
 		ImGui::LoadIniSettingsFromMemory(ini.c_str(), ini_size);
-		ImGui::GetIO().WantSaveIniSettings = false;
 		ini_change = false;
 	}
 
@@ -153,7 +152,6 @@ bool ModuleEditor::CleanUp()
 void ModuleEditor::Save(Config* config) const
 {
 	size_t ini_data_size = 0;
-	ImGui::GetIO().WantSaveIniSettings = true;
 	const char* ini_data = ImGui::SaveIniSettingsToMemory(&ini_data_size);
 	config->AddString("ini", ini_data);
 	config->AddUInt("ini_size", ini_data_size);
@@ -175,7 +173,6 @@ void ModuleEditor::Load(Config* config)
 	{
 		ini_change = true;
 		App->file_system->Save("imgui.ini", ini.data(), ini_size);
-		ImGui::SaveIniSettingsToDisk("imgui.ini");
 	}
 
 	for (Panel* panel : panels)
@@ -407,6 +404,11 @@ void ModuleEditor::DrawPanels()
 				ImGui::SetNextWindowPos(ImVec2(panel_configuration->default_pos_x, panel_configuration->default_pos_y), ImGuiCond_Appearing);
 				ImGui::Begin(name.c_str(), NULL, panels[i]->flags);
 				panels[i]->Draw();
+				if (ImGui::IsWindowAppearing())
+				{
+					panel_configuration->GetLayouts(); //update layouts when opened
+				}
+
 				if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows))
 					focused_panel = panels[i];
 
