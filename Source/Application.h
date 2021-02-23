@@ -20,7 +20,7 @@ class ModuleScene;
 class ModuleRenderer;
 class ModuleEditor;
 class ModuleFileSystem;
-//class ModuleResources;
+class ModuleResources;
 
 class Config;
 class LCG;
@@ -70,7 +70,7 @@ public:
 	//ModuleCamera3D* camera;
 	ModuleEditor* editor;
 	ModuleFileSystem* file_system;
-	//ModuleResources* resources;
+	ModuleResources* resources;
 
 private:
 	Timer	ms_timer;

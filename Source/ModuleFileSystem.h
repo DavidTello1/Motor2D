@@ -31,6 +31,11 @@ public:
 	void CreateFolder(const char* directory) { PHYSFS_mkdir(directory); }
 	void GetFolderContent(const char* directory, std::vector<std::string>& file_list, std::vector<std::string>& dir_list) const;
 
+	// Extensions
+	std::string GetFileName(const char* full_path) const; //returns file name (baker_house.fbx)
+	std::string GetExtension(const char* full_path) const; //returns extension (fbx)
+	bool CheckExtension(const char* path, std::vector<std::string> extensions) const; //check if extension matches any of the list
+
 	// Paths
 	const char* GetBasePath() const { return PHYSFS_getBaseDir(); }
 	const char* GetWritePath() const { return PHYSFS_getWriteDir(); }

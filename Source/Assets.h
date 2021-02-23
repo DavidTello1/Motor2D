@@ -26,9 +26,6 @@ public:
 	void DrawNodeIcon(AssetNode& node);
 	void DrawNodeList(AssetNode& node);
 
-	std::string GetFileName(const char* full_path) const; //returns file name (baker_house.fbx)
-	std::string GetExtension(const char* full_path) const; //returns extension (fbx)
-	bool CheckExtension(const char* path, std::vector<std::string> extensions) const; //check if extension matches any of the list
 	//void ImportAsset(const PathNode& node);
 	//Resource* GetSelectedResource();
 

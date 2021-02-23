@@ -3,7 +3,7 @@
 #include "ModuleInput.h"
 #include "ModuleEditor.h"
 //#include "ModuleScene.h"
-//#include "ModuleResources.h"
+#include "ModuleResources.h"
 #include "ModuleFileSystem.h"
 
 #include "Configuration.h"
@@ -1109,7 +1109,7 @@ AssetNode* Assets::CreateNode(std::string name, AssetNode* parent)
 
 	if (name == "")
 	{
-		node->name = GetFileName(parent->path.c_str());
+		node->name = App->file_system->GetFileName(parent->path.c_str());
 		if (node->name == "")
 			node->name = parent->path;
 	}
@@ -1205,7 +1205,7 @@ uint Assets::GetNumParents(AssetNode& node) const
 
 AssetNode::NodeType Assets::GetType(const AssetNode& node) const
 {
-	std::string extension = GetExtension((&node)->path.c_str());
+	std::string extension = App->file_system->GetExtension((&node)->path.c_str());
 
 	if (extension == "png" || extension == "jpg" || extension == "tga")
 		return AssetNode::NodeType::TEXTURE;
@@ -1403,7 +1403,7 @@ AssetNode* Assets::GetAllFiles(const char* directory, std::vector<std::string>* 
 	if (App->file_system->Exists(directory)) //check if directory exists
 	{
 		node->path = directory;
-		node->name = GetFileName(directory);
+		node->name = App->file_system->GetFileName(directory);
 		if (node->name == "")
 			node->name = directory;
 		node->type = GetType(*node);
@@ -1425,9 +1425,9 @@ AssetNode* Assets::GetAllFiles(const char* directory, std::vector<std::string>* 
 		{
 			bool filter = true, discard = false;
 			if (filter_ext != nullptr)
-				filter = CheckExtension(file.c_str(), *filter_ext); //check if file_ext == filter_ext
+				filter = App->file_system->CheckExtension(file.c_str(), *filter_ext); //check if file_ext == filter_ext
 			else if (ignore_ext != nullptr)
-				discard = CheckExtension(file.c_str(), *ignore_ext); //check if file_ext == ignore_ext
+				discard = App->file_system->CheckExtension(file.c_str(), *ignore_ext); //check if file_ext == ignore_ext
 
 			if (filter == true && discard == false)
 			{
@@ -1443,40 +1443,6 @@ AssetNode* Assets::GetAllFiles(const char* directory, std::vector<std::string>* 
 		LOG("Error retrieving files", 'e');
 
 	return node;
-}
-
-std::string Assets::GetFileName(const char* path) const
-{
-	const char* file_name = strrchr(path, 128);
-	if (file_name == nullptr)
-		file_name = (strrchr(path, '/') != nullptr) ? strrchr(path, '/') : "";
-
-	if (file_name != "")
-		file_name++;
-
-	return file_name;
-}
-
-std::string Assets::GetExtension(const char* path) const
-{
-	char buffer[32] = "";
-	const char* last_dot = strrchr(path, '.');
-	if (last_dot != nullptr)
-		strcpy_s(buffer, last_dot + 1);
-
-	std::string extension(buffer);
-	return extension;
-}
-
-bool Assets::CheckExtension(const char* path, std::vector<std::string> extensions) const
-{
-	std::string ext = GetExtension(path);
-	for (std::string extension : extensions)
-	{
-		if (extension == ext)
-			return true;
-	}
-	return false;
 }
 
 // --- OTHERS ---

@@ -8,8 +8,6 @@
 #include "ModuleEditor.h"
 #include "ModuleFileSystem.h"
 
-#include "Assets.h"
-
 #include "Imgui/imgui_internal.h"
 #include "gpudetect/DeviceId.h"
 #include "Glew/include/glew.h"
@@ -689,7 +687,7 @@ std::vector<std::string> Configuration::GetLayouts()
 
 		for (std::string file : file_list)
 		{
-			if (App->editor->panel_assets->GetExtension(file.c_str()) == "json")
+			if (App->file_system->GetExtension(file.c_str()) == "json")
 			{
 				std::string name = file.substr(0, file.find("."));
 				layouts.push_back(name);

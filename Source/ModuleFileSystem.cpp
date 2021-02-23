@@ -260,6 +260,40 @@ void ModuleFileSystem::GetFolderContent(const char* directory, std:: vector<std:
 	PHYSFS_freeList(rc);
 }
 
+std::string ModuleFileSystem::GetFileName(const char* path) const
+{
+	const char* file_name = strrchr(path, 128);
+	if (file_name == nullptr)
+		file_name = (strrchr(path, '/') != nullptr) ? strrchr(path, '/') : "";
+
+	if (file_name != "")
+		file_name++;
+
+	return file_name;
+}
+
+std::string ModuleFileSystem::GetExtension(const char* path) const
+{
+	char buffer[32] = "";
+	const char* last_dot = strrchr(path, '.');
+	if (last_dot != nullptr)
+		strcpy_s(buffer, last_dot + 1);
+
+	std::string extension(buffer);
+	return extension;
+}
+
+bool ModuleFileSystem::CheckExtension(const char* path, std::vector<std::string> extensions) const
+{
+	std::string ext = GetExtension(path);
+	for (std::string extension : extensions)
+	{
+		if (extension == ext)
+			return true;
+	}
+	return false;
+}
+
 const char* ModuleFileSystem::GetReadPaths() const
 {
 	static char paths[512];

@@ -1,6 +1,7 @@
 #include "Application.h"
 #include "ModuleInput.h"
 #include "ModuleWindow.h"
+#include "ModuleResources.h"
 
 #include "ImGui/imgui.h"
 #include "imGui/imgui_impl_sdl.h"
@@ -115,7 +116,7 @@ bool ModuleInput::PreUpdate(float dt)
 
 		case SDL_DROPFILE:
 			dir = e.drop.file;
-			//App->resources->ImportFromOutside(dir);
+			App->resources->ImportFromPath(dir);
 			SDL_free(e.drop.file);
 			break;
 

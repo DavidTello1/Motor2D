@@ -21,6 +21,6 @@ public:
 	bool GetVSync() const { return vsync; }
 
 public:
-	SDL_GLContext context;
+	SDL_GLContext context = nullptr;
 	bool vsync = false;
 };
