@@ -8,24 +8,16 @@
 
 #include "mmgr/mmgr.h"
 
-bool ResourceTexture::Create(const char* path, UID uid)
+bool ResourceTexture::Create(const char* path, UID uid, bool save_meta)
 {
+	UID id = uid;
 	size_t index = data.files_library.size();
-	Add(path, LIBRARY_TEXTURES_FOLDER, EXTENSION_TEXTURE, uid); //initialize data
+	Add(path, LIBRARY_TEXTURE_FOLDER, EXTENSION_TEXTURE, uid); //initialize data
 
-	if (App->file_system->Exists(data.files_library[index].c_str())) //if already loaded don't import
-	{
-		// ***if last mod date not equal reimport
-		LOG("File has already been imported", 'd');
-
-		return true;
-	}
-	else if (Load(index)) //import & save meta
-	{
+	if (save_meta)
 		SaveMeta(index);
-		return true;
-	}
-	return false;
+
+	return true;
 }
 
 bool ResourceTexture::Remove(size_t index) const
@@ -43,7 +35,9 @@ void ResourceTexture::SaveMeta(size_t index) const
 	// Create Config file
 	Config config;
 	config.AddUID("ID", data.ids[index]);
-	config.AddString("File", data.files_assets[index].c_str());
+	config.AddString("AssetsFile", data.files_assets[index].c_str());
+	config.AddString("LibraryFile", data.files_library[index].c_str());
+	config.AddDouble("Date", App->file_system->GetLastModTime(data.files_assets[index].c_str()));
 
 	// Save as .meta file
 	char* buffer = nullptr;

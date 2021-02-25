@@ -1,9 +1,7 @@
+#pragma once
 #include "Globals.h"
 #include <string>
 #include <vector>
-
-class GameObject;
-//class Resource;
 
 class AssetNode
 {
@@ -25,6 +23,17 @@ public:
 	virtual ~AssetNode() {};
 
 public:
+	//enum State {
+	//	IDLE,
+	//	SELECTED,
+	//	RENAME,
+	//	CUT
+	//};
+
+	//size_t index;
+	//ResourceType type;
+	//State state;
+
 	NodeType type = NodeType::NONE;
 	std::string path = "null path";
 	std::string name = "file_name";
@@ -39,5 +48,4 @@ public:
 
 	AssetNode* parent = nullptr;
 	std::vector<AssetNode*> childs;
-	//Resource* resource;
 };

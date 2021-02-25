@@ -15,10 +15,11 @@ struct ResourceData
 	std::vector<std::string> files_library;
 	std::vector<int> times_loaded;
 
+	// --------------
 	void Add(const char* assets_path, const char* library_folder, const char* extension, UID id = 0) 
 	{
 		UID uid = id;
-		if (uid == 0 && !ids.empty() && GetIndex(id) != -1) {}
+		if (uid == 0 || (!ids.empty() && GetIndex(id) == -1)) {}
 			//uid = GenerateUID()
 
 		ids.push_back(uid);
@@ -38,7 +39,29 @@ struct ResourceData
 	}
 };
 
-struct ResourceTexture
+
+struct ResourceFolder
+{
+	ResourceData data;
+	std::vector<std::vector<UID>> childs;
+
+	//--------------------------
+	void Add(const char* assets_path, const char* library_folder, const char* extension, UID id = 0)
+	{
+		data.Add(assets_path, library_folder, extension, id);
+
+		std::vector<UID> children;
+		childs.push_back(children);
+	}
+
+	void AddChild(size_t index, UID id)
+	{
+		childs[index].push_back(id);
+	}
+};
+
+
+struct ResourceTexture //***maybe have the functions inside a struct
 {
 	//enum
 	//{
@@ -56,6 +79,7 @@ struct ResourceTexture
 		//std::vector<int> flags;
 	} texture;
 
+	//--------------------------
 	void Add(const char* assets_path, const char* library_folder, const char* extension, UID id = 0)
 	{
 		data.Add(assets_path, library_folder, extension, id);
@@ -65,7 +89,7 @@ struct ResourceTexture
 		texture.buffer.push_back(0);
 	}
 
-	bool Create(const char* path, UID uid = 0);
+	bool Create(const char* path, UID uid = 0, bool save_meta = true);
 	bool Remove(size_t index) const;
 
 	bool Import(size_t index) const;

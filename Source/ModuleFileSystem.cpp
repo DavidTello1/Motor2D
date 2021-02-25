@@ -1,7 +1,9 @@
 #include "Globals.h"
 #include "Application.h"
 #include "ModuleFileSystem.h"
-#include "AssetNode.h"
+
+#include "ModuleEditor.h"
+#include "Assets.h"
 
 #pragma comment( lib, "PhysFS/libx86/physfs.lib" )
 #include "PhysFS/include/physfs.h"
@@ -35,8 +37,15 @@ ModuleFileSystem::ModuleFileSystem(const char* game_path) : Module("FileSystem",
 		SETTINGS_FOLDER,
 		ASSETS_FOLDER,
 		LIBRARY_FOLDER,
-		LIBRARY_MATERIAL_FOLDER,
+
 		LIBRARY_SCENE_FOLDER,
+		LIBRARY_PREFAB_FOLDER,
+		LIBRARY_TEXTURE_FOLDER,
+		LIBRARY_MATERIAL_FOLDER,
+		LIBRARY_ANIMATION_FOLDER,
+		LIBRARY_TILEMAP_FOLDER,
+		LIBRARY_AUDIO_FOLDER,
+		LIBRARY_SCRIPT_FOLDER
 	};
 
 	for (uint i = 0; i < sizeof(dirs) / sizeof(const char*); ++i)
@@ -306,4 +315,53 @@ const char* ModuleFileSystem::GetReadPaths() const
 		strcat_s(paths, 512, "\n");
 	}
 	return paths;
+}
+
+AssetNode* ModuleFileSystem::GetAllFiles(const char* directory, std::vector<std::string>* filter_ext, std::vector<std::string>* ignore_ext)
+{
+	AssetNode* node = new AssetNode();
+
+	if (Exists(directory)) //check if directory exists
+	{
+		node->path = directory;
+		node->name = GetFileName(directory);
+		if (node->name == "")
+			node->name = directory;
+		node->type = App->editor->panel_assets->GetType(*node);
+
+		std::vector<std::string> file_list, dir_list;
+		GetFolderContent(directory, file_list, dir_list);
+
+		//Adding all child directories
+		for (std::string dir : dir_list)
+		{
+			std::string str = directory + std::string("/") + dir;
+			AssetNode* child = GetAllFiles(str.c_str(), filter_ext, ignore_ext);
+			node->childs.push_back(child);
+			child->parent = node;
+		}
+
+		//Adding all child files
+		for (std::string file : file_list)
+		{
+			bool filter = true, discard = false;
+			if (filter_ext != nullptr)
+				filter = CheckExtension(file.c_str(), *filter_ext); //check if file_ext == filter_ext
+			else if (ignore_ext != nullptr)
+				discard = CheckExtension(file.c_str(), *ignore_ext); //check if file_ext == ignore_ext
+
+			if (filter == true && discard == false)
+			{
+				std::string str = directory + std::string("/") + file;
+				AssetNode* child = GetAllFiles(str.c_str(), filter_ext, ignore_ext);
+				node->childs.push_back(child);
+			}
+		}
+	}
+	if (App->editor->panel_assets != nullptr && node->type != AssetNode::NodeType::NONE)
+		App->editor->panel_assets->nodes.push_back(node);
+	else
+		LOG("Error retrieving files", 'e');
+
+	return node;
 }

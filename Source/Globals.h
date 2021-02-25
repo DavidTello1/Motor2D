@@ -67,14 +67,17 @@ typedef unsigned long long UID;
 		 }\
 	 }
 
-// Configuration -----------
+// Configuration ----------- FOLDERS ---
 #define VERSION "0.1-alpha"
 #define ASSETS_FOLDER "Assets/"
 #define SETTINGS_FOLDER "Settings/"
 #define LIBRARY_FOLDER "Library/"
 
 #define LIBRARY_SCENE_FOLDER "Library/Scenes/"
-#define LIBRARY_TEXTURES_FOLDER "Library/Textures/"
+#define LIBRARY_PREFAB_FOLDER "Library/Prefabs/"
+#define LIBRARY_TEXTURE_FOLDER "Library/Textures/"
+#define LIBRARY_MATERIAL_FOLDER "Library/Materials/"
 #define LIBRARY_ANIMATION_FOLDER "Library/Animations/"
 #define LIBRARY_AUDIO_FOLDER "Library/Audio/"
-#define LIBRARY_MATERIAL_FOLDER "Library/Materials/"
+#define LIBRARY_TILEMAP_FOLDER "Library/Tilemaps/"
+#define LIBRARY_SCRIPT_FOLDER "Library/Scripts/"

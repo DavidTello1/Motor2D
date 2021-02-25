@@ -1,6 +1,7 @@
 #pragma once
 #include "Panel.h"
 #include "AssetNode.h"
+//#include "ModuleResources.h"
 
 #define VERY_BIG_SIZE 96
 #define BIG_SIZE 64
@@ -28,6 +29,7 @@ public:
 
 	//void ImportAsset(const PathNode& node);
 	//Resource* GetSelectedResource();
+	AssetNode::NodeType GetType(const AssetNode& node) const; //get node type
 
 private:
 	// --- MAIN HELPERS ---
@@ -43,7 +45,6 @@ private:
 	AssetNode* GetNode(const std::string path) const; //get node from name
 	std::vector<AssetNode*> GetParents(AssetNode& node) const; //get all parents until root
 	uint GetNumParents(AssetNode& node) const; //get number of parents
-	AssetNode::NodeType GetType(const AssetNode& node) const; //get node type
 	std::string GetNameWithCount(const std::string name) const; //get name with count
 	std::string GetIconList(const AssetNode::NodeType type) const; //get icon for list view mode
 	ImVec4 GetIconColor(const AssetNode::NodeType type) const; //get icon color for list view mode
@@ -56,9 +57,6 @@ private:
 	void UnSelectAll();
 	void Cut(AssetNode& node, AssetNode& parent) const; //paste cut nodes
 	void Copy(AssetNode& node, AssetNode& parent); //paste copied nodes
-
-	// --- FILES ---
-	AssetNode* GetAllFiles(const char* directory, std::vector<std::string>* filter_ext = nullptr, std::vector<std::string>* ignore_ext = nullptr); //filter if you only want specific extensions or ignore if you want to ignore specific extensions
 	
 	// --- OTHERS ---
 	void DockSpace();
@@ -69,8 +67,9 @@ public:
 	static const uint default_pos_x = 0;
 	static const uint default_pos_y = 701;
 
-private:
 	std::vector<AssetNode*> nodes;
+
+private:
 	std::vector<AssetNode*> selected_nodes;
 	std::vector<AssetNode*> aux_nodes; //used for cut and copy
 	std::vector<AssetNode*> current_list; //used for selectall and unselectall (can be nodes or current_folder.childs)

@@ -29,10 +29,15 @@ public:
 	void Load(Config* config) override;
 
 	// Importing
-	bool ImportFromPath(std::string path, UID uid = 0);
-	bool ImportResource(const char* path, UID uid = 0);
+	bool ImportFromExplorer(std::string path, UID uid = 0);
 
 private:
+	void LoadAllAssets(const char* path);
+	bool ImportFromAssets(const char* path, UID uid = 0, bool save_meta = true); // Creates file in /Library and a .meta in /Assets (if bool is true)
+
+	void CleanMeta(); // Remove .meta files of resources that no longer exist in /Assets
+	void CleanLibrary(); // Remove Library-Resources that no longer exist in /Assets
+
 	ResourceType GetResourceType(const char* path);
 
 public:

@@ -4,6 +4,8 @@
 #include "PhysFS/include/physfs.h"
 #include <vector>
 
+class AssetNode;
+
 class ModuleFileSystem : public Module
 {
 public:
@@ -41,4 +43,8 @@ public:
 	const char* GetWritePath() const { return PHYSFS_getWriteDir(); }
 	const char* GetReadPaths() const;
 	const char* GetActualPath() const { return PHYSFS_getUserDir(); }
+
+	// Assets
+	AssetNode* GetAllFiles(const char* directory, std::vector<std::string>* filter_ext = nullptr, std::vector<std::string>* ignore_ext = nullptr); //filter if you only want specific extensions or ignore if you want to ignore specific extensions
+	uint64_t GetLastModTime(const char* path) { return PHYSFS_getLastModTime(path); }
 };

@@ -31,7 +31,7 @@ Assets::Assets() : Panel("Assets", ICON_ASSETS, 4)
 	// Get Files
 	std::vector<std::string> ignore_ext;
 	ignore_ext.push_back("meta");
-	current_folder = root = GetAllFiles("Assets", nullptr, &ignore_ext);
+	current_folder = root = App->file_system->GetAllFiles("Assets", nullptr, &ignore_ext);
 	root->open = true;
 
 	current_list = current_folder->childs;
@@ -966,7 +966,7 @@ void Assets::UpdateAssets()
 
 		std::vector<std::string> ignore_ext;
 		ignore_ext.push_back("meta");
-		root = GetAllFiles("Assets", nullptr, &ignore_ext);
+		root = App->file_system->GetAllFiles("Assets", nullptr, &ignore_ext);
 
 		root->open = true;
 		for (std::string node_path : open_nodes)
@@ -1393,56 +1393,6 @@ void Assets::Copy(AssetNode& node, AssetNode& parent)
 	//std::string full_newpath = App->file_system->GetBasePath() + new_node->path;
 
 	//App->file_system->Copy(full_path.c_str(), full_newpath.c_str());
-}
-
-// --- FILES ---
-AssetNode* Assets::GetAllFiles(const char* directory, std::vector<std::string>* filter_ext, std::vector<std::string>* ignore_ext)
-{
-	AssetNode* node = new AssetNode();
-
-	if (App->file_system->Exists(directory)) //check if directory exists
-	{
-		node->path = directory;
-		node->name = App->file_system->GetFileName(directory);
-		if (node->name == "")
-			node->name = directory;
-		node->type = GetType(*node);
-
-		std::vector<std::string> file_list, dir_list;
-		App->file_system->GetFolderContent(directory, file_list, dir_list);
-
-		//Adding all child directories
-		for (std::string dir : dir_list)
-		{
-			std::string str = directory + std::string("/") + dir;
-			AssetNode* child = GetAllFiles(str.c_str(), filter_ext, ignore_ext);
-			node->childs.push_back(child);
-			child->parent = node;
-		}
-
-		//Adding all child files
-		for (std::string file : file_list)
-		{
-			bool filter = true, discard = false;
-			if (filter_ext != nullptr)
-				filter = App->file_system->CheckExtension(file.c_str(), *filter_ext); //check if file_ext == filter_ext
-			else if (ignore_ext != nullptr)
-				discard = App->file_system->CheckExtension(file.c_str(), *ignore_ext); //check if file_ext == ignore_ext
-
-			if (filter == true && discard == false)
-			{
-				std::string str = directory + std::string("/") + file;
-				AssetNode* child = GetAllFiles(str.c_str(), filter_ext, ignore_ext);
-				node->childs.push_back(child);
-			}
-		}
-	}
-	if (node->type != AssetNode::NodeType::NONE)
-		nodes.push_back(node);
-	else
-		LOG("Error retrieving files", 'e');
-
-	return node;
 }
 
 // --- OTHERS ---
