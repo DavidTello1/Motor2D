@@ -2,8 +2,8 @@
 #include "Application.h"
 #include "ModuleFileSystem.h"
 
-#include "ModuleEditor.h"
-#include "Assets.h"
+//#include "ModuleEditor.h"
+#include "AssetNode.h"
 
 #pragma comment( lib, "PhysFS/libx86/physfs.lib" )
 #include "PhysFS/include/physfs.h"
@@ -317,18 +317,22 @@ const char* ModuleFileSystem::GetReadPaths() const
 	return paths;
 }
 
-AssetNode* ModuleFileSystem::GetAllFiles(const char* directory, std::vector<std::string>* filter_ext, std::vector<std::string>* ignore_ext)
+AssetNode ModuleFileSystem::GetAllFiles(const char* directory, std::vector<std::string>* filter_ext, std::vector<std::string>* ignore_ext)
 {
-	AssetNode* node = new AssetNode();
+	AssetNode nodes;
 
 	if (Exists(directory)) //check if directory exists
 	{
-		node->path = directory;
-		node->name = GetFileName(directory);
-		if (node->name == "")
-			node->name = directory;
-		node->type = App->editor->panel_assets->GetType(*node);
+		// Create AssetNode and initialize
+		std::string name = GetFileName(directory);
+		if (name == "")
+			name = directory;
 
+		ResourceType type = GetType(directory);
+		std::vector<std::string> empty_childs;
+		size_t index = nodes.Add(directory, name, type, empty_childs);
+
+		// Get Folder Content
 		std::vector<std::string> file_list, dir_list;
 		GetFolderContent(directory, file_list, dir_list);
 
@@ -336,9 +340,12 @@ AssetNode* ModuleFileSystem::GetAllFiles(const char* directory, std::vector<std:
 		for (std::string dir : dir_list)
 		{
 			std::string str = directory + std::string("/") + dir;
-			AssetNode* child = GetAllFiles(str.c_str(), filter_ext, ignore_ext);
-			node->childs.push_back(child);
-			child->parent = node;
+			AssetNode child = GetAllFiles(str.c_str(), filter_ext, ignore_ext);
+
+			for (size_t i = 0, size = child.name.size(); i < size; ++i)
+				nodes.Add(child.path[i], child.name[i], child.type[i], child.childs[i], nodes.name[index]);
+
+			nodes.childs[index].insert(nodes.childs[index].end(), child.name.begin(), child.name.end());
 		}
 
 		//Adding all child files
@@ -353,15 +360,30 @@ AssetNode* ModuleFileSystem::GetAllFiles(const char* directory, std::vector<std:
 			if (filter == true && discard == false)
 			{
 				std::string str = directory + std::string("/") + file;
-				AssetNode* child = GetAllFiles(str.c_str(), filter_ext, ignore_ext);
-				node->childs.push_back(child);
+				AssetNode child = GetAllFiles(str.c_str(), filter_ext, ignore_ext);
+				nodes.childs[index] = child.name;
 			}
 		}
 	}
-	if (App->editor->panel_assets != nullptr && node->type != AssetNode::NodeType::NONE)
-		App->editor->panel_assets->nodes.push_back(node);
 	else
 		LOG("Error retrieving files", 'e');
 
-	return node;
+	return nodes;
+}
+
+ResourceType ModuleFileSystem::GetType(const char* path) const
+{
+	std::string extension = GetExtension(path);
+
+	if		(extension == EXTENSION_FOLDER)		return ResourceType::FOLDER;
+	else if (extension == EXTENSION_SCENE)		return ResourceType::SCENE;
+	else if (extension == EXTENSION_PREFAB)		return ResourceType::PREFAB;
+	else if (extension == EXTENSION_TEXTURE)	return ResourceType::TEXTURE;
+	else if (extension == EXTENSION_MATERIAL)	return ResourceType::MATERIAL;
+	else if (extension == EXTENSION_ANIMATION)	return ResourceType::ANIMATION;
+	else if (extension == EXTENSION_TILEMAP)	return ResourceType::TILEMAP;
+	else if (extension == EXTENSION_AUDIO)		return ResourceType::AUDIO;
+	else if (extension == EXTENSION_SCRIPT)		return ResourceType::SCRIPT;
+	else if (extension == EXTENSION_SHADER)		return ResourceType::SHADER;
+	else										return ResourceType::UNKNOWN;
 }

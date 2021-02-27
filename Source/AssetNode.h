@@ -3,49 +3,83 @@
 #include <string>
 #include <vector>
 
-class AssetNode
+enum class ResourceType {
+	FOLDER,
+	SCENE,
+	PREFAB,
+	TEXTURE,
+	MATERIAL,
+	ANIMATION,
+	TILEMAP,
+	AUDIO,
+	SCRIPT,
+	SHADER,
+	UNKNOWN
+};
+
+enum class State {
+	IDLE,
+	SELECTED,
+	DRAGGING,
+	RENAME,
+	CUT
+};
+
+struct AssetNode
 {
-public:
-	enum class NodeType {
-		NONE = 0,
-		FOLDER,
-		SCENE,
-		PREFAB,
-		TEXTURE,
-		MATERIAL,
-		ANIMATION,
-		TILEMAP,
-		AUDIO,
-		SCRIPT
-	};
+	std::vector<std::string> name;
+	std::vector<std::string> path;
+	std::vector<ResourceType> type;
+	std::vector<State> state;
+	std::vector<bool> open;
 
-	AssetNode() {};
-	virtual ~AssetNode() {};
+	std::vector<std::string> parent;
+	std::vector <std::vector<std::string>> childs;
 
-public:
-	//enum State {
-	//	IDLE,
-	//	SELECTED,
-	//	RENAME,
-	//	CUT
-	//};
+	//uint icon = 0;
+	//uint count = 0;
 
-	//size_t index;
-	//ResourceType type;
-	//State state;
+	//----------------------------
+	size_t Add(std::string path_, std::string name_, ResourceType type_, std::vector<std::string> childs_, std::string parent_ = "", State state_ = State::IDLE, bool open_ = false)
+	{
+		name.push_back(name_);
+		path.push_back(path_);
+		type.push_back(type_);
+		state.push_back(state_);
+		open.push_back(open_);
+		parent.push_back(parent_);
+		childs.push_back(childs_);
 
-	NodeType type = NodeType::NONE;
-	std::string path = "null path";
-	std::string name = "file_name";
+		return name.size() - 1;
+	}
 
-	uint icon = 0;
-	uint count = 0;
+	void Remove(size_t index)
+	{
+		name.erase(name.begin() + index);
+		path.erase(path.begin() + index);
+		type.erase(type.begin() + index);
+		state.erase(state.begin() + index);
+		open.erase(open.begin() + index);
+		parent.erase(parent.begin() + index);
+		childs.erase(childs.begin() + index);
+	}
 
-	bool rename = false;
-	bool selected = false;
-	bool open = false;
-	bool cut = false;
+	void Clear()
+	{
+		name.clear();
+		path.clear();
+		type.clear();
+		state.clear();
+		open.clear();
+		parent.clear();
+		childs.clear();
 
-	AssetNode* parent = nullptr;
-	std::vector<AssetNode*> childs;
+		name.shrink_to_fit();
+		path.shrink_to_fit();
+		type.shrink_to_fit();
+		state.shrink_to_fit();
+		open.shrink_to_fit();
+		parent.shrink_to_fit();	
+		childs.shrink_to_fit();
+	}
 };

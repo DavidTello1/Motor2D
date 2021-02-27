@@ -23,40 +23,42 @@ public:
 	void ChildHierarchy();
 	void ChildIcons();
 
-	void DrawHierarchy(AssetNode& node);
-	void DrawNodeIcon(AssetNode& node);
-	void DrawNodeList(AssetNode& node);
+	void DrawHierarchy(size_t index);
+	void DrawNodeIcon(size_t index);
+	void DrawNodeList(size_t index);
+
 
 	//void ImportAsset(const PathNode& node);
 	//Resource* GetSelectedResource();
-	AssetNode::NodeType GetType(const AssetNode& node) const; //get node type
 
 private:
 	// --- MAIN HELPERS ---
-	AssetNode* HandleSelection(AssetNode& node); //selection states
+	void HandleSelection(size_t index); //selection states
+
 	bool DrawRightClick();
 	void UpdateAssets(); //update files (called only on return focus)
-	void DrawPath(); //draw path with links
+	//void DrawPath(); //draw path with links
 
 	// --- NODES ---
-	AssetNode* CreateNode(std::string name = "", AssetNode* parent = nullptr);
-	void DeleteNodes(std::vector<AssetNode*> nodes_list);
+	size_t CreateNode(std::string name = "", size_t parent_index = 0);
+	void DeleteNodes(std::vector<std::string> names_list);
 
-	AssetNode* GetNode(const std::string path) const; //get node from name
-	std::vector<AssetNode*> GetParents(AssetNode& node) const; //get all parents until root
-	uint GetNumParents(AssetNode& node) const; //get number of parents
+	size_t GetNode(const std::string name) const; //get node from name
+
+	//std::vector<AssetNode*> GetParents(AssetNode& node) const; //get all parents until root
+	//uint GetNumParents(AssetNode& node) const; //get number of parents
 	std::string GetNameWithCount(const std::string name) const; //get name with count
-	std::string GetIconList(const AssetNode::NodeType type) const; //get icon for list view mode
-	ImVec4 GetIconColor(const AssetNode::NodeType type) const; //get icon color for list view mode
+	std::string GetIconList(const ResourceType type) const; //get icon for list view mode
+	ImVec4 GetIconColor(const ResourceType type) const; //get icon color for list view mode
 
-	bool IsChildOf(const AssetNode& node, AssetNode& child) const; //check if node is child or child of childs of parent
-	int FindNode(const AssetNode& node, const std::vector<AssetNode*> list) const; //get node pos in list (returns -1 if not found)
-	void UpdatePath(AssetNode& node, const std::string path) const; //update path
+	//bool IsChildOf(const AssetNode& node, AssetNode& child) const; //check if node is child or child of childs of parent
+	int FindNode(const char* name, std::vector<std::string> list) const; //get node pos in list (returns -1 if not found)
+	void UpdatePath(size_t index, const std::string path); //update path
 
-	void SelectAll() const;
+	void SelectAll();
 	void UnSelectAll();
-	void Cut(AssetNode& node, AssetNode& parent) const; //paste cut nodes
-	void Copy(AssetNode& node, AssetNode& parent); //paste copied nodes
+	//void Cut(AssetNode& node, AssetNode& parent) const; //paste cut nodes
+	//void Copy(AssetNode& node, AssetNode& parent); //paste copied nodes
 	
 	// --- OTHERS ---
 	void DockSpace();
@@ -67,22 +69,20 @@ public:
 	static const uint default_pos_x = 0;
 	static const uint default_pos_y = 701;
 
-	std::vector<AssetNode*> nodes;
 
 private:
-	std::vector<AssetNode*> selected_nodes;
-	std::vector<AssetNode*> aux_nodes; //used for cut and copy
-	std::vector<AssetNode*> current_list; //used for selectall and unselectall (can be nodes or current_folder.childs)
+	AssetNode nodes;
+	std::vector<std::string> selected_nodes;
+	std::vector<std::string> aux_nodes; //used for cut and copy
 
-	AssetNode* root = nullptr;
-	AssetNode* current_folder = nullptr;
-	AssetNode* rename_node = nullptr; //used for handling selection
+	size_t current_folder;
 
 	bool is_delete_popup = true; //used for showing popup delete
 	bool is_engine_focus = true; //used for updating assets
 	bool is_init = false; //used for dockspace
 	bool is_list_view = false;
 	bool is_search = false;
+
 	bool is_arrow_hover = false; //used for drag&drop scroll (HierarchyChild)
 	bool is_delete = false;
 	bool is_cut = false;
@@ -90,8 +90,9 @@ private:
 	bool is_rename_flag = true;
 
 	static ImGuiTextFilter searcher;
-	AssetNode::NodeType filter = AssetNode::NodeType::NONE;
+	ResourceType filter = ResourceType::UNKNOWN;
 
+	// Node Visualization Variables
 	float node_size = 0.0f;
 	uint icon_size = BIG_SIZE;
 	ImVec4 bg_color = ImVec4(0.4f, 0.7f, 1.0f, 0.0f);

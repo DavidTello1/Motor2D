@@ -6,8 +6,6 @@
 #include <vector>
 #include <string>
 
-#define EXTENSION_TEXTURE ".dvs_texture"
-
 struct ResourceData
 {
 	std::vector<UID> ids;
@@ -26,6 +24,14 @@ struct ResourceData
 		files_assets.push_back(assets_path);
 		files_library.push_back(library_folder + std::to_string(uid) + extension);
 		times_loaded.push_back(0);
+	}
+
+	void Remove(size_t index)
+	{
+		ids.erase(ids.begin() + index);
+		files_assets.erase(files_assets.begin() + index);
+		files_library.erase(files_library.begin() + index);
+		times_loaded.erase(times_loaded.begin() + index);
 	}
 
 	int GetIndex(UID id)
@@ -90,7 +96,7 @@ struct ResourceTexture //***maybe have the functions inside a struct
 	}
 
 	bool Create(const char* path, UID uid = 0, bool save_meta = true);
-	bool Remove(size_t index) const;
+	void Remove(size_t index);
 
 	bool Import(size_t index) const;
 	void SaveMeta(size_t index) const;

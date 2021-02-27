@@ -16,6 +16,9 @@ ModuleResources::~ModuleResources()
 
 bool ModuleResources::Init(Config* config)
 {
+	//CleanMeta();
+	//CleanLibrary();
+
 	return true;
 }
 
@@ -29,6 +32,9 @@ bool ModuleResources::Start(Config* config)
 
 bool ModuleResources::CleanUp()
 {
+	//CleanMeta();
+	//CleanLibrary();
+
 	return true;
 }
 
@@ -101,32 +107,36 @@ void ModuleResources::LoadAllAssets(const char* path)
 	ignore_ext.push_back("meta");
 
 	// Get All Files
-	AssetNode* assets = App->file_system->GetAllFiles(path, nullptr, &ignore_ext);
-	std::string meta_file = assets->path + ".meta";
+	AssetNode assets = App->file_system->GetAllFiles(path, nullptr, &ignore_ext);
 
-	// Check if .meta file exists
-	if (App->file_system->Exists(meta_file.c_str()))
+	for (size_t index = 0, size = assets.name.size(); index < size; ++index)
 	{
-		// Load .meta
-		char* buffer = nullptr;
-		App->file_system->Load(meta_file.c_str(), &buffer);
+		std::string meta_file = assets.path[index] + std::string(".meta");
 
-		// Get UID from .meta
-		Config meta_data(buffer);
-		UID uid = meta_data.GetUID("ID");
-
-		// Check if Library File exists
-		if (App->file_system->Exists(meta_data.GetString("LibraryFile")))
+		// Check if .meta file exists
+		if (App->file_system->Exists(meta_file.c_str()))
 		{
-			// Check if Last Modification Time has changed
-			if (App->file_system->GetLastModTime(assets->path.c_str()) != meta_data.GetInt("Date"))
-				ImportFromAssets(assets->path.c_str(), uid); // Import File and Save .meta
+			// Load .meta
+			char* buffer = nullptr;
+			App->file_system->Load(meta_file.c_str(), &buffer);
+
+			// Get UID from .meta
+			Config meta_data(buffer);
+			UID uid = meta_data.GetUID("ID");
+
+			// Check if Library File exists
+			if (App->file_system->Exists(meta_data.GetString("LibraryFile")))
+			{
+				// Check if Last Modification Time has changed
+				if (App->file_system->GetLastModTime(assets.path[index].c_str()) != meta_data.GetInt("Date"))
+					ImportFromAssets(assets.path[index].c_str(), uid); // Import File and Save .meta
+			}
+			else
+				ImportFromAssets(assets.path[index].c_str(), uid, false); // Import File and NOT Save .meta
+
+			RELEASE_ARRAY(buffer);
 		}
 		else
-			ImportFromAssets(assets->path.c_str(), uid, false); // Import File and NOT Save .meta
-
-		RELEASE_ARRAY(buffer);
+			ImportFromAssets(assets.path[index].c_str()); // Import File and Save .meta
 	}
-	else
-		ImportFromAssets(assets->path.c_str()); // Import File and Save .meta
 }

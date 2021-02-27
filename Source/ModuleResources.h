@@ -1,19 +1,7 @@
 #pragma once
 #include "Module.h"
 #include "Resource.h"
-
-enum class ResourceType {
-	FOLDER,
-	SCENE,
-	PREFAB,
-	TEXTURE,
-	MATERIAL,
-	ANIMATION,
-	TILEMAP,
-	AUDIO,
-	SCRIPT,
-	UNKNOWN
-};
+#include "AssetNode.h"
 
 class ModuleResources : public Module
 {
@@ -35,8 +23,8 @@ private:
 	void LoadAllAssets(const char* path);
 	bool ImportFromAssets(const char* path, UID uid = 0, bool save_meta = true); // Creates file in /Library and a .meta in /Assets (if bool is true)
 
-	void CleanMeta(); // Remove .meta files of resources that no longer exist in /Assets
-	void CleanLibrary(); // Remove Library-Resources that no longer exist in /Assets
+	//void CleanMeta(); // Remove .meta files of resources that no longer exist in /Assets
+	//void CleanLibrary(); // Remove Library-Resources that no longer exist in /Assets
 
 	ResourceType GetResourceType(const char* path);
 

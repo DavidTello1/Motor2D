@@ -26,25 +26,18 @@ Assets::Assets() : Panel("Assets", ICON_ASSETS, 4)
 
 	flags = ImGuiWindowFlags_NoCollapse;
 	is_init = false;
-	filter = AssetNode::NodeType::NONE;
+	filter = ResourceType::UNKNOWN;
 
 	// Get Files
 	std::vector<std::string> ignore_ext;
 	ignore_ext.push_back("meta");
-	current_folder = root = App->file_system->GetAllFiles("Assets", nullptr, &ignore_ext);
-	root->open = true;
-
-	current_list = current_folder->childs;
+	nodes = App->file_system->GetAllFiles("Assets", nullptr, &ignore_ext);
+	current_folder = 0;
+	//current_list = nodes.childs[current_folder];
 }
 
 Assets::~Assets()
 {
-	for (std::vector<AssetNode*>::iterator it = nodes.begin(); it != nodes.end(); ++it)
-		delete *it;
-
-	nodes.clear();
-	selected_nodes.clear();
-	aux_nodes.clear();
 }
 
 void Assets::Draw()
@@ -75,80 +68,80 @@ void Assets::Draw()
 
 void Assets::Shortcuts()
 {
-	// Delete
-	if (App->input->Shortcut(SDL_SCANCODE_DELETE, KEY_DOWN) && !selected_nodes.empty())
-	{
-		if (is_delete_popup)
-			is_delete = true;
-		else
-		{
-			DeleteNodes(selected_nodes);
-			selected_nodes.clear();
-		}
-	}
+	//// Delete
+	//if (App->input->Shortcut(SDL_SCANCODE_DELETE, KEY_DOWN) && !selected_nodes.empty())
+	//{
+	//	if (is_delete_popup)
+	//		is_delete = true;
+	//	else
+	//	{
+	//		DeleteNodes(selected_nodes);
+	//		selected_nodes.clear();
+	//	}
+	//}
 
-	// Cut
-	if ((App->input->Shortcut(SDL_SCANCODE_LCTRL, KEY_REPEAT, SDL_SCANCODE_X, KEY_DOWN) ||
-		App->input->Shortcut(SDL_SCANCODE_RCTRL, KEY_REPEAT, SDL_SCANCODE_X, KEY_DOWN)) && !selected_nodes.empty())
-	{
-		if (!aux_nodes.empty())
-		{
-			for (AssetNode* aux : aux_nodes)
-				aux->cut = false;
-		}
-		aux_nodes = selected_nodes;
-		is_cut = true;
-		is_copy = false;
+	//// Cut
+	//if ((App->input->Shortcut(SDL_SCANCODE_LCTRL, KEY_REPEAT, SDL_SCANCODE_X, KEY_DOWN) ||
+	//	App->input->Shortcut(SDL_SCANCODE_RCTRL, KEY_REPEAT, SDL_SCANCODE_X, KEY_DOWN)) && !selected_nodes.empty())
+	//{
+	//	if (!aux_nodes.empty())
+	//	{
+	//		for (std::string aux : aux_nodes)
+	//			aux->cut = false;
+	//	}
+	//	aux_nodes = selected_nodes;
+	//	is_cut = true;
+	//	is_copy = false;
 
-		for (AssetNode* aux : aux_nodes)
-			aux->cut = true;
-	}
+	//	for (AssetNode* aux : aux_nodes)
+	//		aux->cut = true;
+	//}
 
-	// Copy
-	if ((App->input->Shortcut(SDL_SCANCODE_LCTRL, KEY_REPEAT, SDL_SCANCODE_C, KEY_DOWN) ||
-		App->input->Shortcut(SDL_SCANCODE_RCTRL, KEY_REPEAT, SDL_SCANCODE_C, KEY_DOWN)) && !selected_nodes.empty())
-	{
-		aux_nodes = selected_nodes;
-		is_copy = true;
-		is_cut = false;
-	}
+	//// Copy
+	//if ((App->input->Shortcut(SDL_SCANCODE_LCTRL, KEY_REPEAT, SDL_SCANCODE_C, KEY_DOWN) ||
+	//	App->input->Shortcut(SDL_SCANCODE_RCTRL, KEY_REPEAT, SDL_SCANCODE_C, KEY_DOWN)) && !selected_nodes.empty())
+	//{
+	//	aux_nodes = selected_nodes;
+	//	is_copy = true;
+	//	is_cut = false;
+	//}
 
-	// Paste
-	if ((App->input->Shortcut(SDL_SCANCODE_LCTRL, KEY_REPEAT, SDL_SCANCODE_V, KEY_DOWN) ||
-		App->input->Shortcut(SDL_SCANCODE_RCTRL, KEY_REPEAT, SDL_SCANCODE_V, KEY_DOWN)) && (is_copy || is_cut))
-	{
-		if (is_cut)
-		{
-			for (AssetNode* aux : aux_nodes)
-			{
-				if (current_folder != aux && !IsChildOf(*aux, *current_folder))
-					Cut(*aux, *current_folder);
-				aux->cut = false;
-			}
-		}
-		else if (is_copy)
-		{
-			for (AssetNode* aux : aux_nodes)
-			{
-				if (current_folder != aux && !IsChildOf(*aux, *current_folder))
-					Copy(*aux, *current_folder);
-			}
-		}
-	}
+	//// Paste
+	//if ((App->input->Shortcut(SDL_SCANCODE_LCTRL, KEY_REPEAT, SDL_SCANCODE_V, KEY_DOWN) ||
+	//	App->input->Shortcut(SDL_SCANCODE_RCTRL, KEY_REPEAT, SDL_SCANCODE_V, KEY_DOWN)) && (is_copy || is_cut))
+	//{
+	//	if (is_cut)
+	//	{
+	//		for (AssetNode* aux : aux_nodes)
+	//		{
+	//			if (current_folder != aux && !IsChildOf(*aux, *current_folder))
+	//				Cut(*aux, *current_folder);
+	//			aux->cut = false;
+	//		}
+	//	}
+	//	else if (is_copy)
+	//	{
+	//		for (AssetNode* aux : aux_nodes)
+	//		{
+	//			if (current_folder != aux && !IsChildOf(*aux, *current_folder))
+	//				Copy(*aux, *current_folder);
+	//		}
+	//	}
+	//}
 
-	// SelectAll
-	if (App->input->Shortcut(SDL_SCANCODE_LCTRL, KEY_REPEAT, SDL_SCANCODE_A, KEY_DOWN) ||
-		App->input->Shortcut(SDL_SCANCODE_RCTRL, KEY_REPEAT, SDL_SCANCODE_A, KEY_DOWN))
-	{
-		SelectAll();
-	}
+	//// SelectAll
+	//if (App->input->Shortcut(SDL_SCANCODE_LCTRL, KEY_REPEAT, SDL_SCANCODE_A, KEY_DOWN) ||
+	//	App->input->Shortcut(SDL_SCANCODE_RCTRL, KEY_REPEAT, SDL_SCANCODE_A, KEY_DOWN))
+	//{
+	//	SelectAll();
+	//}
 
-	// Search
-	if (App->input->Shortcut(SDL_SCANCODE_LCTRL, KEY_REPEAT, SDL_SCANCODE_F, KEY_DOWN) ||
-		App->input->Shortcut(SDL_SCANCODE_RCTRL, KEY_REPEAT, SDL_SCANCODE_F, KEY_DOWN))
-	{
-		is_search = !is_search;
-	}
+	//// Search
+	//if (App->input->Shortcut(SDL_SCANCODE_LCTRL, KEY_REPEAT, SDL_SCANCODE_F, KEY_DOWN) ||
+	//	App->input->Shortcut(SDL_SCANCODE_RCTRL, KEY_REPEAT, SDL_SCANCODE_F, KEY_DOWN))
+	//{
+	//	is_search = !is_search;
+	//}
 }
 
 void Assets::Save(Config* config) const
@@ -170,29 +163,17 @@ void Assets::ChildHierarchy()
 	{
 		if (ImGui::BeginMenu("Filters")) // Filters
 		{
-			if (ImGui::MenuItem("None", NULL, filter == AssetNode::NodeType::NONE))
-				filter = AssetNode::NodeType::NONE;
+			if (ImGui::MenuItem("None", NULL, filter == ResourceType::UNKNOWN))			filter = ResourceType::UNKNOWN;
 			ImGui::Separator();
-
-			if (ImGui::MenuItem("Folders", NULL, filter == AssetNode::NodeType::FOLDER))
-				filter = AssetNode::NodeType::FOLDER;
-			if (ImGui::MenuItem("Scenes", NULL, filter == AssetNode::NodeType::SCENE))
-				filter = AssetNode::NodeType::SCENE;
-			if (ImGui::MenuItem("Prefabs", NULL, filter == AssetNode::NodeType::PREFAB))
-				filter = AssetNode::NodeType::PREFAB;
-			if (ImGui::MenuItem("Textures", NULL, filter == AssetNode::NodeType::TEXTURE))
-				filter = AssetNode::NodeType::TEXTURE;
-			if (ImGui::MenuItem("Materials", NULL, filter == AssetNode::NodeType::MATERIAL))
-				filter = AssetNode::NodeType::MATERIAL;
-			if (ImGui::MenuItem("Animations", NULL, filter == AssetNode::NodeType::ANIMATION))
-				filter = AssetNode::NodeType::ANIMATION;
-			if (ImGui::MenuItem("Tilemaps", NULL, filter == AssetNode::NodeType::TILEMAP))
-				filter = AssetNode::NodeType::TILEMAP;
-			if (ImGui::MenuItem("Audios", NULL, filter == AssetNode::NodeType::AUDIO))
-				filter = AssetNode::NodeType::AUDIO;
-			if (ImGui::MenuItem("Scripts", NULL, filter == AssetNode::NodeType::SCRIPT))
-				filter = AssetNode::NodeType::SCRIPT;
-
+			if (ImGui::MenuItem("Folders", NULL, filter == ResourceType::FOLDER))		filter = ResourceType::FOLDER;
+			if (ImGui::MenuItem("Scenes", NULL, filter == ResourceType::SCENE))			filter = ResourceType::SCENE;
+			if (ImGui::MenuItem("Prefabs", NULL, filter == ResourceType::PREFAB))		filter = ResourceType::PREFAB;
+			if (ImGui::MenuItem("Textures", NULL, filter == ResourceType::TEXTURE))		filter = ResourceType::TEXTURE;
+			if (ImGui::MenuItem("Materials", NULL, filter == ResourceType::MATERIAL))	filter = ResourceType::MATERIAL;
+			if (ImGui::MenuItem("Animations", NULL, filter == ResourceType::ANIMATION)) filter = ResourceType::ANIMATION;
+			if (ImGui::MenuItem("Tilemaps", NULL, filter == ResourceType::TILEMAP))		filter = ResourceType::TILEMAP;
+			if (ImGui::MenuItem("Audios", NULL, filter == ResourceType::AUDIO))			filter = ResourceType::AUDIO;
+			if (ImGui::MenuItem("Scripts", NULL, filter == ResourceType::SCRIPT))		filter = ResourceType::SCRIPT;
 			ImGui::EndMenu();
 		}
 		ImGui::MenuItem("Search", NULL, &is_search); // Search
@@ -212,7 +193,7 @@ void Assets::ChildHierarchy()
 
 	ImVec2 pos = ImGui::GetCursorPos();
 	ImGui::SetCursorPos(ImVec2(pos.x + 5, pos.y + 3));
-	DrawHierarchy(*root);
+	DrawHierarchy(0); //root
 
 	// Scroll
 	ImVec2 scroll = ImGui::GetCurrentWindow()->Scroll;
@@ -280,7 +261,7 @@ void Assets::ChildIcons()
 		if (ImGui::Button("Delete", ImVec2(size.x / 2, 22)))
 		{
 			is_delete = false;
-			DeleteNodes(selected_nodes);
+			//DeleteNodes(selected_nodes);
 			selected_nodes.clear();
 			ImGui::CloseCurrentPopup();
 		}
@@ -302,37 +283,20 @@ void Assets::ChildIcons()
 	{
 		switch (filter)
 		{
-		case AssetNode::NodeType::FOLDER:
-			ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.0f, 1.0f), "Showing All Folders");
-			break;
-		case AssetNode::NodeType::SCENE:
-			ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.0f, 1.0f), "Showing All Scenes");
-			break;
-		case AssetNode::NodeType::PREFAB:
-			ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.0f, 1.0f), "Showing All Prefabs");
-			break;
-		case AssetNode::NodeType::TEXTURE:
-			ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.0f, 1.0f), "Showing All Textures");
-			break;
-		case AssetNode::NodeType::MATERIAL:
-			ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.0f, 1.0f), "Showing All Materials");
-			break;
-		case AssetNode::NodeType::ANIMATION:
-			ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.0f, 1.0f), "Showing All Animations");
-			break;
-		case AssetNode::NodeType::TILEMAP:
-			ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.0f, 1.0f), "Showing All TileMaps");
-			break;
-		case AssetNode::NodeType::AUDIO:
-			ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.0f, 1.0f), "Showing All Audios");
-			break;
-		case AssetNode::NodeType::SCRIPT:
-			ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.0f, 1.0f), "Showing All Scripts");
-			break;
-		case AssetNode::NodeType::NONE: // Path with links
-			if (current_folder->parent != nullptr)
-				DrawPath();
-			ImGui::Text(current_folder->name.c_str());
+		case ResourceType::FOLDER:		ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.0f, 1.0f), "Showing All Folders"); break;
+		case ResourceType::SCENE:		ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.0f, 1.0f), "Showing All Scenes"); break;
+		case ResourceType::PREFAB:		ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.0f, 1.0f), "Showing All Prefabs"); break;
+		case ResourceType::TEXTURE:		ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.0f, 1.0f), "Showing All Textures"); break;
+		case ResourceType::MATERIAL:	ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.0f, 1.0f), "Showing All Materials"); break;
+		case ResourceType::ANIMATION:	ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.0f, 1.0f), "Showing All Animations"); break;
+		case ResourceType::TILEMAP:		ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.0f, 1.0f), "Showing All TileMaps"); break;
+		case ResourceType::AUDIO:		ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.0f, 1.0f), "Showing All Audios"); break;
+		case ResourceType::SCRIPT:		ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.0f, 1.0f), "Showing All Scripts"); break;
+
+		case ResourceType::UNKNOWN: // Path with links
+			//if (nodes.parent[current_folder] != "")
+			//	DrawPath();
+			ImGui::Text(nodes.name[current_folder].c_str());
 			break;
 		}
 		ImGui::EndMenuBar();
@@ -340,26 +304,28 @@ void Assets::ChildIcons()
 
 	// Draw Icons
 	int columns = (int)(ImGui::GetContentRegionAvailWidth() / (node_size + 4));
-	if (filter == AssetNode::NodeType::NONE)
-		current_list = current_folder->childs;
-	else
-		current_list = nodes;
+	//if (filter == ResourceType::UNKNOWN)
+	//	current_list = nodes.childs[current_folder];
+	//else
+		//current_list = nodes;
 
-	for (uint i = 0, size = current_list.size(); i < size; ++i)
+	for (uint i = 0, size = nodes.childs[current_folder].size(); i < size; ++i)
 	{
-		AssetNode* current_node = current_list[i];
-		if ((filter != AssetNode::NodeType::NONE && filter != current_node->type) || !searcher.PassFilter(current_node->name.c_str()))
-			continue;
-
+		int index = FindNode(nodes.childs[current_folder][i].c_str(), nodes.name);
+		if (index != -1)
+		{
+			if ((filter != ResourceType::UNKNOWN && filter != nodes.type[index]) || !searcher.PassFilter(nodes.name[index].c_str()))
+				continue;
+		}
 		if (is_list_view)
 		{
 			ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 2);
-			DrawNodeList(*current_node);
+			DrawNodeList(index);
 		}
 		else
 		{
 			float pos = ImGui::GetCursorPosX();
-			DrawNodeIcon(*current_node);
+			DrawNodeIcon(index);
 
 			if (columns > 0 && (i + 1) % columns != 0)
 			{
@@ -368,7 +334,6 @@ void Assets::ChildIcons()
 			}
 		}
 	}
-
 	// Unselect nodes when clicking on empty space
 	if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup | ImGuiHoveredFlags_AllowWhenBlockedByActiveItem) && 
 		ImGui::IsMouseClicked(0) && !ImGui::IsAnyItemHovered())
@@ -377,7 +342,7 @@ void Assets::ChildIcons()
 	ImGui::End();
 }
 
-void Assets::DrawHierarchy(AssetNode& node)
+void Assets::DrawHierarchy(size_t index)
 {
 	static ImGuiContext& g = *GImGui;
 	static ImGuiWindow* window = g.CurrentWindow;
@@ -396,72 +361,73 @@ void Assets::DrawHierarchy(AssetNode& node)
 		if (ImGui::IsItemClicked())
 		{
 			UnSelectAll();
-			current_folder = &node;
-			filter = AssetNode::NodeType::NONE;
+			current_folder = index;
+			filter = ResourceType::UNKNOWN;
 		}
 	}
-	if (current_folder == &node)
+	if (current_folder == index)
 		color = colors[ImGuiCol_ButtonActive];
 
-	// Drag & Drop
-	if (ImGui::BeginDragDropTarget() && node.type == AssetNode::NodeType::FOLDER)
-	{
-		color = colors[ImGuiCol_ButtonHovered];
-		if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("AssetNode"))
-		{
-			for (AssetNode* selected_node : selected_nodes)
-			{
-				if (selected_node != &node && !IsChildOf(*selected_node, node))
-					Cut(*selected_node, node);
-			}
-		}
-		ImGui::EndDragDropTarget();
-	}
+	//// Drag & Drop
+	//if (ImGui::BeginDragDropTarget() && nodes.type[index] == ResourceType::FOLDER)
+	//{
+	//	color = colors[ImGuiCol_ButtonHovered];
+	//	if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("AssetNode"))
+	//	{
+	//		for (std::string selected_node : selected_nodes)
+	//		{
+	//			if (selected_node != &node && !IsChildOf(*selected_node, node))
+	//				Cut(*selected_node, node);
+	//		}
+	//	}
+	//	ImGui::EndDragDropTarget();
+	//}
 
 	// Highlight
 	window->DrawList->AddRectFilled(bg.Min, bg.Max, ImColor(color));
 
-	// Indent
-	ImGui::SameLine();
-	ImGui::SetCursorPosX(pos.x + 14 * GetNumParents(node));
+	//// Indent
+	//ImGui::SameLine();
+	//ImGui::SetCursorPosX(pos.x + 14 * GetNumParents(node));
 
-	// Arrow
-	pos = ImGui::GetCursorPos();
-	ImGui::SetCursorPosY(pos.y - 1);
-	if (!node.childs.empty())
-	{
-		if (node.open)
-			ImGui::Text(ICON_ARROW_OPEN);
-		else
-			ImGui::Text(ICON_ARROW_CLOSED);
+	//// Arrow
+	//pos = ImGui::GetCursorPos();
+	//ImGui::SetCursorPosY(pos.y - 1);
+	//if (!nodes.childs[index].empty())
+	//{
+	//	if (nodes.open[index])
+	//		ImGui::Text(ICON_ARROW_OPEN);
+	//	else
+	//		ImGui::Text(ICON_ARROW_CLOSED);
 
-		if (ImGui::IsItemClicked())
-			node.open = !node.open;
+	//	if (ImGui::IsItemClicked())
+	//		nodes.open[index] = !nodes.open[index];
 
-		if (!node.open && ImGui::BeginDragDropTarget() && node.type == AssetNode::NodeType::FOLDER)
-		{
-			node.open = true;
-			is_arrow_hover = true;
-		}
-		ImGui::SameLine();
-		ImGui::SetCursorPosX(pos.x + 16);
-	}
+	//	if (!nodes.open[index] && ImGui::BeginDragDropTarget() && nodes.type[index] == ResourceType::FOLDER)
+	//	{
+	//		nodes.open[index] = true;
+	//		is_arrow_hover = true;
+	//	}
+	//	ImGui::SameLine();
+	//	ImGui::SetCursorPosX(pos.x + 16);
+	//}
 
-	// Name
-	ImGui::Text(node.name.c_str());
+	//// Name
+	//ImGui::Text(nodes.name[index].c_str());
 
-	// Childs
-	if (node.open && !node.childs.empty())
-	{
-		for (AssetNode* child : node.childs)
-		{
-			if (App->file_system->IsFolder(child->path.c_str()))
-				DrawHierarchy(*child);
-		}
-	}
+	//// Childs
+	//if (nodes.open[index] && !nodes.childs[index].empty())
+	//{
+	//	for (std::string child : nodes.childs[index])
+	//	{
+	//		size_t pos = GetNode(child);
+	//		if (App->file_system->IsFolder(nodes.path[pos].c_str()))
+	//			DrawHierarchy(pos);
+	//	}
+	//}
 }
 
-void Assets::DrawNodeIcon(AssetNode& node)
+void Assets::DrawNodeIcon(size_t index)
 {
 	bg_color.w = 0.0f;
 	border_color.w = 0.0f;
@@ -471,43 +437,43 @@ void Assets::DrawNodeIcon(AssetNode& node)
 	// Dummy
 	ImGui::Dummy(ImVec2(node_size,node_size));
 
-	//Drag and Drop
-	if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_AcceptNoDrawDefaultRect | ImGuiDragDropFlags_SourceAllowNullID)) // Source
-	{
-		ImGui::SetDragDropPayload("AssetNode", &node.name, sizeof(std::string));
+	////Drag and Drop
+	//if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_AcceptNoDrawDefaultRect | ImGuiDragDropFlags_SourceAllowNullID)) // Source
+	//{
+	//	ImGui::SetDragDropPayload("AssetNode", &node.name, sizeof(std::string));
 
-		if (!selected_nodes.empty()) // Popup text
-		{
-			if (selected_nodes.size() == 1)
-				ImGui::Text(selected_nodes[0]->name.c_str());
-			else
-				ImGui::Text(std::to_string(selected_nodes.size()).c_str());
-		}
-		else
-			ImGui::Text(node.name.c_str());
+	//	if (!selected_nodes.empty()) // Popup text
+	//	{
+	//		if (selected_nodes.size() == 1)
+	//			ImGui::Text(selected_nodes[0]->name.c_str());
+	//		else
+	//			ImGui::Text(std::to_string(selected_nodes.size()).c_str());
+	//	}
+	//	else
+	//		ImGui::Text(node.name.c_str());
 
-		if (!node.selected && !selected_nodes.empty() && !ImGui::GetIO().KeyCtrl && !ImGui::GetIO().KeyShift) // Selection
-			UnSelectAll();
-		node.selected = true;
+	//	if (!node.selected && !selected_nodes.empty() && !ImGui::GetIO().KeyCtrl && !ImGui::GetIO().KeyShift) // Selection
+	//		UnSelectAll();
+	//	node.selected = true;
 
-		ImGui::EndDragDropSource();
-	}
-	if (ImGui::BeginDragDropTarget() && node.type == AssetNode::NodeType::FOLDER) // Target
-	{
-		if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("AssetNode"))
-		{
-			for (AssetNode* selected_node : selected_nodes)
-				Cut(*selected_node, node);
-		}
-		bg_color.w = 0.3f;
-		ImGui::EndDragDropTarget();
-	}
+	//	ImGui::EndDragDropSource();
+	//}
+	//if (ImGui::BeginDragDropTarget() && node.type == ResourceType::FOLDER) // Target
+	//{
+	//	if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("AssetNode"))
+	//	{
+	//		for (AssetNode* selected_node : selected_nodes)
+	//			Cut(*selected_node, node);
+	//	}
+	//	bg_color.w = 0.3f;
+	//	ImGui::EndDragDropTarget();
+	//}
 
 	// Handle Selection
-	HandleSelection(node);
+	HandleSelection(index);
 
 	// Draw Highlight
-	if (!node.rename)
+	if (nodes.state[index] != State::RENAME)
 	{
 		ImGui::GetWindowDrawList()->AddRectFilled(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), ImColor(bg_color), 3.0f);
 		ImGui::GetWindowDrawList()->AddRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), ImColor(border_color), 3.0f);
@@ -519,21 +485,21 @@ void Assets::DrawNodeIcon(AssetNode& node)
 	ImGui::BeginGroup();
 	ImGui::SetCursorPosY(pos.y + 5);
 
-	if (node.cut) // Transparent Image if node is cut
+	if (nodes.state[index] == State::CUT) // Transparent Image if node is cut
 		ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.5f);
 
-	ImGui::Image((ImTextureID)node.icon, ImVec2((float)icon_size, (float)icon_size), ImVec2(0, 1), ImVec2(1, 0)); // Image
+	ImGui::Image((ImTextureID)0, ImVec2((float)icon_size, (float)icon_size), ImVec2(0, 1), ImVec2(1, 0)); // Image
 
-	if (node.cut)
+	if (nodes.state[index] == State::CUT)
 		ImGui::PopStyleVar();
 
-	if (ImGui::IsItemClicked() && node.rename)
-		node.rename = false;
+	if (ImGui::IsItemClicked() && nodes.state[index] == State::RENAME)
+		nodes.state[index] = State::SELECTED;
 
-	if (!node.rename)
+	if (nodes.state[index] != State::RENAME)
 	{
 		// Text
-		std::string text = node.name;
+		std::string text = nodes.name[index];
 		uint text_size = (uint)ImGui::CalcTextSize(text.c_str()).x;
 		uint max_size = (uint)(node_size - 7 - ImGui::CalcTextSize("...").x) / 7;
 		ImGui::SetCursorPosX(pos.x + 7);
@@ -549,7 +515,7 @@ void Assets::DrawNodeIcon(AssetNode& node)
 		{
 			ImGui::BeginTooltip();
 			ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-			ImGui::TextUnformatted(node.name.c_str());
+			ImGui::TextUnformatted(nodes.name[index].c_str());
 			ImGui::PopTextWrapPos();
 			ImGui::EndTooltip();
 		}
@@ -557,22 +523,23 @@ void Assets::DrawNodeIcon(AssetNode& node)
 	else // Rename
 	{
 		char buffer[128];
-		sprintf_s(buffer, 128, "%s", node.name.c_str());
+		sprintf_s(buffer, 128, "%s", nodes.name[index].c_str());
 
 		ImGui::SetCursorPosX(pos.x);
 		ImGui::SetNextItemWidth(node_size);
 		if (ImGui::InputText("##RenameAsset", buffer, IM_ARRAYSIZE(buffer), ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll))
 		{
-			node.rename = false;
-			if (buffer != node.name)
+			nodes.state[index] = State::SELECTED;
+			if (buffer != nodes.name[index])
 			{
-				node.name = GetNameWithCount(buffer);
-				std::string new_name = node.path.substr(0, node.path.find_last_of("/") + 1) + node.name;
-				MoveFile(node.path.c_str(), new_name.c_str());
-				node.path = new_name;
+				nodes.name[index] = GetNameWithCount(buffer);
+				std::string new_path = nodes.path[index];
+				new_path = new_path.substr(0, new_path.find_last_of("/") + 1) + nodes.name[index];
+				MoveFile(nodes.path[index].c_str(), new_path.c_str());
+				nodes.path[index] = new_path.c_str();
 			
-				for (AssetNode* child : node.childs)
-					UpdatePath(*child, node.path);
+				for (std::string child : nodes.childs[index])
+					UpdatePath(GetNode(child), nodes.path[index]);
 			}
 		}
 		if (ImGui::IsItemClicked() || is_rename_flag)
@@ -584,210 +551,209 @@ void Assets::DrawNodeIcon(AssetNode& node)
 	ImGui::EndGroup();
 
 	// Update Selected Nodes List
-	int position = FindNode(node, selected_nodes);
-	if (node.selected && position == -1)
-		selected_nodes.push_back(&node);
-	else if (!node.selected && position != -1)
+	int position = FindNode(nodes.name[index].c_str(), selected_nodes);
+	if (nodes.state[index] == State::SELECTED && position == -1)
+		selected_nodes.push_back(nodes.name[index]);
+	else if (nodes.state[index] != State::SELECTED && position != -1)
 		selected_nodes.erase(selected_nodes.begin() + position);
 }
 
-void Assets::DrawNodeList(AssetNode& node)
+void Assets::DrawNodeList(size_t index)
 {
-	ImVec4 text_color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
-	bg_color.w = 0.0f;
-	border_color.w = 0.0f;
-	ImVec2 pos = ImGui::GetCursorPos();
-	ImVec2 size = ImVec2(ImGui::GetContentRegionAvailWidth(), 20);
-	bool tooltip = true;
+	//ImVec4 text_color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+	//bg_color.w = 0.0f;
+	//border_color.w = 0.0f;
+	//ImVec2 pos = ImGui::GetCursorPos();
+	//ImVec2 size = ImVec2(ImGui::GetContentRegionAvailWidth(), 20);
+	//bool tooltip = true;
 
-	// Dummy
-	ImGui::Dummy(size);
+	//// Dummy
+	//ImGui::Dummy(size);
 
-	//Drag and Drop
-	if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_AcceptNoDrawDefaultRect | ImGuiDragDropFlags_SourceAllowNullID)) // Source
-	{
-		ImGui::SetDragDropPayload("AssetNode", &node.name, sizeof(std::string));
+	////Drag and Drop
+	//if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_AcceptNoDrawDefaultRect | ImGuiDragDropFlags_SourceAllowNullID)) // Source
+	//{
+	//	ImGui::SetDragDropPayload("AssetNode", &node.name, sizeof(std::string));
 
-		if (!selected_nodes.empty()) // Popup text
-		{
-			if (selected_nodes.size() == 1)
-				ImGui::Text(selected_nodes[0]->name.c_str());
-			else
-				ImGui::Text(std::to_string(selected_nodes.size()).c_str());
-		}
-		else
-			ImGui::Text(node.name.c_str());
+	//	if (!selected_nodes.empty()) // Popup text
+	//	{
+	//		if (selected_nodes.size() == 1)
+	//			ImGui::Text(selected_nodes[0]->name.c_str());
+	//		else
+	//			ImGui::Text(std::to_string(selected_nodes.size()).c_str());
+	//	}
+	//	else
+	//		ImGui::Text(node.name.c_str());
 
-		if (!node.selected && !selected_nodes.empty() && !ImGui::GetIO().KeyCtrl && !ImGui::GetIO().KeyShift) // Selection
-			UnSelectAll();
-		node.selected = true;
+	//	if (!node.selected && !selected_nodes.empty() && !ImGui::GetIO().KeyCtrl && !ImGui::GetIO().KeyShift) // Selection
+	//		UnSelectAll();
+	//	node.selected = true;
 
-		ImGui::EndDragDropSource();
-	}
-	if (ImGui::BeginDragDropTarget() && node.type == AssetNode::NodeType::FOLDER) // Target
-	{
-		if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("AssetNode"))
-		{
-			for (AssetNode* selected_node : selected_nodes)
-				Cut(*selected_node, node);
-		}
-		bg_color.w = 0.3f;
-		ImGui::EndDragDropTarget();
-	}
+	//	ImGui::EndDragDropSource();
+	//}
+	//if (ImGui::BeginDragDropTarget() && node.type == ResourceType::FOLDER) // Target
+	//{
+	//	if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("AssetNode"))
+	//	{
+	//		for (AssetNode* selected_node : selected_nodes)
+	//			Cut(*selected_node, node);
+	//	}
+	//	bg_color.w = 0.3f;
+	//	ImGui::EndDragDropTarget();
+	//}
 
-	// Handle Selection
-	HandleSelection(node);
+	//// Handle Selection
+	//HandleSelection(node);
 
-	// Draw Highlight
-	if (!node.rename)
-	{
-		ImGui::GetWindowDrawList()->AddRectFilled(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), ImColor(bg_color), 3.0f);
-		ImGui::GetWindowDrawList()->AddRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), ImColor(border_color), 3.0f);
-	}
+	//// Draw Highlight
+	//if (!node.rename)
+	//{
+	//	ImGui::GetWindowDrawList()->AddRectFilled(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), ImColor(bg_color), 3.0f);
+	//	ImGui::GetWindowDrawList()->AddRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), ImColor(border_color), 3.0f);
+	//}
 
-	// Draw Actual Node
-	ImGui::SetCursorPos(ImVec2(pos.x + (node_size - icon_size) / 2, pos.y));
+	//// Draw Actual Node
+	//ImGui::SetCursorPos(ImVec2(pos.x + (node_size - icon_size) / 2, pos.y));
 
-	ImGui::BeginGroup();
-	ImGui::SetCursorPosY(pos.y + 4);
+	//ImGui::BeginGroup();
+	//ImGui::SetCursorPosY(pos.y + 4);
 
-	if (node.cut)
-		text_color = ImVec4(0.6f, 0.6f, 0.6f, 1.0f);
+	//if (node.cut)
+	//	text_color = ImVec4(0.6f, 0.6f, 0.6f, 1.0f);
 
-	if (!node.rename)
-	{
-		// Text
-		ImVec4 icon_color = GetIconColor(node.type);
-		std::string icon = GetIconList(node.type);
-		std::string text = node.name;
-		uint text_size = (uint)ImGui::CalcTextSize(std::string(icon + " " + text).c_str()).x;
-		int max_size = (int)(size.x - 7 - ImGui::CalcTextSize("...").x) / 7;
-		ImGui::SetCursorPosX(pos.x + 7);
+	//if (!node.rename)
+	//{
+	//	// Text
+	//	ImVec4 icon_color = GetIconColor(node.type);
+	//	std::string icon = GetIconList(node.type);
+	//	std::string text = node.name;
+	//	uint text_size = (uint)ImGui::CalcTextSize(std::string(icon + " " + text).c_str()).x;
+	//	int max_size = (int)(size.x - 7 - ImGui::CalcTextSize("...").x) / 7;
+	//	ImGui::SetCursorPosX(pos.x + 7);
 
-		if (max_size >= 3 && text_size > size.x - 14)
-			text = text.substr(0, max_size) + "...";
-		else if (max_size < 3)
-			text = "...";
-		else
-			tooltip = false;
+	//	if (max_size >= 3 && text_size > size.x - 14)
+	//		text = text.substr(0, max_size) + "...";
+	//	else if (max_size < 3)
+	//		text = "...";
+	//	else
+	//		tooltip = false;
 
-		ImGui::TextColored(icon_color, icon.c_str());
-		ImGui::SameLine();
-		ImGui::TextColored(text_color, text.c_str());
-	}
-	else // Rename
-	{
-		char buffer[128];
-		sprintf_s(buffer, 128, "%s", node.name.c_str());
+	//	ImGui::TextColored(icon_color, icon.c_str());
+	//	ImGui::SameLine();
+	//	ImGui::TextColored(text_color, text.c_str());
+	//}
+	//else // Rename
+	//{
+	//	char buffer[128];
+	//	sprintf_s(buffer, 128, "%s", node.name.c_str());
 
-		ImGui::SetCursorPosX(pos.x);
-		if (ImGui::InputText("##RenameAsset", buffer, IM_ARRAYSIZE(buffer), ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll))
-		{
-			node.rename = false;
-			if (buffer != node.name)
-			{
-				node.name = GetNameWithCount(buffer);
-				std::string new_name = node.path.substr(0, node.path.find_last_of("/") + 1) + node.name;
-				MoveFile(node.path.c_str(), new_name.c_str());
-				node.path = new_name;
+	//	ImGui::SetCursorPosX(pos.x);
+	//	if (ImGui::InputText("##RenameAsset", buffer, IM_ARRAYSIZE(buffer), ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll))
+	//	{
+	//		node.rename = false;
+	//		if (buffer != node.name)
+	//		{
+	//			node.name = GetNameWithCount(buffer);
+	//			std::string new_name = node.path.substr(0, node.path.find_last_of("/") + 1) + node.name;
+	//			MoveFile(node.path.c_str(), new_name.c_str());
+	//			node.path = new_name;
 
-				for (AssetNode* child : node.childs)
-					UpdatePath(*child, node.path);
-			}
-		}
-		if (ImGui::IsItemClicked() || is_rename_flag)
-		{
-			is_rename_flag = false;
-			ImGui::SetKeyboardFocusHere(-1);
-		}
-	}
-	ImGui::EndGroup();
+	//			for (AssetNode* child : node.childs)
+	//				UpdatePath(*child, node.path);
+	//		}
+	//	}
+	//	if (ImGui::IsItemClicked() || is_rename_flag)
+	//	{
+	//		is_rename_flag = false;
+	//		ImGui::SetKeyboardFocusHere(-1);
+	//	}
+	//}
+	//ImGui::EndGroup();
 
-	// Show full name
-	if (tooltip && ImGui::IsItemHovered() && !ImGui::IsMouseDragging(0))
-	{
-		ImGui::BeginTooltip();
-		ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-		ImGui::TextUnformatted(node.name.c_str());
-		ImGui::PopTextWrapPos();
-		ImGui::EndTooltip();
-	}
+	//// Show full name
+	//if (tooltip && ImGui::IsItemHovered() && !ImGui::IsMouseDragging(0))
+	//{
+	//	ImGui::BeginTooltip();
+	//	ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+	//	ImGui::TextUnformatted(node.name.c_str());
+	//	ImGui::PopTextWrapPos();
+	//	ImGui::EndTooltip();
+	//}
 
-	// Update Selected Nodes List
-	int position = FindNode(node, selected_nodes);
-	if (node.selected && position == -1)
-		selected_nodes.push_back(&node);
-	else if (!node.selected && position != -1)
-		selected_nodes.erase(selected_nodes.begin() + position);
+	//// Update Selected Nodes List
+	//int position = FindNode(node, selected_nodes);
+	//if (node.selected && position == -1)
+	//	selected_nodes.push_back(&node);
+	//else if (!node.selected && position != -1)
+	//	selected_nodes.erase(selected_nodes.begin() + position);
 }
 
 // --- MAIN HELPERS ---
-AssetNode* Assets::HandleSelection(AssetNode& node)
+void Assets::HandleSelection(size_t index)
 {
 	if (ImGui::IsItemHovered()) // Hover
 	{
-		if (ImGui::IsMouseClicked(0) && !node.rename) // Left Click
+		if (ImGui::IsMouseClicked(0) && nodes.state[index] != State::RENAME) // Left Click
 		{
 			//Show in Resources Panel
-
-			if (rename_node != nullptr) // Quit Rename
-			{
-				rename_node->rename = false;
-				rename_node = nullptr;
-			}
 
 			if (ImGui::GetIO().KeyCtrl) // Multiple Selection (Ctrl)
 			{
 				if (selected_nodes.size() > 1)
-					node.selected = !node.selected;
+				{
+					if (nodes.state[index] == State::SELECTED)
+						nodes.state[index] = State::IDLE;
+					else
+						nodes.state[index] = State::SELECTED;
+				}
 				else
-					node.selected = true;
+					nodes.state[index] = State::SELECTED;
 			}
 			else if (ImGui::GetIO().KeyShift && !selected_nodes.empty()) // Multiple Selection (Shift)
 			{
-				int pos1 = FindNode(node, current_list);
-				int pos2 = FindNode(*selected_nodes.back(), current_list);
+				size_t pos1 = GetNode(nodes.path[index]);
+				size_t pos2 = FindNode(selected_nodes.back().c_str(), nodes.name);
 
 				if (pos1 < pos2)
 				{
-					for (int i = pos1; i < pos2; ++i)
-						current_list[i]->selected = true;
+					for (size_t i = pos1; i < pos2; ++i)
+						nodes.state[i] = State::SELECTED;
 				}
 				else
 				{
-					for (int i = pos1; i >= pos2; --i)
-						current_list[i]->selected = true;
+					for (size_t i = pos1; i >= pos2; --i)
+						nodes.state[i] = State::SELECTED;
 				}
 			}
 		}
 		if (ImGui::IsMouseReleased(0)) // Single Selection (Left Release)
 		{
-			if (!ImGui::GetIO().KeyCtrl && !ImGui::GetIO().KeyShift && !ImGui::IsMouseDragging(0) && !node.rename)
+			if (!ImGui::GetIO().KeyCtrl && !ImGui::GetIO().KeyShift && !ImGui::IsMouseDragging(0) && nodes.state[index] != State::RENAME)
 			{
 				UnSelectAll();
-				node.selected = true;
+				nodes.state[index] = State::SELECTED;
 			}
 		}
 		else if (ImGui::IsMouseClicked(1)) // Right Click
 		{
-			if (selected_nodes.size() <= 1 || !node.selected)
+			if (selected_nodes.size() <= 1 || nodes.state[index] != State::SELECTED)
 				UnSelectAll();
-			node.selected = true;
+			nodes.state[index] = State::SELECTED;
 		}
 
 		if (ImGui::IsMouseDoubleClicked(0)) // Double Click
 		{
-			switch (node.type)
+			switch (nodes.type[index])
 			{
-			case AssetNode::NodeType::FOLDER:
-				current_folder = &node;
-				filter = AssetNode::NodeType::NONE;
+			case ResourceType::FOLDER:
+				current_folder = index;
+				filter = ResourceType::UNKNOWN;
 				UnSelectAll();
 				break;
-			case AssetNode::NodeType::SCENE:
+			case ResourceType::SCENE:
 				//Load Scene
 				break;
-			case AssetNode::NodeType::SCRIPT:
+			case ResourceType::SCRIPT:
 				//Open in Editor
 				break;
 			default:
@@ -798,13 +764,11 @@ AssetNode* Assets::HandleSelection(AssetNode& node)
 		bg_color.w = 0.3f;
 	}
 
-	if (node.selected) // Color
+	if (nodes.state[index] == State::SELECTED) // Color
 	{
 		bg_color.w = 0.5f;
 		border_color.w = 1.0f;
 	}
-
-	return &node;
 }
 
 bool Assets::DrawRightClick()
@@ -815,15 +779,15 @@ bool Assets::DrawRightClick()
 		{
 			if (ImGui::MenuItem("Folder")) //folder
 			{
-				AssetNode* new_node = CreateNode("Folder", current_folder);
+				size_t index = CreateNode("Folder", current_folder);
 				UnSelectAll();
-				new_node->selected = true;
+				nodes.state[index] = State::SELECTED;
 			}
 			if (ImGui::MenuItem("Script")) //script
 			{
-				AssetNode* new_node = CreateNode("Script.scr", current_folder);
+				size_t index = CreateNode("Script.scr", current_folder);
 				UnSelectAll();
-				new_node->selected = true;
+				nodes.state[index] = State::SELECTED;
 			}
 
 			ImGui::EndMenu();
@@ -832,17 +796,17 @@ bool Assets::DrawRightClick()
 
 		if (ImGui::MenuItem("Cut", "Ctrl+X", false, !selected_nodes.empty())) //cut
 		{
-			if (!aux_nodes.empty())
-			{
-				for (AssetNode* aux : aux_nodes)
-					aux->cut = false;
-			}
-			aux_nodes = selected_nodes;
-			is_cut = true;
-			is_copy = false;
+			//if (!aux_nodes.empty())
+			//{
+			//	for (AssetNode* aux : aux_nodes)
+			//		aux->cut = false;
+			//}
+			//aux_nodes = selected_nodes;
+			//is_cut = true;
+			//is_copy = false;
 
-			for (AssetNode* aux : aux_nodes)
-				aux->cut = true;
+			//for (AssetNode* aux : aux_nodes)
+			//	aux->cut = true;
 		}
 		if (ImGui::MenuItem("Copy", "Ctrl+C", false, !selected_nodes.empty())) //copy
 		{
@@ -852,34 +816,35 @@ bool Assets::DrawRightClick()
 		}
 		if (ImGui::MenuItem("Paste", "Ctrl+V", false, is_copy || is_cut)) //paste
 		{
-			if (is_cut)
-			{
-				for (AssetNode* aux : aux_nodes)
-				{
-					if (current_folder != aux && !IsChildOf(*aux, *current_folder))
-						Cut(*aux, *current_folder);
-					aux->cut = false;
-				}
-			}
-			else if (is_copy)
-			{
-				for (AssetNode* aux : aux_nodes)
-				{
-					if (current_folder != aux && !IsChildOf(*aux, *current_folder))
-						Copy(*aux, *current_folder);
-				}
-			}
+			//if (is_cut)
+			//{
+			//	for (AssetNode* aux : aux_nodes)
+			//	{
+			//		if (current_folder != aux && !IsChildOf(*aux, *current_folder))
+			//			Cut(*aux, *current_folder);
+			//		aux->cut = false;
+			//	}
+			//}
+			//else if (is_copy)
+			//{
+			//	for (AssetNode* aux : aux_nodes)
+			//	{
+			//		if (current_folder != aux && !IsChildOf(*aux, *current_folder))
+			//			Copy(*aux, *current_folder);
+			//	}
+			//}
 		}
 		ImGui::Separator();
 
-		if (ImGui::MenuItem("Select All", NULL, false, current_folder != nullptr && !current_folder->childs.empty())) //select all
+		if (ImGui::MenuItem("Select All", NULL, false, !nodes.childs[current_folder].empty())) //select all
 			SelectAll();
 
 		if (ImGui::MenuItem("Rename", NULL, false, selected_nodes.size() == 1)) //rename
 		{
 			is_rename_flag = true;
-			selected_nodes.front()->rename = true;
-			rename_node = selected_nodes.front();
+
+			size_t index = GetNode(selected_nodes.front());
+			nodes.state[index] = State::RENAME;
 		}
 
 		if (ImGui::MenuItem("Delete", "Supr", false, !selected_nodes.empty())) //delete
@@ -924,7 +889,8 @@ bool Assets::DrawRightClick()
 		if (ImGui::MenuItem("Show in Explorer", NULL, nullptr, selected_nodes.size() == 1)) //show in explorer
 		{
 			TCHAR  buffer[4096] = TEXT("");
-			GetFullPathName(selected_nodes[0]->path.c_str(), 4096, buffer, NULL);
+			size_t index = GetNode(selected_nodes[0]);
+			GetFullPathName(nodes.path[index].c_str(), 4096, buffer, NULL);
 
 			HRESULT hr = CoInitializeEx(0, NULL);
 			ITEMIDLIST* pidl = ILCreateFromPath(std::string(buffer).substr(0, std::string(buffer).find_last_of("/")).c_str());
@@ -943,7 +909,7 @@ bool Assets::DrawRightClick()
 	return false;
 }
 
-void Assets::UpdateAssets()
+void Assets::UpdateAssets() //***put the check inside ModuleInput.cpp as a SDL_Event and then call UpdateAssets()
 {
 	HWND wd = FindWindow(NULL, App->GetAppName());
 	if (wd != GetForegroundWindow() && is_engine_focus)
@@ -953,282 +919,251 @@ void Assets::UpdateAssets()
 	else if (wd == GetForegroundWindow() && !is_engine_focus)
 	{
 		is_engine_focus = true;
-		std::string path = current_folder->path;
+		std::string path = nodes.path[current_folder];
 
-		std::vector<std::string>open_nodes;
-		for (uint i = 0, size = nodes.size(); i < size; ++i)
+		std::vector<std::string> open_nodes;
+		for (size_t i = 0, size = nodes.name.size(); i < size; ++i)
 		{
-			if (nodes[i]->open)
-				open_nodes.push_back(nodes[i]->path);
-			delete nodes[i];
+			if (nodes.open[i])
+				open_nodes.push_back(nodes.path[i]);
 		}
-		nodes.clear();
+		nodes.Clear();
 
 		std::vector<std::string> ignore_ext;
 		ignore_ext.push_back("meta");
-		root = App->file_system->GetAllFiles("Assets", nullptr, &ignore_ext);
+		nodes = App->file_system->GetAllFiles("Assets", nullptr, &ignore_ext);
 
-		root->open = true;
+		nodes.open[0] = true;
 		for (std::string node_path : open_nodes)
 		{
-			AssetNode* node = GetNode(node_path);
-			if (node)
-				node->open = true;
+			int index = GetNode(node_path);
+			if (index != -1)
+				nodes.open[index] = true;
 		}
 
-		if (current_folder != nullptr)
+		if (current_folder != 0)
 			current_folder = GetNode(path);
-		if (current_folder == nullptr)
-			current_folder = root;
 
 		// Update Layouts (Configuration Panel)
 		App->editor->panel_configuration->GetLayouts();
 	}
 }
 
-void Assets::DrawPath()
-{
-	std::vector<AssetNode*> parents = GetParents(*current_folder);
-	std::string path, aux_path;
-	int count = 0, position = 0;
-
-	// path
-	for (int i = parents.size() - 1; i >= 0; --i)
-		path += parents[i]->name + " > ";
-	path += current_folder->name;
-	aux_path = path;
-
-	// check size and get count of parents not shown
-	float size = ImGui::CalcTextSize(path.c_str()).x + 44;
-	float max_size = ImGui::GetWindowWidth() + ImGui::CalcTextSize("<< ").x;
-	if (size > max_size)
-	{
-		int offset = int((size - max_size) / 7);
-		path = path.substr(offset);
-		position = path.find_first_of(">");
-
-		int found = 0;
-		if (position != -1)
-		{
-			while (found - offset != position)
-			{
-				found = aux_path.find(">", found + 1);
-				count++;
-			}
-		}
-		else
-			count = parents.size();
-
-		// '<<' Button
-		ImVec4 color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
-		float pos = ImGui::GetCursorPosX();
-		ImGui::Text("<<");
-
-		bool hovered = false;
-		if (ImGui::IsItemHovered())
-			color = ImVec4(0.2f, 0.6f, 1.0f, 1.0f);
-
-		if (ImGui::IsItemClicked())
-			ImGui::OpenPopup("<<");
-
-		if (ImGui::BeginPopup("<<")) //popup
-		{
-			for (int i = parents.size() - 1, size = parents.size() - count; i >= size; --i)
-			{
-				if (ImGui::MenuItem(parents[i]->name.c_str()))
-					current_folder = parents[i];
-			}
-			ImGui::EndPopup();
-		}
-
-		float pos2 = ImGui::GetCursorPosX();
-		ImGui::SetCursorPosX(pos);
-		ImGui::TextColored(color, "<<");
-		ImGui::SetCursorPosX(pos2);
-	}
-
-	// Buttons
-	if (position != -1)
-	{
-		static uint selected = 0;
-		for (int i = parents.size() - count - 1; i >= 0; --i)
-		{
-			ImVec4 color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
-			ImVec4 color2 = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
-
-			// Parent Button
-			float pos = ImGui::GetCursorPosX();
-			ImGui::Text(parents[i]->name.c_str());
-
-			if (ImGui::IsItemHovered())
-				color = ImVec4(0.2f, 0.6f, 1.0f, 1.0f);
-			if (ImGui::IsItemClicked())
-				current_folder = parents[i];
-
-			float pos2 = ImGui::GetCursorPosX();
-			ImGui::SetCursorPosX(pos);
-			ImGui::TextColored(color, parents[i]->name.c_str());
-			ImGui::SetCursorPosX(pos2);
-
-			// '>' Button
-			pos = ImGui::GetCursorPosX();
-			ImGui::Text(">");
-
-			if (ImGui::IsItemHovered())
-				color2 = ImVec4(0.2f, 0.6f, 1.0f, 1.0f);
-
-			if (ImGui::IsItemClicked())
-			{
-				ImGui::OpenPopup(">");
-				selected = i;
-			}
-
-			if (i == selected && ImGui::BeginPopup(">")) //popup
-			{
-				for (AssetNode* child : parents[i]->childs)
-				{
-					if (child->type == AssetNode::NodeType::FOLDER &&
-						ImGui::MenuItem(child->name.c_str(), NULL, child == current_folder || FindNode(*child, parents) != -1))
-						current_folder = child;
-				}
-				ImGui::EndPopup();
-			}
-
-			pos2 = ImGui::GetCursorPosX();
-			ImGui::SetCursorPosX(pos);
-			ImGui::TextColored(color2, ">");
-			ImGui::SetCursorPosX(pos2);
-		}
-	}
-}
+//void Assets::DrawPath()
+//{
+//	std::vector<AssetNode*> parents = GetParents(*current_folder);
+//	std::string path, aux_path;
+//	int count = 0, position = 0;
+//
+//	// path
+//	for (int i = parents.size() - 1; i >= 0; --i)
+//		path += parents[i]->name + " > ";
+//	path += current_folder->name;
+//	aux_path = path;
+//
+//	// check size and get count of parents not shown
+//	float size = ImGui::CalcTextSize(path.c_str()).x + 44;
+//	float max_size = ImGui::GetWindowWidth() + ImGui::CalcTextSize("<< ").x;
+//	if (size > max_size)
+//	{
+//		int offset = int((size - max_size) / 7);
+//		path = path.substr(offset);
+//		position = path.find_first_of(">");
+//
+//		int found = 0;
+//		if (position != -1)
+//		{
+//			while (found - offset != position)
+//			{
+//				found = aux_path.find(">", found + 1);
+//				count++;
+//			}
+//		}
+//		else
+//			count = parents.size();
+//
+//		// '<<' Button
+//		ImVec4 color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+//		float pos = ImGui::GetCursorPosX();
+//		ImGui::Text("<<");
+//
+//		bool hovered = false;
+//		if (ImGui::IsItemHovered())
+//			color = ImVec4(0.2f, 0.6f, 1.0f, 1.0f);
+//
+//		if (ImGui::IsItemClicked())
+//			ImGui::OpenPopup("<<");
+//
+//		if (ImGui::BeginPopup("<<")) //popup
+//		{
+//			for (int i = parents.size() - 1, size = parents.size() - count; i >= size; --i)
+//			{
+//				if (ImGui::MenuItem(parents[i]->name.c_str()))
+//					current_folder = parents[i];
+//			}
+//			ImGui::EndPopup();
+//		}
+//
+//		float pos2 = ImGui::GetCursorPosX();
+//		ImGui::SetCursorPosX(pos);
+//		ImGui::TextColored(color, "<<");
+//		ImGui::SetCursorPosX(pos2);
+//	}
+//
+//	// Buttons
+//	if (position != -1)
+//	{
+//		static uint selected = 0;
+//		for (int i = parents.size() - count - 1; i >= 0; --i)
+//		{
+//			ImVec4 color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+//			ImVec4 color2 = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+//
+//			// Parent Button
+//			float pos = ImGui::GetCursorPosX();
+//			ImGui::Text(parents[i]->name.c_str());
+//
+//			if (ImGui::IsItemHovered())
+//				color = ImVec4(0.2f, 0.6f, 1.0f, 1.0f);
+//			if (ImGui::IsItemClicked())
+//				current_folder = parents[i];
+//
+//			float pos2 = ImGui::GetCursorPosX();
+//			ImGui::SetCursorPosX(pos);
+//			ImGui::TextColored(color, parents[i]->name.c_str());
+//			ImGui::SetCursorPosX(pos2);
+//
+//			// '>' Button
+//			pos = ImGui::GetCursorPosX();
+//			ImGui::Text(">");
+//
+//			if (ImGui::IsItemHovered())
+//				color2 = ImVec4(0.2f, 0.6f, 1.0f, 1.0f);
+//
+//			if (ImGui::IsItemClicked())
+//			{
+//				ImGui::OpenPopup(">");
+//				selected = i;
+//			}
+//
+//			if (i == selected && ImGui::BeginPopup(">")) //popup
+//			{
+//				for (AssetNode* child : parents[i]->childs)
+//				{
+//					if (child->type == ResourceType::FOLDER &&
+//						ImGui::MenuItem(child->name.c_str(), NULL, child == current_folder || FindNode(*child, parents) != -1))
+//						current_folder = child;
+//				}
+//				ImGui::EndPopup();
+//			}
+//
+//			pos2 = ImGui::GetCursorPosX();
+//			ImGui::SetCursorPosX(pos);
+//			ImGui::TextColored(color2, ">");
+//			ImGui::SetCursorPosX(pos2);
+//		}
+//	}
+//}
 
 // --- NODES ---
-AssetNode* Assets::CreateNode(std::string name, AssetNode* parent)
+size_t Assets::CreateNode(std::string name_, size_t parent_index)
 {
-	AssetNode* node = new AssetNode();
-
-	if (name == "")
+	// Get Node Variables
+	std::string name;
+	if (name_ == "")
 	{
-		node->name = App->file_system->GetFileName(parent->path.c_str());
-		if (node->name == "")
-			node->name = parent->path;
+		name = App->file_system->GetFileName(nodes.path[parent_index].c_str());
+		if (name == "")
+			name = nodes.path[parent_index];
 	}
 	else
-		node->name = name;
-	node->name = GetNameWithCount(node->name);
-	node->path = parent->path + std::string("/") + node->name;
-	node->type = GetType(*node);
+		name = name_;
+	name = GetNameWithCount(name);
+	std::string path = nodes.path[parent_index] + std::string("/") + name;
+	ResourceType type = App->file_system->GetType(path.c_str());
+	std::vector<std::string> empty_childs;
 
-	if (node->type == AssetNode::NodeType::FOLDER)
-		App->file_system->CreateFolder(node->path.c_str());
+	// Add Node
+	size_t index = nodes.Add(path.c_str(), name, type, empty_childs, nodes.name[parent_index]);
 
-	if (parent != nullptr)
-	{
-		node->parent = parent;
-		parent->childs.push_back(node);
-	}
-	else if (current_folder != nullptr)
-	{
-		node->parent = current_folder;
-		current_folder->childs.push_back(node);
-	}
+	// Create Real Folder
+	if (nodes.type[index] == ResourceType::FOLDER)
+		App->file_system->CreateFolder(nodes.path[index].c_str());
 
-	nodes.push_back(node);
-	return node;
+	// Add node to parent's child list
+	nodes.childs[parent_index].push_back(nodes.name[index]);
+
+	return index;
 }
 
-void Assets::DeleteNodes(std::vector<AssetNode*> nodes_list)
+void Assets::DeleteNodes(std::vector<std::string> nodes_list)
 {
 	while (!nodes_list.empty())
 	{
-		AssetNode* node = nodes_list.front();
-		int pos;
+		size_t index = GetNode(nodes_list.front());
 
 		// Delete node from parent's child list
-		if (node->parent != nullptr)
+		const char* parent_name = nodes.parent[index].c_str();
+		if (parent_name != "")
 		{
-			pos = FindNode(*node, node->parent->childs);
-			if (pos != -1)
-				node->parent->childs.erase(node->parent->childs.begin() + pos);
+			int parent_index = FindNode(parent_name, nodes.name);
+			if (parent_index != -1)
+			{
+				int child_index = FindNode(nodes.name[index].c_str(), nodes.childs[parent_index]);
+				if (child_index != -1)
+					nodes.childs[parent_index].erase(nodes.childs[parent_index].begin() + child_index);
+			}
 		}
 
 		// Delete childs
-		if (!node->childs.empty())
-			DeleteNodes(node->childs);
+		if (!nodes.childs[index].empty())
+			DeleteNodes(nodes.childs[index]);
 
 		// Delete node data
-		App->file_system->Remove(node->path.c_str());
-		pos = FindNode(*node, nodes);
-		if (pos != -1)
-		{
-			delete nodes[pos];
-			nodes.erase(nodes.begin() + pos);
-		}
+		App->file_system->Remove(nodes.path[index].c_str());
+		nodes.Remove(index);
 		nodes_list.erase(nodes_list.begin());
 	}
 	nodes_list.clear();
 }
 
-AssetNode* Assets::GetNode(const std::string path) const
+size_t Assets::GetNode(const std::string path) const
 {
-	for (AssetNode* node : nodes)
+	for (size_t index = 0, size = nodes.path.size(); index < size; ++index)
 	{
-		if (node->path == path)
-			return node;
+		if (nodes.path[index] == path)
+			return index;
 	}
-	return nullptr;
+	return 0;
 }
 
-std::vector<AssetNode*> Assets::GetParents(AssetNode& node) const
-{
-	std::vector<AssetNode*> parents;
-	AssetNode* aux_node = &node;
-	while (aux_node->parent != nullptr)
-	{
-		parents.push_back(aux_node->parent);
-		aux_node = aux_node->parent;
-	}
-	return parents;
-}
+//std::vector<AssetNode*> Assets::GetParents(AssetNode& node) const
+//{
+//	std::vector<AssetNode*> parents;
+//	AssetNode* aux_node = &node;
+//	while (aux_node->parent != nullptr)
+//	{
+//		parents.push_back(aux_node->parent);
+//		aux_node = aux_node->parent;
+//	}
+//	return parents;
+//}
 
-uint Assets::GetNumParents(AssetNode& node) const
-{
-	uint count = 0;
-	AssetNode* aux_node = &node;
-	while (aux_node->parent != nullptr)
-	{
-		count++;
-		aux_node = aux_node->parent;
-	}
-	return count;
-}
-
-AssetNode::NodeType Assets::GetType(const AssetNode& node) const
-{
-	std::string extension = App->file_system->GetExtension((&node)->path.c_str());
-
-	if (extension == "png" || extension == "jpg" || extension == "tga")
-		return AssetNode::NodeType::TEXTURE;
-
-	else if (extension == "pfb")
-		return AssetNode::NodeType::PREFAB;
-
-	else if (extension == "dvs")
-		return AssetNode::NodeType::SCENE;
-
-	else if (extension == "scr")
-		return AssetNode::NodeType::SCRIPT;
-
-	else if (extension == "")
-		return AssetNode::NodeType::FOLDER;
-
-	else
-		return AssetNode::NodeType::NONE;
-}
+//uint Assets::GetNumParents(AssetNode& node) const
+//{
+//	uint count = 0;
+//	AssetNode* aux_node = &node;
+//	while (aux_node->parent != nullptr)
+//	{
+//		count++;
+//		aux_node = aux_node->parent;
+//	}
+//	return count;
+//}
 
 std::string Assets::GetNameWithCount(const std::string name) const
 {
-	if (nodes.empty())
+	if (nodes.name.empty())
 		return name;
 
 	bool found = false;
@@ -1237,15 +1172,15 @@ std::string Assets::GetNameWithCount(const std::string name) const
 
 	while (found == false)
 	{
-		for (uint i = 0, size = nodes.size(); i < size; ++i)
+		for (size_t i = 0, size = nodes.name.size(); i < size; ++i)
 		{
-			if (new_name == nodes[i]->name)
+			if (new_name == nodes.name[i])
 			{
 				count++;
 				new_name = name + (" (") + std::to_string(count) + (")");
 				break;
 			}
-			else if (i == nodes.size() - 1)
+			else if (i == nodes.name.size() - 1)
 			{
 				found = true;
 				break;
@@ -1255,145 +1190,123 @@ std::string Assets::GetNameWithCount(const std::string name) const
 	return new_name;
 }
 
-std::string Assets::GetIconList(const AssetNode::NodeType type) const
+std::string Assets::GetIconList(const ResourceType type) const
 {
 	switch (type)
 	{
-	case AssetNode::NodeType::FOLDER:
-		return ICON_FOLDER;
-	case AssetNode::NodeType::SCENE:
-		return ICON_SCENE;
-	case AssetNode::NodeType::PREFAB:
-		return ICON_PREFAB;
-	case AssetNode::NodeType::TEXTURE:
-		return ICON_TEXTURE;
-	case AssetNode::NodeType::MATERIAL:
-		return ICON_SHADER;
-	case AssetNode::NodeType::ANIMATION:
-		return ICON_ANIMATION;
-	case AssetNode::NodeType::TILEMAP:
-		return ICON_TILEMAP;
-	case AssetNode::NodeType::AUDIO:
-		return ICON_AUDIO;
-	case AssetNode::NodeType::SCRIPT:
-		return ICON_SCRIPT;
-	case AssetNode::NodeType::NONE:
-		return "";
-	default:
-		return "";
+	case ResourceType::FOLDER:		return ICON_FOLDER;
+	case ResourceType::SCENE:		return ICON_SCENE;
+	case ResourceType::PREFAB:		return ICON_PREFAB;
+	case ResourceType::TEXTURE:		return ICON_TEXTURE;
+	case ResourceType::MATERIAL:	return ICON_SHADER;
+	case ResourceType::ANIMATION:	return ICON_ANIMATION;
+	case ResourceType::TILEMAP:		return ICON_TILEMAP;
+	case ResourceType::AUDIO:		return ICON_AUDIO;
+	case ResourceType::SCRIPT:		return ICON_SCRIPT;
+	case ResourceType::SHADER:		return ICON_SHADER;
+	case ResourceType::UNKNOWN:		return "";
+	default:						return "";
 	}
 }
 
-ImVec4 Assets::GetIconColor(const AssetNode::NodeType type) const
+ImVec4 Assets::GetIconColor(const ResourceType type) const
 {
 	switch (type)
 	{
-	case AssetNode::NodeType::FOLDER:
-		return ImVec4(0.9f, 0.6f, 0.0f, 1.0f); //orange
-	case AssetNode::NodeType::SCENE:
-		return ImVec4(1.0f, 1.0f, 1.0f, 1.0f); //white
-	case AssetNode::NodeType::PREFAB:
-		return ImVec4(0.2f, 1.0f, 1.0f, 1.0f); //blue
-	case AssetNode::NodeType::TEXTURE:
-		return ImVec4(1.0f, 1.0f, 1.0f, 1.0f); //
-	case AssetNode::NodeType::MATERIAL:
-		return ImVec4(1.0f, 1.0f, 1.0f, 1.0f); //
-	case AssetNode::NodeType::ANIMATION:
-		return ImVec4(1.0f, 1.0f, 1.0f, 1.0f); //
-	case AssetNode::NodeType::TILEMAP:
-		return ImVec4(1.0f, 1.0f, 1.0f, 1.0f); //
-	case AssetNode::NodeType::AUDIO:
-		return ImVec4(1.0f, 1.0f, 1.0f, 1.0f); //
-	case AssetNode::NodeType::SCRIPT:
-		return ImVec4(1.0f, 1.0f, 1.0f, 1.0f); //
-	case AssetNode::NodeType::NONE:
-		return ImVec4(1.0f, 1.0f, 1.0f, 1.0f); //
-	default:
-		return ImVec4(1.0f, 1.0f, 1.0f, 1.0f); //
+	case ResourceType::FOLDER:		return ImVec4(0.9f, 0.6f, 0.0f, 1.0f); //orange
+	case ResourceType::SCENE:		return ImVec4(1.0f, 1.0f, 1.0f, 1.0f); //white
+	case ResourceType::PREFAB:		return ImVec4(0.2f, 1.0f, 1.0f, 1.0f); //blue
+	case ResourceType::TEXTURE:		return ImVec4(1.0f, 1.0f, 1.0f, 1.0f); //
+	case ResourceType::MATERIAL:	return ImVec4(1.0f, 1.0f, 1.0f, 1.0f); //
+	case ResourceType::ANIMATION:	return ImVec4(1.0f, 1.0f, 1.0f, 1.0f); //
+	case ResourceType::TILEMAP:		return ImVec4(1.0f, 1.0f, 1.0f, 1.0f); //
+	case ResourceType::AUDIO:		return ImVec4(1.0f, 1.0f, 1.0f, 1.0f); //
+	case ResourceType::SCRIPT:		return ImVec4(1.0f, 1.0f, 1.0f, 1.0f); //
+	case ResourceType::SHADER:		return ImVec4(1.0f, 1.0f, 1.0f, 1.0f); //
+	case ResourceType::UNKNOWN:		return ImVec4(1.0f, 1.0f, 1.0f, 1.0f); //
+	default:						return ImVec4(1.0f, 1.0f, 1.0f, 1.0f); //
 	}
 }
 
-bool Assets::IsChildOf(const AssetNode& node, AssetNode& child) const
-{
-	for (AssetNode* aux : node.childs)
-	{
-		if (aux == &child || (!aux->childs.empty() && IsChildOf(*aux, child)))
-			return true;
-	}
-	return false;
-}
+//bool Assets::IsChildOf(const AssetNode& node, AssetNode& child) const
+//{
+//	for (AssetNode* aux : node.childs)
+//	{
+//		if (aux == &child || (!aux->childs.empty() && IsChildOf(*aux, child)))
+//			return true;
+//	}
+//	return false;
+//}
 
-int Assets::FindNode(const AssetNode& node, const std::vector<AssetNode*> list) const
+int Assets::FindNode(const char* name, std::vector<std::string> list) const
 {
 	for (uint i = 0; i < list.size(); ++i)
 	{
-		if (list[i] == &node)
+		if (list[i] == name)
 			return i;
 	}
 	return -1;
 }
 
-void Assets::UpdatePath(AssetNode& node, const std::string path) const
+void Assets::UpdatePath(size_t index, const std::string path)
 {
-	node.path = path + ("/") + node.name;
+	nodes.path[index] = std::string(path + ("/") + nodes.name[index]).c_str();
 
-	if (!node.childs.empty())
+	if (!nodes.childs[index].empty())
 	{
-		for (AssetNode* child : node.childs)
-			UpdatePath(*child, node.path);
+		for (std::string child : nodes.childs[index])
+			UpdatePath(GetNode(child), nodes.path[index]);
 	}
 }
 
-void Assets::SelectAll() const
+void Assets::SelectAll()
 {
-	for (AssetNode* node : current_list)
-		node->selected = true;
+	for (size_t index = 0, size = nodes.name.size(); index < size; ++index)
+		nodes.state[index] = State::SELECTED;
 }
 
 void Assets::UnSelectAll()
 {
-	for (AssetNode* node : current_list)
-	{
-		node->selected = false;
-		node->rename = false;
-	}
+	for (size_t index = 0, size = nodes.name.size(); index < size; ++index)
+		nodes.state[index] = State::IDLE;
+
 	selected_nodes.clear();
 }
 
-void Assets::Cut(AssetNode& node, AssetNode& parent) const
-{
-	// Move in Explorer
-	MoveFile(node.path.c_str(), std::string(parent.path + ("/") + node.name).c_str());
-
-	// Update Parent
-	node.parent->childs.erase(node.parent->childs.begin() + FindNode(node, node.parent->childs)); //erase from parent's child list
-	node.parent = &parent; //set new parent
-	node.parent->childs.push_back(&node); //add node to new parent's child list
-
-	// Update Childs
-	UpdatePath(node, parent.path);
-}
-
-void Assets::Copy(AssetNode& node, AssetNode& parent)
-{
-	// Create new Node
-	std::string new_name = node.name + " - copy";
-	AssetNode* new_node = CreateNode(new_name, &parent);
-
-	// If has childs, copy them too
-	if (!node.childs.empty())
-	{
-		std::vector<AssetNode*> childs = node.childs;
-		for (AssetNode* child : childs)
-			Copy(*child, *new_node);
-	}
-
-	//// Copy in Explorer
-	//std::string full_path = App->file_system->GetBasePath() + node.path;
-	//std::string full_newpath = App->file_system->GetBasePath() + new_node->path;
-
-	//App->file_system->Copy(full_path.c_str(), full_newpath.c_str());
-}
+//void Assets::Cut(AssetNode& node, AssetNode& parent) const
+//{
+//	// Move in Explorer
+//	MoveFile(node.path.c_str(), std::string(parent.path + ("/") + node.name).c_str());
+//
+//	// Update Parent
+//	node.parent->childs.erase(node.parent->childs.begin() + FindNode(node, node.parent->childs)); //erase from parent's child list
+//	node.parent = &parent; //set new parent
+//	node.parent->childs.push_back(&node); //add node to new parent's child list
+//
+//	// Update Childs
+//	UpdatePath(node, parent.path);
+//}
+//
+//void Assets::Copy(AssetNode& node, AssetNode& parent)
+//{
+//	// Create new Node
+//	std::string new_name = node.name + " - copy";
+//	AssetNode* new_node = CreateNode(new_name, &parent);
+//
+//	// If has childs, copy them too
+//	if (!node.childs.empty())
+//	{
+//		std::vector<AssetNode*> childs = node.childs;
+//		for (AssetNode* child : childs)
+//			Copy(*child, *new_node);
+//	}
+//
+//	//// Copy in Explorer
+//	//std::string full_path = App->file_system->GetBasePath() + node.path;
+//	//std::string full_newpath = App->file_system->GetBasePath() + new_node->path;
+//
+//	//App->file_system->Copy(full_path.c_str(), full_newpath.c_str());
+//}
 
 // --- OTHERS ---
 void Assets::DockSpace()

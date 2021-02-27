@@ -20,9 +20,13 @@ bool ResourceTexture::Create(const char* path, UID uid, bool save_meta)
 	return true;
 }
 
-bool ResourceTexture::Remove(size_t index) const
+void ResourceTexture::Remove(size_t index)
 {
-	return true;
+	data.Remove(index);
+
+	texture.buffer.erase(texture.buffer.begin() + index);
+	texture.width.erase(texture.width.begin() + index);
+	texture.height.erase(texture.height.begin() + index);
 }
 
 bool ResourceTexture::Import(size_t index) const
