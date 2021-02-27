@@ -42,7 +42,6 @@ private:
 	size_t CreateNode(std::string name = "", size_t parent_index = 0);
 	void DeleteNodes(std::vector<std::string> names_list);
 
-	size_t GetNode(const std::string name) const; //get node from name
 	std::vector<std::string> GetParents(size_t index) const; //get all parents until root
 	uint GetNumParents(size_t index) const; //get number of parents
 	std::string GetNameWithCount(const std::string name) const; //get name with count
@@ -51,7 +50,7 @@ private:
 
 	//bool IsChildOf(const AssetNode& node, AssetNode& child) const; //check if node is child or child of childs of parent
 	int FindNode(const char* name, std::vector<std::string> list) const; //get node pos in list (returns -1 if not found)
-	void UpdatePath(size_t index, const std::string path); //update path
+	void UpdatePath(size_t index, const std::string path, const std::string parent); //update path
 
 	void SetState(std::string name, State state);
 	void SelectAll();
@@ -59,7 +58,7 @@ private:
 	//void Cut(AssetNode& node, AssetNode& parent) const; //paste cut nodes
 	//void Copy(AssetNode& node, AssetNode& parent); //paste copied nodes
 	
-	// --- OTHERS ---
+	// --- INTERNAL ---
 	void DockSpace();
 	void Scroll(ImVec2 pos);
 	void DeletePopup();
@@ -70,18 +69,18 @@ public:
 	static const uint default_pos_x = 0;
 	static const uint default_pos_y = 701;
 
-
 private:
 	AssetNode nodes;
 	std::vector<std::string> selected_nodes;
 	std::vector<std::string> aux_nodes; //used for cut and copy
 
-	AssetNode current_list;
+	AssetNode current_list; //used for filters
 	size_t current_folder;
 
 	bool is_delete_popup = true; //used for showing popup delete
 	bool is_engine_focus = true; //used for updating assets
 	bool is_init = false; //used for dockspace
+
 	bool is_list_view = false;
 	bool is_search = false;
 

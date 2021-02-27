@@ -492,7 +492,7 @@ void Assets::DrawNodeIcon(size_t index)
 				{
 					int pos = FindNode(child.c_str(), nodes.name);
 					if (pos != -1)
-						UpdatePath(pos, nodes.path[index]);
+						UpdatePath(pos, nodes.path[index], nodes.name[index]);
 				}
 
 				// Update Parent's Child List
@@ -848,15 +848,18 @@ bool Assets::DrawRightClick()
 		if (ImGui::MenuItem("Show in Explorer", NULL, nullptr, selected_nodes.size() == 1)) //show in explorer
 		{
 			TCHAR  buffer[4096] = TEXT("");
-			size_t index = GetNode(selected_nodes[0]);
-			GetFullPathName(nodes.path[index].c_str(), 4096, buffer, NULL);
-
-			HRESULT hr = CoInitializeEx(0, NULL);
-			ITEMIDLIST* pidl = ILCreateFromPath(std::string(buffer).substr(0, std::string(buffer).find_last_of("/")).c_str());
-			if (pidl)
+			int index = FindNode(selected_nodes[0].c_str(), nodes.name);
+			if (index != -1)
 			{
-				SHOpenFolderAndSelectItems(pidl, 0, 0, 0);
-				ILFree(pidl);
+				GetFullPathName(nodes.path[index].c_str(), 4096, buffer, NULL);
+
+				HRESULT hr = CoInitializeEx(0, NULL);
+				ITEMIDLIST* pidl = ILCreateFromPath(std::string(buffer).substr(0, std::string(buffer).find_last_of("/")).c_str());
+				if (pidl)
+				{
+					SHOpenFolderAndSelectItems(pidl, 0, 0, 0);
+					ILFree(pidl);
+				}
 			}
 		}
 		if (ImGui::MenuItem("Show References", NULL, nullptr, selected_nodes.size() == 1)) //references
@@ -878,13 +881,13 @@ void Assets::UpdateAssets() //***put the check inside ModuleInput.cpp as a SDL_E
 	else if (wd == GetForegroundWindow() && !is_engine_focus)
 	{
 		is_engine_focus = true;
-		std::string path = nodes.path[current_folder];
+		std::string node_name = nodes.name[current_folder];
 
 		std::vector<std::string> open_nodes;
 		for (size_t i = 0, size = nodes.name.size(); i < size; ++i)
 		{
 			if (nodes.open[i])
-				open_nodes.push_back(nodes.path[i]);
+				open_nodes.push_back(nodes.name[i]);
 		}
 		nodes.Clear();
 
@@ -893,15 +896,19 @@ void Assets::UpdateAssets() //***put the check inside ModuleInput.cpp as a SDL_E
 		nodes = App->file_system->GetAllFiles("Assets", nullptr, &ignore_ext);
 
 		nodes.open[0] = true;
-		for (std::string node_path : open_nodes)
+		for (std::string name : open_nodes)
 		{
-			int index = GetNode(node_path);
+			int index = FindNode(name.c_str(), nodes.name);
 			if (index != -1)
 				nodes.open[index] = true;
 		}
 
 		if (current_folder != 0)
-			current_folder = GetNode(path);
+		{
+			int index = FindNode(node_name.c_str(), nodes.name);
+			if (index != -1)
+				current_folder = index;
+		}
 
 		// Update Layouts (Configuration Panel)
 		App->editor->panel_configuration->GetLayouts();
@@ -1071,43 +1078,36 @@ size_t Assets::CreateNode(std::string name_, size_t parent_index)
 
 void Assets::DeleteNodes(std::vector<std::string> nodes_list)
 {
-	while (!nodes_list.empty())
+	int index = 0;
+	while (index != -1 && !nodes_list.empty())
 	{
-		size_t index = GetNode(nodes_list.front());
-
-		// Delete node from parent's child list
-		const char* parent_name = nodes.parent[index].c_str();
-		if (parent_name != "")
+		index = FindNode(nodes_list[0].c_str(), nodes.name);
+		if (index != -1)
 		{
-			int parent_index = FindNode(parent_name, nodes.name);
-			if (parent_index != -1)
+			// Delete node from parent's child list
+			const char* parent_name = nodes.parent[index].c_str();
+			if (parent_name != "")
 			{
-				int child_index = FindNode(nodes.name[index].c_str(), nodes.childs[parent_index]);
-				if (child_index != -1)
-					nodes.childs[parent_index].erase(nodes.childs[parent_index].begin() + child_index);
+				int parent_index = FindNode(parent_name, nodes.name);
+				if (parent_index != -1)
+				{
+					int child_index = FindNode(nodes.name[index].c_str(), nodes.childs[parent_index]);
+					if (child_index != -1)
+						nodes.childs[parent_index].erase(nodes.childs[parent_index].begin() + child_index);
+				}
 			}
+
+			// Delete childs
+			if (!nodes.childs[index].empty())
+				DeleteNodes(nodes.childs[index]);
+
+			// Delete node data
+			App->file_system->Remove(nodes.path[index].c_str());
+			nodes.Remove(index);
+			nodes_list.erase(nodes_list.begin());
 		}
-
-		// Delete childs
-		if (!nodes.childs[index].empty())
-			DeleteNodes(nodes.childs[index]);
-
-		// Delete node data
-		App->file_system->Remove(nodes.path[index].c_str());
-		nodes.Remove(index);
-		nodes_list.erase(nodes_list.begin());
 	}
 	nodes_list.clear();
-}
-
-size_t Assets::GetNode(const std::string path) const
-{
-	for (size_t index = 0, size = nodes.path.size(); index < size; ++index)
-	{
-		if (nodes.path[index] == path)
-			return index;
-	}
-	return 0;
 }
 
 std::vector<std::string> Assets::GetParents(size_t index) const
@@ -1221,14 +1221,19 @@ int Assets::FindNode(const char* name, std::vector<std::string> list) const
 	return -1;
 }
 
-void Assets::UpdatePath(size_t index, const std::string path)
+void Assets::UpdatePath(size_t index, const std::string path, const std::string parent)
 {
 	nodes.path[index] = std::string(path + ("/") + nodes.name[index]).c_str();
+	nodes.parent[index] = parent;
 
 	if (!nodes.childs[index].empty())
 	{
 		for (std::string child : nodes.childs[index])
-			UpdatePath(GetNode(child), nodes.path[index]);
+		{
+			int pos = FindNode(child.c_str(), nodes.name);
+			if (pos != -1)
+				UpdatePath(pos, nodes.path[index], nodes.name[index]);
+		}
 	}
 }
 
