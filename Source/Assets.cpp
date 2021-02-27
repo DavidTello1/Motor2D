@@ -31,9 +31,8 @@ Assets::Assets() : Panel("Assets", ICON_ASSETS, 4)
 	// Get Files
 	std::vector<std::string> ignore_ext;
 	ignore_ext.push_back("meta");
-	nodes = App->file_system->GetAllFiles("Assets", nullptr, &ignore_ext);
+	current_list = nodes = App->file_system->GetAllFiles("Assets", nullptr, &ignore_ext);
 	current_folder = 0;
-	//current_list = nodes.childs[current_folder];
 }
 
 Assets::~Assets()
@@ -158,7 +157,7 @@ void Assets::ChildHierarchy()
 	ImGui::Begin("Assets_Hierarchy", NULL, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoMove);
 	ImGui::PopStyleVar();
 
-	// Menu Bar
+	// --- MENU BAR ---
 	if (ImGui::BeginMenuBar())
 	{
 		if (ImGui::BeginMenu("Filters")) // Filters
@@ -174,6 +173,7 @@ void Assets::ChildHierarchy()
 			if (ImGui::MenuItem("Tilemaps", NULL, filter == ResourceType::TILEMAP))		filter = ResourceType::TILEMAP;
 			if (ImGui::MenuItem("Audios", NULL, filter == ResourceType::AUDIO))			filter = ResourceType::AUDIO;
 			if (ImGui::MenuItem("Scripts", NULL, filter == ResourceType::SCRIPT))		filter = ResourceType::SCRIPT;
+			if (ImGui::MenuItem("Shaders", NULL, filter == ResourceType::SHADER))		filter = ResourceType::SHADER;
 			ImGui::EndMenu();
 		}
 		ImGui::MenuItem("Search", NULL, &is_search); // Search
@@ -188,7 +188,7 @@ void Assets::ChildHierarchy()
 		ImGui::Separator();
 	}
 
-	//Draw Hierarchy Tree
+	//---  DRAW HIERARCHY TREE ---
 	ImGui::BeginChild("HierarchyTree");
 
 	ImVec2 pos = ImGui::GetCursorPos();
@@ -196,32 +196,7 @@ void Assets::ChildHierarchy()
 	DrawHierarchy(0); //root
 
 	// Scroll
-	ImVec2 scroll = ImGui::GetCurrentWindow()->Scroll;
-	ImVec2 size = ImVec2(ImGui::GetWindowContentRegionMax().x, 25);
-
-	if (ImGui::GetCursorPosY() < scroll.y)
-		ImGui::SetScrollHereY();
-
-	ImGui::SetCursorPos(ImVec2(pos.x + scroll.x - 4, pos.y + scroll.y)); // Top Area
-	ImGui::Dummy(size);
-	if (!is_arrow_hover && ImGui::BeginDragDropTarget())
-	{
-		if (scroll.y >= 1.0f)
-			ImGui::GetCurrentWindow()->Scroll.y -= 1.0f;
-		ImGui::EndDragDropTarget();
-	}
-
-	ImGui::SetCursorPos(ImVec2(pos.x + scroll.x - 4, ImGui::GetWindowHeight() + scroll.y - 25.0f)); //Bottom Area
-	ImGui::Dummy(size);
-	if (!is_arrow_hover && ImGui::BeginDragDropTarget())
-	{
-		if (scroll.y < ImGui::GetCurrentWindow()->ScrollMax.y)
-			ImGui::GetCurrentWindow()->Scroll.y += 1.0f;
-		ImGui::EndDragDropTarget();
-	}
-
-	if (ImGui::GetScrollY() > ImGui::GetScrollMaxY())
-		ImGui::SetScrollX(ImGui::GetScrollMaxY());
+	Scroll(pos);
 	is_arrow_hover = false;
 
 	ImGui::EndChild();
@@ -240,45 +215,9 @@ void Assets::ChildIcons()
 	DrawRightClick();
 
 	// Delete Popup
-	if (is_delete && is_delete_popup)
-		ImGui::OpenPopup("Confirm Delete");
+	DeletePopup();
 
-	if (ImGui::BeginPopupModal("Confirm Delete", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove))
-	{
-		ImGui::Text(ICON_WARNING);
-		ImGui::SameLine();
-		ImGui::Text("Are you sure you want to delete?");
-		ImGui::Text("This action cannot be undone");
-		ImGui::NewLine();
-
-		static bool check = false;
-		if (ImGui::Checkbox("Do not show this message again", &check))
-			is_delete_popup = !check;
-		ImGui::NewLine();
-
-		float pos = ImGui::GetCursorPosX();
-		ImVec2 size = ImGui::GetContentRegionAvail();
-		if (ImGui::Button("Delete", ImVec2(size.x / 2, 22)))
-		{
-			is_delete = false;
-			//DeleteNodes(selected_nodes);
-			selected_nodes.clear();
-			ImGui::CloseCurrentPopup();
-		}
-		ImGui::SameLine();
-
-		ImGui::SetCursorPosX(pos + ImGui::GetItemRectSize().x + 1);
-		pos = ImGui::GetCursorPosX();
-		if (ImGui::Button("Cancel", ImVec2(size.x / 2, 22)))
-		{
-			is_delete = false;
-			ImGui::CloseCurrentPopup();
-		}
-
-		ImGui::EndPopup();
-	}
-
-	// Menu Bar
+	// --- MENU BAR ---
 	if (ImGui::BeginMenuBar())
 	{
 		switch (filter)
@@ -292,52 +231,62 @@ void Assets::ChildIcons()
 		case ResourceType::TILEMAP:		ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.0f, 1.0f), "Showing All TileMaps"); break;
 		case ResourceType::AUDIO:		ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.0f, 1.0f), "Showing All Audios"); break;
 		case ResourceType::SCRIPT:		ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.0f, 1.0f), "Showing All Scripts"); break;
+		case ResourceType::SHADER:		ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.0f, 1.0f), "Showing All Shaders"); break;
 
 		case ResourceType::UNKNOWN: // Path with links
-			//if (nodes.parent[current_folder] != "")
-			//	DrawPath();
+			if (nodes.parent[current_folder] != "")
+				DrawPath();
 			ImGui::Text(nodes.name[current_folder].c_str());
 			break;
 		}
 		ImGui::EndMenuBar();
 	}
 
-	// Draw Icons
+	// --- DRAW ICONS ---
 	int columns = (int)(ImGui::GetContentRegionAvailWidth() / (node_size + 4));
 	//if (filter == ResourceType::UNKNOWN)
 	//	current_list = nodes.childs[current_folder];
 	//else
 		//current_list = nodes;
 
-	for (uint i = 0, size = nodes.childs[current_folder].size(); i < size; ++i)
+	size_t aux_current_folder = current_folder;
+	for (size_t i = 0, size = nodes.childs[current_folder].size(); i < size; ++i)
 	{
+		if (current_folder != aux_current_folder) // Current folder has changed
+			break;
+
+		// Filter
 		int index = FindNode(nodes.childs[current_folder][i].c_str(), nodes.name);
 		if (index != -1)
 		{
 			if ((filter != ResourceType::UNKNOWN && filter != nodes.type[index]) || !searcher.PassFilter(nodes.name[index].c_str()))
 				continue;
-		}
-		if (is_list_view)
-		{
-			ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 2);
-			DrawNodeList(index);
-		}
-		else
-		{
-			float pos = ImGui::GetCursorPosX();
-			DrawNodeIcon(index);
 
-			if (columns > 0 && (i + 1) % columns != 0)
+			// Draw
+			if (is_list_view) // List View
 			{
-				ImGui::SameLine();
-				ImGui::SetCursorPosX(pos + node_size + 5);
+				ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 2);
+				DrawNodeList(index);
+			}
+			else // Icon View
+			{
+				float pos = ImGui::GetCursorPosX();
+				DrawNodeIcon(index);
+
+				// Columns
+				if (columns > 0 && (i + 1) % columns != 0)
+				{
+					ImGui::SameLine();
+					ImGui::SetCursorPosX(pos + node_size + 5);
+				}
 			}
 		}
 	}
-	// Unselect nodes when clicking on empty space
-	if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup | ImGuiHoveredFlags_AllowWhenBlockedByActiveItem) && 
-		ImGui::IsMouseClicked(0) && !ImGui::IsAnyItemHovered())
-		UnSelectAll();
+
+	//// Unselect nodes when clicking on empty space
+	//if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup | ImGuiHoveredFlags_AllowWhenBlockedByActiveItem) && 
+	//	ImGui::IsMouseClicked(0) && !ImGui::IsAnyItemHovered())
+	//	UnSelectAll();
 
 	ImGui::End();
 }
@@ -376,7 +325,7 @@ void Assets::DrawHierarchy(size_t index)
 	//	{
 	//		for (std::string selected_node : selected_nodes)
 	//		{
-	//			if (selected_node != &node && !IsChildOf(*selected_node, node))
+	//			if (selected_node != nodes.name[index] && !IsChildOf(*selected_node, node))
 	//				Cut(*selected_node, node);
 	//		}
 	//	}
@@ -386,45 +335,45 @@ void Assets::DrawHierarchy(size_t index)
 	// Highlight
 	window->DrawList->AddRectFilled(bg.Min, bg.Max, ImColor(color));
 
-	//// Indent
-	//ImGui::SameLine();
-	//ImGui::SetCursorPosX(pos.x + 14 * GetNumParents(node));
+	// Indent
+	ImGui::SameLine();
+	ImGui::SetCursorPosX(pos.x + 14 * GetNumParents(index));
 
-	//// Arrow
-	//pos = ImGui::GetCursorPos();
-	//ImGui::SetCursorPosY(pos.y - 1);
-	//if (!nodes.childs[index].empty())
-	//{
-	//	if (nodes.open[index])
-	//		ImGui::Text(ICON_ARROW_OPEN);
-	//	else
-	//		ImGui::Text(ICON_ARROW_CLOSED);
+	// Arrow
+	pos = ImGui::GetCursorPos();
+	ImGui::SetCursorPosY(pos.y - 1);
+	if (!nodes.childs[index].empty())
+	{
+		if (nodes.open[index])
+			ImGui::Text(ICON_ARROW_OPEN);
+		else
+			ImGui::Text(ICON_ARROW_CLOSED);
 
-	//	if (ImGui::IsItemClicked())
-	//		nodes.open[index] = !nodes.open[index];
+		if (ImGui::IsItemClicked())
+			nodes.open[index] = !nodes.open[index];
 
-	//	if (!nodes.open[index] && ImGui::BeginDragDropTarget() && nodes.type[index] == ResourceType::FOLDER)
-	//	{
-	//		nodes.open[index] = true;
-	//		is_arrow_hover = true;
-	//	}
-	//	ImGui::SameLine();
-	//	ImGui::SetCursorPosX(pos.x + 16);
-	//}
+		//if (!nodes.open[index] && ImGui::BeginDragDropTarget() && nodes.type[index] == ResourceType::FOLDER)
+		//{
+		//	nodes.open[index] = true;
+		//	is_arrow_hover = true;
+		//}
+		ImGui::SameLine();
+		ImGui::SetCursorPosX(pos.x + 16);
+	}
 
-	//// Name
-	//ImGui::Text(nodes.name[index].c_str());
+	// Name
+	ImGui::Text(nodes.name[index].c_str());
 
-	//// Childs
-	//if (nodes.open[index] && !nodes.childs[index].empty())
-	//{
-	//	for (std::string child : nodes.childs[index])
-	//	{
-	//		size_t pos = GetNode(child);
-	//		if (App->file_system->IsFolder(nodes.path[pos].c_str()))
-	//			DrawHierarchy(pos);
-	//	}
-	//}
+	// Childs
+	if (nodes.open[index] && !nodes.childs[index].empty())
+	{
+		for (std::string child : nodes.childs[index])
+		{
+			int pos = FindNode(child.c_str(), nodes.name);
+			if (pos != -1 && App->file_system->IsFolder(nodes.path[pos].c_str()))
+				DrawHierarchy(pos);
+		}
+	}
 }
 
 void Assets::DrawNodeIcon(size_t index)
@@ -532,6 +481,7 @@ void Assets::DrawNodeIcon(size_t index)
 			nodes.state[index] = State::SELECTED;
 			if (buffer != nodes.name[index])
 			{
+				std::string old_name = nodes.name[index];
 				nodes.name[index] = GetNameWithCount(buffer);
 				std::string new_path = nodes.path[index];
 				new_path = new_path.substr(0, new_path.find_last_of("/") + 1) + nodes.name[index];
@@ -539,7 +489,20 @@ void Assets::DrawNodeIcon(size_t index)
 				nodes.path[index] = new_path.c_str();
 			
 				for (std::string child : nodes.childs[index])
-					UpdatePath(GetNode(child), nodes.path[index]);
+				{
+					int pos = FindNode(child.c_str(), nodes.name);
+					if (pos != -1)
+						UpdatePath(pos, nodes.path[index]);
+				}
+
+				// Update Parent's Child List
+				int parent_index = FindNode(nodes.parent[index].c_str(), nodes.name);
+				if (parent_index != -1)
+				{
+					int child_index = FindNode(old_name.c_str(), nodes.childs[parent_index]);
+					if (child_index != -1)
+						nodes.childs[parent_index][child_index] = nodes.name[index];
+				}
 			}
 		}
 		if (ImGui::IsItemClicked() || is_rename_flag)
@@ -701,7 +664,7 @@ void Assets::HandleSelection(size_t index)
 			{
 				if (selected_nodes.size() > 1)
 				{
-					if (nodes.state[index] == State::SELECTED)
+					if (nodes.state[index] == State::SELECTED) 
 						nodes.state[index] = State::IDLE;
 					else
 						nodes.state[index] = State::SELECTED;
@@ -711,17 +674,15 @@ void Assets::HandleSelection(size_t index)
 			}
 			else if (ImGui::GetIO().KeyShift && !selected_nodes.empty()) // Multiple Selection (Shift)
 			{
-				size_t pos1 = GetNode(nodes.path[index]);
-				size_t pos2 = FindNode(selected_nodes.back().c_str(), nodes.name);
-
-				if (pos1 < pos2)
+				size_t pos = FindNode(selected_nodes.back().c_str(), nodes.name);
+				if (index < pos)
 				{
-					for (size_t i = pos1; i < pos2; ++i)
+					for (size_t i = index; i < pos; ++i)
 						nodes.state[i] = State::SELECTED;
 				}
 				else
 				{
-					for (size_t i = pos1; i >= pos2; --i)
+					for (size_t i = index; i >= pos; --i)
 						nodes.state[i] = State::SELECTED;
 				}
 			}
@@ -796,17 +757,17 @@ bool Assets::DrawRightClick()
 
 		if (ImGui::MenuItem("Cut", "Ctrl+X", false, !selected_nodes.empty())) //cut
 		{
-			//if (!aux_nodes.empty())
-			//{
-			//	for (AssetNode* aux : aux_nodes)
-			//		aux->cut = false;
-			//}
-			//aux_nodes = selected_nodes;
-			//is_cut = true;
-			//is_copy = false;
+			if (!aux_nodes.empty())
+			{
+				for (std::string aux : aux_nodes)
+					SetState(aux, State::IDLE);
+			}
+			aux_nodes = selected_nodes;
+			is_cut = true;
+			is_copy = false;
 
-			//for (AssetNode* aux : aux_nodes)
-			//	aux->cut = true;
+			for (std::string aux : aux_nodes)
+				SetState(aux, State::CUT);
 		}
 		if (ImGui::MenuItem("Copy", "Ctrl+C", false, !selected_nodes.empty())) //copy
 		{
@@ -842,9 +803,7 @@ bool Assets::DrawRightClick()
 		if (ImGui::MenuItem("Rename", NULL, false, selected_nodes.size() == 1)) //rename
 		{
 			is_rename_flag = true;
-
-			size_t index = GetNode(selected_nodes.front());
-			nodes.state[index] = State::RENAME;
+			SetState(selected_nodes[0], State::RENAME);
 		}
 
 		if (ImGui::MenuItem("Delete", "Supr", false, !selected_nodes.empty())) //delete
@@ -949,121 +908,135 @@ void Assets::UpdateAssets() //***put the check inside ModuleInput.cpp as a SDL_E
 	}
 }
 
-//void Assets::DrawPath()
-//{
-//	std::vector<AssetNode*> parents = GetParents(*current_folder);
-//	std::string path, aux_path;
-//	int count = 0, position = 0;
-//
-//	// path
-//	for (int i = parents.size() - 1; i >= 0; --i)
-//		path += parents[i]->name + " > ";
-//	path += current_folder->name;
-//	aux_path = path;
-//
-//	// check size and get count of parents not shown
-//	float size = ImGui::CalcTextSize(path.c_str()).x + 44;
-//	float max_size = ImGui::GetWindowWidth() + ImGui::CalcTextSize("<< ").x;
-//	if (size > max_size)
-//	{
-//		int offset = int((size - max_size) / 7);
-//		path = path.substr(offset);
-//		position = path.find_first_of(">");
-//
-//		int found = 0;
-//		if (position != -1)
-//		{
-//			while (found - offset != position)
-//			{
-//				found = aux_path.find(">", found + 1);
-//				count++;
-//			}
-//		}
-//		else
-//			count = parents.size();
-//
-//		// '<<' Button
-//		ImVec4 color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
-//		float pos = ImGui::GetCursorPosX();
-//		ImGui::Text("<<");
-//
-//		bool hovered = false;
-//		if (ImGui::IsItemHovered())
-//			color = ImVec4(0.2f, 0.6f, 1.0f, 1.0f);
-//
-//		if (ImGui::IsItemClicked())
-//			ImGui::OpenPopup("<<");
-//
-//		if (ImGui::BeginPopup("<<")) //popup
-//		{
-//			for (int i = parents.size() - 1, size = parents.size() - count; i >= size; --i)
-//			{
-//				if (ImGui::MenuItem(parents[i]->name.c_str()))
-//					current_folder = parents[i];
-//			}
-//			ImGui::EndPopup();
-//		}
-//
-//		float pos2 = ImGui::GetCursorPosX();
-//		ImGui::SetCursorPosX(pos);
-//		ImGui::TextColored(color, "<<");
-//		ImGui::SetCursorPosX(pos2);
-//	}
-//
-//	// Buttons
-//	if (position != -1)
-//	{
-//		static uint selected = 0;
-//		for (int i = parents.size() - count - 1; i >= 0; --i)
-//		{
-//			ImVec4 color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
-//			ImVec4 color2 = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
-//
-//			// Parent Button
-//			float pos = ImGui::GetCursorPosX();
-//			ImGui::Text(parents[i]->name.c_str());
-//
-//			if (ImGui::IsItemHovered())
-//				color = ImVec4(0.2f, 0.6f, 1.0f, 1.0f);
-//			if (ImGui::IsItemClicked())
-//				current_folder = parents[i];
-//
-//			float pos2 = ImGui::GetCursorPosX();
-//			ImGui::SetCursorPosX(pos);
-//			ImGui::TextColored(color, parents[i]->name.c_str());
-//			ImGui::SetCursorPosX(pos2);
-//
-//			// '>' Button
-//			pos = ImGui::GetCursorPosX();
-//			ImGui::Text(">");
-//
-//			if (ImGui::IsItemHovered())
-//				color2 = ImVec4(0.2f, 0.6f, 1.0f, 1.0f);
-//
-//			if (ImGui::IsItemClicked())
-//			{
-//				ImGui::OpenPopup(">");
-//				selected = i;
-//			}
-//
-//			if (i == selected && ImGui::BeginPopup(">")) //popup
-//			{
-//				for (AssetNode* child : parents[i]->childs)
-//				{
-//					if (child->type == ResourceType::FOLDER &&
-//						ImGui::MenuItem(child->name.c_str(), NULL, child == current_folder || FindNode(*child, parents) != -1))
-//						current_folder = child;
-//				}
-//				ImGui::EndPopup();
-//			}
-//
-//			pos2 = ImGui::GetCursorPosX();
-//			ImGui::SetCursorPosX(pos);
-//			ImGui::TextColored(color2, ">");
-//			ImGui::SetCursorPosX(pos2);
-//		}
-//	}
-//}
+void Assets::DrawPath()
+{
+	// Main Variables
+	std::vector<std::string> parents = GetParents(current_folder);
+	std::string path, aux_path;
+	int count = 0, position = 0;
+
+	// Path
+	for (int i = parents.size() - 1; i >= 0; --i)
+		path += parents[i] + " > ";
+	path += nodes.name[current_folder];
+	aux_path = path;
+
+	// '<<' Button
+	float size = ImGui::CalcTextSize(path.c_str()).x + 44;
+	float max_size = ImGui::GetWindowWidth() + ImGui::CalcTextSize("<< ").x;
+	if (size > max_size) // Check size and get count of parents not shown
+	{
+		int offset = int((size - max_size) / 7);
+		path = path.substr(offset);
+		position = path.find_first_of(">");
+
+		int found = 0;
+		if (position != -1)
+		{
+			while (found - offset != position)
+			{
+				found = aux_path.find(">", found + 1);
+				count++;
+			}
+		}
+		else
+			count = parents.size();
+
+		// '<<' Button Text
+		ImVec4 color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+		float pos = ImGui::GetCursorPosX();
+		ImGui::Text("<<");
+
+		bool hovered = false;
+		if (ImGui::IsItemHovered())
+			color = ImVec4(0.2f, 0.6f, 1.0f, 1.0f);
+
+		if (ImGui::IsItemClicked())
+			ImGui::OpenPopup("<<");
+
+		if (ImGui::BeginPopup("<<")) // Popup
+		{
+			for (int i = parents.size() - 1, size = parents.size() - count; i >= size; --i)
+			{
+				if (ImGui::MenuItem(parents[i].c_str()))
+				{
+					int index = FindNode(parents[i].c_str(), nodes.name);
+					if (index != -1)
+						current_folder = index;
+				}
+			}
+			ImGui::EndPopup();
+		}
+
+		float pos2 = ImGui::GetCursorPosX();
+		ImGui::SetCursorPosX(pos);
+		ImGui::TextColored(color, "<<");
+		ImGui::SetCursorPosX(pos2);
+	}
+
+	// Path Buttons
+	if (position != -1)
+	{
+		static uint selected = 0;
+		for (int i = parents.size() - count - 1; i >= 0; --i)
+		{
+			ImVec4 color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+			ImVec4 color2 = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+
+			// Parent Button
+			float pos = ImGui::GetCursorPosX();
+			ImGui::Text(parents[i].c_str());
+
+			if (ImGui::IsItemHovered())
+				color = ImVec4(0.2f, 0.6f, 1.0f, 1.0f);
+			if (ImGui::IsItemClicked())
+			{
+				int index = FindNode(parents[i].c_str(), nodes.name);
+				if (index != -1)
+					current_folder = index;
+			}
+
+			float pos2 = ImGui::GetCursorPosX();
+			ImGui::SetCursorPosX(pos);
+			ImGui::TextColored(color, parents[i].c_str());
+			ImGui::SetCursorPosX(pos2);
+
+			// '>' Button
+			pos = ImGui::GetCursorPosX();
+			ImGui::Text(">");
+
+			if (ImGui::IsItemHovered())
+				color2 = ImVec4(0.2f, 0.6f, 1.0f, 1.0f);
+
+			if (ImGui::IsItemClicked())
+			{
+				ImGui::OpenPopup(">");
+				selected = i;
+			}
+
+			if (i == selected && ImGui::BeginPopup(">")) //popup
+			{
+				int index = FindNode(parents[i].c_str(), nodes.name);
+				if (index != -1)
+				{
+					for (std::string child : nodes.childs[index])
+					{
+						int child_index = FindNode(child.c_str(), nodes.name);
+						if (child_index != -1 && nodes.type[child_index] == ResourceType::FOLDER &&
+							ImGui::MenuItem(child.c_str(), NULL, child_index == current_folder || FindNode(child.c_str(), parents) != -1))
+							current_folder = child_index;
+					}
+				}
+				ImGui::EndPopup();
+			}
+
+			pos2 = ImGui::GetCursorPosX();
+			ImGui::SetCursorPosX(pos);
+			ImGui::TextColored(color2, ">");
+			ImGui::SetCursorPosX(pos2);
+		}
+	}
+}
 
 // --- NODES ---
 size_t Assets::CreateNode(std::string name_, size_t parent_index)
@@ -1137,29 +1110,29 @@ size_t Assets::GetNode(const std::string path) const
 	return 0;
 }
 
-//std::vector<AssetNode*> Assets::GetParents(AssetNode& node) const
-//{
-//	std::vector<AssetNode*> parents;
-//	AssetNode* aux_node = &node;
-//	while (aux_node->parent != nullptr)
-//	{
-//		parents.push_back(aux_node->parent);
-//		aux_node = aux_node->parent;
-//	}
-//	return parents;
-//}
+std::vector<std::string> Assets::GetParents(size_t index) const
+{
+	std::vector<std::string> parents;
+	size_t aux_index = index;
+	while (aux_index != -1 && nodes.parent[aux_index] != "")
+	{
+		parents.push_back(nodes.parent[aux_index]);
+		aux_index = FindNode(nodes.parent[aux_index].c_str(), nodes.name);			
+	}
+	return parents;
+}
 
-//uint Assets::GetNumParents(AssetNode& node) const
-//{
-//	uint count = 0;
-//	AssetNode* aux_node = &node;
-//	while (aux_node->parent != nullptr)
-//	{
-//		count++;
-//		aux_node = aux_node->parent;
-//	}
-//	return count;
-//}
+uint Assets::GetNumParents(size_t index) const
+{
+	uint count = 0;
+	size_t aux_index = index;
+	while (aux_index != -1 && nodes.parent[aux_index] != "")
+	{
+		count++;
+		aux_index = FindNode(nodes.parent[aux_index].c_str(), nodes.name);
+	}
+	return count;
+}
 
 std::string Assets::GetNameWithCount(const std::string name) const
 {
@@ -1240,7 +1213,7 @@ ImVec4 Assets::GetIconColor(const ResourceType type) const
 
 int Assets::FindNode(const char* name, std::vector<std::string> list) const
 {
-	for (uint i = 0; i < list.size(); ++i)
+	for (size_t i = 0, size = list.size(); i < size; ++i)
 	{
 		if (list[i] == name)
 			return i;
@@ -1257,6 +1230,13 @@ void Assets::UpdatePath(size_t index, const std::string path)
 		for (std::string child : nodes.childs[index])
 			UpdatePath(GetNode(child), nodes.path[index]);
 	}
+}
+
+void Assets::SetState(std::string name, State state)
+{
+	int pos = FindNode(name.c_str(), nodes.name);
+	if (pos != -1)
+		nodes.state[pos] = state;
 }
 
 void Assets::SelectAll()
@@ -1331,6 +1311,78 @@ void Assets::DockSpace()
 	else
 		ImGui::DockSpace(dock_space, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_NoSplit);
 }
+
+void Assets::Scroll(ImVec2 pos)
+{
+	ImVec2 scroll = ImGui::GetCurrentWindow()->Scroll;
+	ImVec2 size = ImVec2(ImGui::GetWindowContentRegionMax().x, 25);
+
+	if (ImGui::GetCursorPosY() < scroll.y)
+		ImGui::SetScrollHereY();
+
+	ImGui::SetCursorPos(ImVec2(pos.x + scroll.x - 4, pos.y + scroll.y)); // Top Area
+	ImGui::Dummy(size);
+	if (!is_arrow_hover && ImGui::BeginDragDropTarget())
+	{
+		if (scroll.y >= 1.0f)
+			ImGui::GetCurrentWindow()->Scroll.y -= 1.0f;
+		ImGui::EndDragDropTarget();
+	}
+
+	ImGui::SetCursorPos(ImVec2(pos.x + scroll.x - 4, ImGui::GetWindowHeight() + scroll.y - 25.0f)); //Bottom Area
+	ImGui::Dummy(size);
+	if (!is_arrow_hover && ImGui::BeginDragDropTarget())
+	{
+		if (scroll.y < ImGui::GetCurrentWindow()->ScrollMax.y)
+			ImGui::GetCurrentWindow()->Scroll.y += 1.0f;
+		ImGui::EndDragDropTarget();
+	}
+
+	if (ImGui::GetScrollY() > ImGui::GetScrollMaxY())
+		ImGui::SetScrollX(ImGui::GetScrollMaxY());
+}
+
+void Assets::DeletePopup()
+{
+	if (is_delete && is_delete_popup)
+		ImGui::OpenPopup("Confirm Delete");
+
+	if (ImGui::BeginPopupModal("Confirm Delete", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove))
+	{
+		ImGui::Text(ICON_WARNING);
+		ImGui::SameLine();
+		ImGui::Text("Are you sure you want to delete?");
+		ImGui::Text("This action cannot be undone");
+		ImGui::NewLine();
+
+		static bool check = false;
+		if (ImGui::Checkbox("Do not show this message again", &check))
+			is_delete_popup = !check;
+		ImGui::NewLine();
+
+		float pos = ImGui::GetCursorPosX();
+		ImVec2 size = ImGui::GetContentRegionAvail();
+		if (ImGui::Button("Delete", ImVec2(size.x / 2, 22)))
+		{
+			is_delete = false;
+			//DeleteNodes(selected_nodes);
+			selected_nodes.clear();
+			ImGui::CloseCurrentPopup();
+		}
+		ImGui::SameLine();
+
+		ImGui::SetCursorPosX(pos + ImGui::GetItemRectSize().x + 1);
+		pos = ImGui::GetCursorPosX();
+		if (ImGui::Button("Cancel", ImVec2(size.x / 2, 22)))
+		{
+			is_delete = false;
+			ImGui::CloseCurrentPopup();
+		}
+
+		ImGui::EndPopup();
+	}
+}
+
 
 //void Assets::ImportAsset(const PathNode& node)
 //{

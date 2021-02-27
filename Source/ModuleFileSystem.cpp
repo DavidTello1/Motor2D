@@ -45,7 +45,8 @@ ModuleFileSystem::ModuleFileSystem(const char* game_path) : Module("FileSystem",
 		LIBRARY_ANIMATION_FOLDER,
 		LIBRARY_TILEMAP_FOLDER,
 		LIBRARY_AUDIO_FOLDER,
-		LIBRARY_SCRIPT_FOLDER
+		LIBRARY_SCRIPT_FOLDER,
+		LIBRARY_SHADER_FOLDER
 	};
 
 	for (uint i = 0; i < sizeof(dirs) / sizeof(const char*); ++i)
@@ -324,13 +325,20 @@ AssetNode ModuleFileSystem::GetAllFiles(const char* directory, std::vector<std::
 	if (Exists(directory)) //check if directory exists
 	{
 		// Create AssetNode and initialize
-		std::string name = GetFileName(directory);
-		if (name == "")
-			name = directory;
-
 		ResourceType type = GetType(directory);
 		std::vector<std::string> empty_childs;
-		size_t index = nodes.Add(directory, name, type, empty_childs);
+
+		std::string parent = directory;
+		parent = parent.substr(0, parent.find_last_of("/"));
+		parent = parent.substr(parent.find_last_of("/") + 1);
+
+		std::string name = GetFileName(directory);
+		if (name == "")
+		{
+			name = directory;
+			parent = "";
+		}
+		size_t index = nodes.Add(directory, name, type, empty_childs, parent);
 
 		// Get Folder Content
 		std::vector<std::string> file_list, dir_list;
@@ -343,9 +351,12 @@ AssetNode ModuleFileSystem::GetAllFiles(const char* directory, std::vector<std::
 			AssetNode child = GetAllFiles(str.c_str(), filter_ext, ignore_ext);
 
 			for (size_t i = 0, size = child.name.size(); i < size; ++i)
-				nodes.Add(child.path[i], child.name[i], child.type[i], child.childs[i], nodes.name[index]);
-
-			nodes.childs[index].insert(nodes.childs[index].end(), child.name.begin(), child.name.end());
+			{
+				nodes.Add(child.path[i], child.name[i], child.type[i], child.childs[i], child.parent[i]);
+				
+				if (child.parent[i] == nodes.name[index])
+					nodes.childs[index].push_back(child.name[i]);
+			}
 		}
 
 		//Adding all child files

@@ -78,9 +78,10 @@ typedef unsigned long long UID;
 #define LIBRARY_TEXTURE_FOLDER "Library/Textures/"
 #define LIBRARY_MATERIAL_FOLDER "Library/Materials/"
 #define LIBRARY_ANIMATION_FOLDER "Library/Animations/"
-#define LIBRARY_AUDIO_FOLDER "Library/Audio/"
+#define LIBRARY_AUDIO_FOLDER "Library/Audios/"
 #define LIBRARY_TILEMAP_FOLDER "Library/Tilemaps/"
 #define LIBRARY_SCRIPT_FOLDER "Library/Scripts/"
+#define LIBRARY_SHADER_FOLDER "Library/Shaders/"
 
 #define EXTENSION_FOLDER ""
 #define EXTENSION_SCENE ".dvss"

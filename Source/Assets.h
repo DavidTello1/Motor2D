@@ -34,19 +34,17 @@ public:
 private:
 	// --- MAIN HELPERS ---
 	void HandleSelection(size_t index); //selection states
-
 	bool DrawRightClick();
 	void UpdateAssets(); //update files (called only on return focus)
-	//void DrawPath(); //draw path with links
+	void DrawPath(); //draw path with links
 
 	// --- NODES ---
 	size_t CreateNode(std::string name = "", size_t parent_index = 0);
 	void DeleteNodes(std::vector<std::string> names_list);
 
 	size_t GetNode(const std::string name) const; //get node from name
-
-	//std::vector<AssetNode*> GetParents(AssetNode& node) const; //get all parents until root
-	//uint GetNumParents(AssetNode& node) const; //get number of parents
+	std::vector<std::string> GetParents(size_t index) const; //get all parents until root
+	uint GetNumParents(size_t index) const; //get number of parents
 	std::string GetNameWithCount(const std::string name) const; //get name with count
 	std::string GetIconList(const ResourceType type) const; //get icon for list view mode
 	ImVec4 GetIconColor(const ResourceType type) const; //get icon color for list view mode
@@ -55,6 +53,7 @@ private:
 	int FindNode(const char* name, std::vector<std::string> list) const; //get node pos in list (returns -1 if not found)
 	void UpdatePath(size_t index, const std::string path); //update path
 
+	void SetState(std::string name, State state);
 	void SelectAll();
 	void UnSelectAll();
 	//void Cut(AssetNode& node, AssetNode& parent) const; //paste cut nodes
@@ -62,6 +61,8 @@ private:
 	
 	// --- OTHERS ---
 	void DockSpace();
+	void Scroll(ImVec2 pos);
+	void DeletePopup();
 
 public:
 	static const uint default_width = 1280;
@@ -75,6 +76,7 @@ private:
 	std::vector<std::string> selected_nodes;
 	std::vector<std::string> aux_nodes; //used for cut and copy
 
+	AssetNode current_list;
 	size_t current_folder;
 
 	bool is_delete_popup = true; //used for showing popup delete

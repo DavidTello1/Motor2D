@@ -76,6 +76,7 @@ bool ModuleResources::ImportFromAssets(const char* path, UID uid, bool save_meta
 	case ResourceType::TILEMAP:		break;
 	case ResourceType::AUDIO:		break;
 	case ResourceType::SCRIPT:		break;
+	case ResourceType::SHADER:		break;
 	}
 
 	LOG("Importing of [%s] FAILED", path, 'e');
