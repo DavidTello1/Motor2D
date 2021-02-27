@@ -1221,7 +1221,7 @@ int Assets::FindNode(const char* name, std::vector<std::string> list) const
 	return -1;
 }
 
-void Assets::UpdatePath(size_t index, const std::string path, const std::string parent)
+void Assets::UpdatePath(size_t index, std::string path, std::string parent)
 {
 	nodes.path[index] = std::string(path + ("/") + nodes.name[index]).c_str();
 	nodes.parent[index] = parent;
@@ -1370,7 +1370,7 @@ void Assets::DeletePopup()
 		if (ImGui::Button("Delete", ImVec2(size.x / 2, 22)))
 		{
 			is_delete = false;
-			//DeleteNodes(selected_nodes);
+			DeleteNodes(selected_nodes);
 			selected_nodes.clear();
 			ImGui::CloseCurrentPopup();
 		}

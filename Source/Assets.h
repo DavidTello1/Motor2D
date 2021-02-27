@@ -50,7 +50,7 @@ private:
 
 	//bool IsChildOf(const AssetNode& node, AssetNode& child) const; //check if node is child or child of childs of parent
 	int FindNode(const char* name, std::vector<std::string> list) const; //get node pos in list (returns -1 if not found)
-	void UpdatePath(size_t index, const std::string path, const std::string parent); //update path
+	void UpdatePath(size_t index, std::string path, std::string parent); //update path
 
 	void SetState(std::string name, State state);
 	void SelectAll();
