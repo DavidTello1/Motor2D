@@ -48,20 +48,21 @@ private:
 	std::string GetIconList(const ResourceType type) const; //get icon for list view mode
 	ImVec4 GetIconColor(const ResourceType type) const; //get icon color for list view mode
 
-	//bool IsChildOf(const AssetNode& node, AssetNode& child) const; //check if node is child or child of childs of parent
+	bool IsChildOf(const size_t node, const char* child_name) const; //check if node is child or child of childs of parent
 	int FindNode(const char* name, std::vector<std::string> list) const; //get node pos in list (returns -1 if not found)
 	void UpdatePath(size_t index, std::string path, std::string parent); //update path
 
 	void SetState(std::string name, State state);
 	void SelectAll();
 	void UnSelectAll();
-	//void Cut(AssetNode& node, AssetNode& parent) const; //paste cut nodes
-	//void Copy(AssetNode& node, AssetNode& parent); //paste copied nodes
+	void Cut(size_t node, size_t parent); //paste cut nodes
+	void Copy(size_t node, size_t parent); //paste copied nodes
 	
 	// --- INTERNAL ---
 	void DockSpace();
 	void Scroll(ImVec2 pos);
 	void DeletePopup();
+	void Rename(size_t index, ImVec2 pos);
 
 public:
 	static const uint default_width = 1280;
