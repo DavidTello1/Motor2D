@@ -31,7 +31,8 @@ Assets::Assets() : Panel("Assets", ICON_ASSETS, 4)
 	// Get Files
 	std::vector<std::string> ignore_ext;
 	ignore_ext.push_back("meta");
-	current_list = nodes = App->file_system->GetAllFiles("Assets", nullptr, &ignore_ext);
+	nodes = App->file_system->GetAllFiles("Assets", nullptr, &ignore_ext);
+	current_list = nodes.name;
 	current_folder = 0;
 }
 
@@ -197,8 +198,9 @@ void Assets::ChildHierarchy()
 
 	// Scroll
 	Scroll(pos);
-	is_arrow_hover = false;
 
+	is_any_hover = false;
+	is_arrow_hover = false;
 	ImGui::EndChild();
 	ImGui::End();
 }
@@ -244,22 +246,22 @@ void Assets::ChildIcons()
 
 	// --- DRAW ICONS ---
 	int columns = (int)(ImGui::GetContentRegionAvailWidth() / (node_size + 4));
-	//if (filter == ResourceType::UNKNOWN)
-	//	current_list = nodes.childs[current_folder];
-	//else
-		//current_list = nodes;
+	if (filter == ResourceType::UNKNOWN)
+		current_list = nodes.childs[current_folder];
+	else
+		current_list = nodes.name;
 
 	size_t aux_current_folder = current_folder;
-	for (size_t i = 0, size = nodes.childs[current_folder].size(); i < size; ++i)
+	for (size_t i = 0, size = current_list.size(); i < size; ++i)
 	{
 		if (current_folder != aux_current_folder) // Current folder has changed
 			break;
 
 		// Filter
-		int index = FindNode(nodes.childs[current_folder][i].c_str(), nodes.name);
+		int index = FindNode(current_list[i].c_str(), nodes.name);
 		if (index != -1)
 		{
-			if ((filter != ResourceType::UNKNOWN && filter != nodes.type[index]) || !searcher.PassFilter(nodes.name[index].c_str()))
+			if (index == 0 || (filter != ResourceType::UNKNOWN && filter != nodes.type[index]) || !searcher.PassFilter(nodes.name[index].c_str()))
 				continue;
 
 			// Draw
@@ -283,10 +285,10 @@ void Assets::ChildIcons()
 		}
 	}
 
-	//// Unselect nodes when clicking on empty space
-	//if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup | ImGuiHoveredFlags_AllowWhenBlockedByActiveItem) && 
-	//	ImGui::IsMouseClicked(0) && !ImGui::IsAnyItemHovered())
-	//	UnSelectAll();
+	// Unselect nodes when clicking on empty space
+	if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup | ImGuiHoveredFlags_AllowWhenBlockedByActiveItem) && 
+		ImGui::IsMouseClicked(0) && !ImGui::IsAnyItemHovered() && !ImGui::GetIO().KeyCtrl && !ImGui::GetIO().KeyShift && !is_any_hover)
+		UnSelectAll();
 
 	ImGui::End();
 }
@@ -299,7 +301,7 @@ void Assets::DrawHierarchy(size_t index)
 	ImVec2 size = ImVec2(ImGui::GetWindowContentRegionMax().x, 14);
 	ImVec4 color = colors[ImGuiCol_WindowBg];
 	ImVec2 pos = window->DC.CursorPos;
-	ImRect bg(ImVec2(pos.x - 10, pos.y - g.Style.FramePadding.y), ImVec2(pos.x + size.x + ImGui::GetScrollX(), pos.y + size.y + 2));
+	ImRect bg(ImVec2(pos.x - 10, pos.y - g.Style.FramePadding.y), ImVec2(pos.x + size.x + ImGui::GetScrollX(), pos.y + size.y));
 	
 	// Selectable
 	pos = ImGui::GetCursorPos();
@@ -317,27 +319,31 @@ void Assets::DrawHierarchy(size_t index)
 	if (current_folder == index)
 		color = colors[ImGuiCol_ButtonActive];
 
-	//// Drag & Drop
-	//if (ImGui::BeginDragDropTarget() && nodes.type[index] == ResourceType::FOLDER)
-	//{
-	//	color = colors[ImGuiCol_ButtonHovered];
-	//	if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("AssetNode"))
-	//	{
-	//		for (std::string selected_node : selected_nodes)
-	//		{
-	//			if (selected_node != nodes.name[index] && !IsChildOf(*selected_node, node))
-	//				Cut(*selected_node, node);
-	//		}
-	//	}
-	//	ImGui::EndDragDropTarget();
-	//}
+	// Drag & Drop
+	if (ImGui::BeginDragDropTarget() && nodes.type[index] == ResourceType::FOLDER)
+	{
+		color = colors[ImGuiCol_ButtonHovered];
+		if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("AssetNode"))
+		{
+			for (std::string selected_node : selected_nodes)
+			{
+				//if (selected_node != nodes.name[index] && !IsChildOf(selected_node, nodes.name[index]))
+				//	Cut(*selected_node, node);
+			}
+		}
+		ImGui::EndDragDropTarget();
+	}
 
 	// Highlight
 	window->DrawList->AddRectFilled(bg.Min, bg.Max, ImColor(color));
 
 	// Indent
 	ImGui::SameLine();
-	ImGui::SetCursorPosX(pos.x + 14 * GetNumParents(index));
+	float indent = pos.x + 14 * GetNumParents(index);
+	if (nodes.childs[index].empty())
+		indent += 16;
+	ImGui::SetCursorPosX(indent);
+
 
 	// Arrow
 	pos = ImGui::GetCursorPos();
@@ -352,11 +358,11 @@ void Assets::DrawHierarchy(size_t index)
 		if (ImGui::IsItemClicked())
 			nodes.open[index] = !nodes.open[index];
 
-		//if (!nodes.open[index] && ImGui::BeginDragDropTarget() && nodes.type[index] == ResourceType::FOLDER)
-		//{
-		//	nodes.open[index] = true;
-		//	is_arrow_hover = true;
-		//}
+		if (!nodes.open[index] && ImGui::BeginDragDropTarget() && nodes.type[index] == ResourceType::FOLDER)
+		{
+			nodes.open[index] = true;
+			is_arrow_hover = true;
+		}
 		ImGui::SameLine();
 		ImGui::SetCursorPosX(pos.x + 16);
 	}
@@ -656,19 +662,15 @@ void Assets::HandleSelection(size_t index)
 {
 	if (ImGui::IsItemHovered()) // Hover
 	{
+		is_any_hover = true;
 		if (ImGui::IsMouseClicked(0) && nodes.state[index] != State::RENAME) // Left Click
 		{
 			//Show in Resources Panel
 
 			if (ImGui::GetIO().KeyCtrl) // Multiple Selection (Ctrl)
 			{
-				if (selected_nodes.size() > 1)
-				{
-					if (nodes.state[index] == State::SELECTED) 
-						nodes.state[index] = State::IDLE;
-					else
-						nodes.state[index] = State::SELECTED;
-				}
+				if (nodes.state[index] == State::SELECTED)
+					nodes.state[index] = State::IDLE;
 				else
 					nodes.state[index] = State::SELECTED;
 			}

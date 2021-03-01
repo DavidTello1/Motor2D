@@ -71,11 +71,11 @@ public:
 
 private:
 	AssetNode nodes;
-	std::vector<std::string> selected_nodes;
-	std::vector<std::string> aux_nodes; //used for cut and copy
-
-	AssetNode current_list; //used for filters
 	size_t current_folder;
+
+	std::vector<std::string> selected_nodes;
+	std::vector<std::string> current_list; //used for filters
+	std::vector<std::string> aux_nodes; //used for cut and copy
 
 	bool is_delete_popup = true; //used for showing popup delete
 	bool is_engine_focus = true; //used for updating assets
@@ -85,6 +85,7 @@ private:
 	bool is_search = false;
 
 	bool is_arrow_hover = false; //used for drag&drop scroll (HierarchyChild)
+	bool is_any_hover = false; //used for unselecting all when clicking on empty
 	bool is_delete = false;
 	bool is_cut = false;
 	bool is_copy = false;
