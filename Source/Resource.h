@@ -17,7 +17,7 @@ struct ResourceData
 	void Add(const char* assets_path, const char* library_folder, const char* extension, UID id = 0) 
 	{
 		UID uid = id;
-		if (uid == 0 || (!ids.empty() && GetIndex(id) == -1)) {}
+		if (uid == 0 || (!ids.empty() && GetIndexFromID(id) == -1)) {}
 			//uid = GenerateUID()
 
 		ids.push_back(uid);
@@ -34,7 +34,7 @@ struct ResourceData
 		times_loaded.erase(times_loaded.begin() + index);
 	}
 
-	int GetIndex(UID id)
+	int GetIndexFromID(UID id)
 	{
 		for (size_t index = 0, size = ids.size(); index <= size; ++index)
 		{
@@ -43,28 +43,38 @@ struct ResourceData
 		}
 		return -1;
 	}
-};
 
-
-struct ResourceFolder
-{
-	ResourceData data;
-	std::vector<std::vector<UID>> childs;
-
-	//--------------------------
-	void Add(const char* assets_path, const char* library_folder, const char* extension, UID id = 0)
+	int GetIndexFromPath(const char* path)
 	{
-		data.Add(assets_path, library_folder, extension, id);
-
-		std::vector<UID> children;
-		childs.push_back(children);
-	}
-
-	void AddChild(size_t index, UID id)
-	{
-		childs[index].push_back(id);
+		for (size_t index = 0, size = files_assets.size(); index <= size; ++index)
+		{
+			if (path == files_assets[index])
+				return index;
+		}
+		return -1;
 	}
 };
+
+
+//struct ResourceFolder
+//{
+//	ResourceData data;
+//	std::vector<std::vector<UID>> childs;
+//
+//	//--------------------------
+//	void Add(const char* assets_path, const char* library_folder, const char* extension, UID id = 0)
+//	{
+//		data.Add(assets_path, library_folder, extension, id);
+//
+//		std::vector<UID> children;
+//		childs.push_back(children);
+//	}
+//
+//	void AddChild(size_t index, UID id)
+//	{
+//		childs[index].push_back(id);
+//	}
+//};
 
 
 struct ResourceTexture //***maybe have the functions inside a struct

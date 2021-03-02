@@ -12,6 +12,7 @@
 #include "Console.h"
 #include "Hierarchy.h"
 #include "Assets.h"
+#include "Resources.h"
 //#include "Inspector.h"
 //#include "Viewport.h"
 
@@ -74,6 +75,7 @@ bool ModuleEditor::Init(Config* config)
 	panels.push_back(panel_console = new Console());
 	panels.push_back(panel_hierarchy = new Hierarchy());
 	panels.push_back(panel_assets = new Assets());
+	panels.push_back(panel_resources = new Resources());
 	//panels.push_back(panel_inspector = new Inspector());
 	//panels.push_back(panel_viewport = new Viewport());
 
@@ -185,7 +187,7 @@ void ModuleEditor::Load(Config* config)
 // Drawing of the FULL gui (first gets drawn the Menus, then panels)
 void ModuleEditor::Draw()
 {
-	// Draw functions
+	// DockSpace
 	ImGuiViewport* viewport = ImGui::GetMainViewport();
 	ImGui::SetNextWindowPos(ImVec2(viewport->Pos.x, viewport->Pos.y + TOOLBAR_SIZE + MENUBAR_SIZE));
 	ImGui::SetNextWindowSize(ImVec2(viewport->Size.x, viewport->Size.y - TOOLBAR_SIZE - MENUBAR_SIZE));
@@ -205,28 +207,10 @@ void ModuleEditor::Draw()
 	ImGui::End();
 	ImGui::PopStyleVar(3);
 
-	//ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-	//ImGui::SetNextWindowClass(frameWindowClass);
-	//ImGui::Begin("DockSpace", 0, window_flags);
-	//ImGui::PopStyleVar();
-
-	//// DockSpace
-	//ImGuiID dockspace = ImGui::GetID("MainDockSpace");
-	//ImGui::DockSpace(dockspace, ImVec2(0.0f, 0.0f), 0, frameWindowClass);
-
+	// Draw functions
 	DrawMenuBar();
 	DrawAbout();
 	DrawPanels();
-
-	//ImGuiDockNode* node = ImGui::DockBuilderGetNode(dockspace);
-	//if (!node->IsSplitNode())
-	//{
-	//	ImGuiID top, main_space;
-	//	ImGui::DockBuilderSplitNode(dockspace, ImGuiDir_Up, 0.1f, &top, &main_space);
-	//	ImGui::DockBuilderDockWindow(panel_toolbar->GetName(), top);
-	//	ImGui::DockBuilderGetNode(top)->LocalFlags |= ImGuiDockNodeFlags_NoCloseButton | ImGuiDockNodeFlags_NoSplit | ImGuiDockNodeFlags_NoDocking;
-	//}
-	//ImGui::End();
 
 	// Shortcuts
 	Shortcuts();
@@ -358,6 +342,7 @@ void ModuleEditor::DrawMenuBar()
 			ImGui::MenuItem("Console", NULL, &GetPanel(2)->active);
 			ImGui::MenuItem("Hierarchy", NULL, &GetPanel(3)->active);
 			ImGui::MenuItem("Assets", NULL, &GetPanel(4)->active);
+			ImGui::MenuItem("Resources", NULL, &GetPanel(5)->active);
 
 			ImGui::EndMenu();
 		}

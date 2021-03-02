@@ -570,6 +570,11 @@ void Assets::DrawList(std::vector<std::string> current_list)
 	}
 }
 
+void Assets::ImportAsset()
+{
+
+}
+
 // --- MAIN HELPERS ---
 void Assets::HandleSelection(size_t index)
 {
@@ -804,6 +809,11 @@ bool Assets::DrawRightClick()
 			}
 			ImGui::EndMenu();
 		}
+		ImGui::Separator();
+
+		if (ImGui::MenuItem("Import")) //import
+			ImportAsset();
+
 		if (ImGui::MenuItem("Show in Explorer", NULL, nullptr, selected_nodes.size() == 1)) //show in explorer
 		{
 			TCHAR  buffer[4096] = TEXT("");
@@ -1162,7 +1172,7 @@ uint32_t Assets::GetNodeImage(const ResourceType type) const
 {
 	switch (type)
 	{
-	case ResourceType::FOLDER:		return App->resources->textures.texture.buffer[0];
+	case ResourceType::FOLDER:		return App->resources->textures.texture.buffer[1];
 	case ResourceType::SCENE:		return App->resources->textures.texture.buffer[2];
 	case ResourceType::PREFAB:		return App->resources->textures.texture.buffer[3];
 	case ResourceType::TEXTURE:		return App->resources->textures.texture.buffer[4];

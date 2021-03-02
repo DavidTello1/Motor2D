@@ -2,7 +2,7 @@
 #include "Application.h"
 #include "ModuleFileSystem.h"
 
-//#include "ModuleEditor.h"
+#include "ModuleResources.h" //*** for GetResourceType() change it
 #include "AssetNode.h"
 
 #pragma comment( lib, "PhysFS/libx86/physfs.lib" )
@@ -325,7 +325,7 @@ AssetNode ModuleFileSystem::GetAllFiles(const char* directory, std::vector<std::
 	if (Exists(directory)) //check if directory exists
 	{
 		// Create AssetNode and initialize
-		ResourceType type = GetType(directory);
+		ResourceType type = App->resources->GetResourceType(directory);
 		std::vector<std::string> empty_childs;
 
 		std::string parent = directory;

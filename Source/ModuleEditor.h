@@ -12,6 +12,7 @@ class Configuration;
 class Console;
 class Hierarchy;
 class Assets;
+class Resources;
 //class Inspector;
 //class Viewport;
 
@@ -57,8 +58,9 @@ public:
 	Console* panel_console = nullptr;
 	Hierarchy* panel_hierarchy = nullptr;
 	Assets* panel_assets = nullptr;
+	Resources* panel_resources = nullptr;
 	//Inspector* panel_inspector = nullptr;
-	//Viewport* panel_viewport = nullptr;
+	//Viewport* panel_scene = nullptr;
 	//Game* panel_game = nullptr;
 
 	bool is_auto_select = false;

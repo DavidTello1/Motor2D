@@ -27,8 +27,11 @@ public:
 	void DrawIcons(std::vector<std::string> current_list, uint columns);
 	void DrawList(std::vector<std::string> current_list);
 
-	//void ImportAsset(const PathNode& node);
+	void ImportAsset();
 	//Resource* GetSelectedResource();
+
+	//***public for panel resources
+	int FindNode(const char* name, std::vector<std::string> list) const; //get node pos in list (returns -1 if not found)
 
 private:
 	// --- MAIN HELPERS ---
@@ -49,7 +52,6 @@ private:
 	uint32_t GetNodeImage(const ResourceType type) const; //get image texture for icon view mode
 
 	bool IsChildOf(const size_t node, const char* child_name) const; //check if node is child or child of childs of parent
-	int FindNode(const char* name, std::vector<std::string> list) const; //get node pos in list (returns -1 if not found)
 	void UpdatePath(size_t index, std::string path, std::string parent); //update path
 
 	void SetState(std::string name, State state);
@@ -70,11 +72,12 @@ public:
 	static const uint default_pos_x = 0;
 	static const uint default_pos_y = 701;
 
-private:
+	std::vector<std::string> selected_nodes; //public for resources_panel (***change to private once EventSystem is added)
 	AssetNode nodes;
+
+private:
 	size_t current_folder;
 
-	std::vector<std::string> selected_nodes;
 	std::vector<std::string> current_list; //used for filters
 	std::vector<std::string> aux_nodes; //used for cut and copy
 

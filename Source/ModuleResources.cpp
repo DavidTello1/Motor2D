@@ -111,6 +111,24 @@ ResourceType ModuleResources::GetResourceType(const char* path) //***put inside 
 	}
 }
 
+size_t ModuleResources::GetResourceIndex(ResourceType type, const char* path)
+{
+	switch (type)
+	{
+	case ResourceType::FOLDER:		break;
+	case ResourceType::SCENE:		break;
+	case ResourceType::PREFAB:		break;
+	case ResourceType::TEXTURE:		return textures.data.GetIndexFromPath(path);
+	case ResourceType::MATERIAL:	break;
+	case ResourceType::ANIMATION:	break;
+	case ResourceType::TILEMAP:		break;
+	case ResourceType::AUDIO:		break;
+	case ResourceType::SCRIPT:		break;
+	case ResourceType::SHADER:		break;
+	default:						break;
+	}
+}
+
 void ModuleResources::ImportAllAssets(const char* path)
 {
 	std::vector<std::string> ignore_ext;
