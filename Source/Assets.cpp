@@ -423,7 +423,7 @@ void Assets::DrawIcons(std::vector<std::string> current_list, uint columns)
 				ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.5f);
 
 			// Image
-			ImGui::Image((ImTextureID)0, ImVec2((float)icon_size, (float)icon_size), ImVec2(0, 1), ImVec2(1, 0));
+			ImGui::Image((ImTextureID)GetNodeImage(nodes.type[index]), ImVec2((float)icon_size, (float)icon_size), ImVec2(0, 1), ImVec2(1, 0));
 
 			if (nodes.state[index] == State::CUT)
 				ImGui::PopStyleVar();
@@ -1155,6 +1155,25 @@ ImVec4 Assets::GetIconColor(const ResourceType type) const
 	case ResourceType::SHADER:		return ImVec4(1.0f, 1.0f, 1.0f, 1.0f); //
 	case ResourceType::UNKNOWN:		return ImVec4(1.0f, 1.0f, 1.0f, 1.0f); //
 	default:						return ImVec4(1.0f, 1.0f, 1.0f, 1.0f); //
+	}
+}
+
+uint32_t Assets::GetNodeImage(const ResourceType type) const
+{
+	switch (type)
+	{
+	case ResourceType::FOLDER:		return App->resources->textures.texture.buffer[0];
+	case ResourceType::SCENE:		return App->resources->textures.texture.buffer[2];
+	case ResourceType::PREFAB:		return App->resources->textures.texture.buffer[3];
+	case ResourceType::TEXTURE:		return App->resources->textures.texture.buffer[4];
+	case ResourceType::MATERIAL:	return App->resources->textures.texture.buffer[5];
+	case ResourceType::ANIMATION:	return App->resources->textures.texture.buffer[6];
+	case ResourceType::TILEMAP:		return App->resources->textures.texture.buffer[7];
+	case ResourceType::AUDIO:		return App->resources->textures.texture.buffer[8];
+	case ResourceType::SCRIPT:		return App->resources->textures.texture.buffer[9];
+	case ResourceType::SHADER:		return App->resources->textures.texture.buffer[10];
+	case ResourceType::UNKNOWN:		return App->resources->textures.texture.buffer[11];
+	default:						return 0;
 	}
 }
 

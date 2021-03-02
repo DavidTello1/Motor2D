@@ -372,7 +372,14 @@ AssetNode ModuleFileSystem::GetAllFiles(const char* directory, std::vector<std::
 			{
 				std::string str = directory + std::string("/") + file;
 				AssetNode child = GetAllFiles(str.c_str(), filter_ext, ignore_ext);
-				nodes.childs[index] = child.name;
+
+				for (size_t i = 0, size = child.name.size(); i < size; ++i)
+				{
+					nodes.Add(child.path[i], child.name[i], child.type[i], child.childs[i], child.parent[i]);
+
+					if (child.parent[i] == nodes.name[index])
+						nodes.childs[index].push_back(child.name[i]);
+				}
 			}
 		}
 	}

@@ -3,6 +3,8 @@
 #include "Resource.h"
 #include "AssetNode.h"
 
+#define RESERVED_RESOURCES 10 // Icons for Panel Assets
+
 class ModuleResources : public Module
 {
 public:
@@ -20,7 +22,7 @@ public:
 	bool ImportFromExplorer(std::string path, UID uid = 0);
 
 private:
-	void LoadAllAssets(const char* path);
+	void ImportAllAssets(const char* path);
 	bool ImportFromAssets(const char* path, UID uid = 0, bool save_meta = true); // Creates file in /Library and a .meta in /Assets (if bool is true)
 
 	//void CleanMeta(); // Remove .meta files of resources that no longer exist in /Assets

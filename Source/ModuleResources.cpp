@@ -24,8 +24,17 @@ bool ModuleResources::Init(Config* config)
 
 bool ModuleResources::Start(Config* config) 
 {
-	LoadAllAssets("Settings/Icons/Assets"); // Load Engine Assets
-	LoadAllAssets("Assets"); // Load Assets
+	// Import & Load Engine Assets
+	ImportAllAssets("Settings/Icons/Assets");
+	for (size_t index = 0; index < RESERVED_RESOURCES; ++index)
+	{
+		if (textures.data.ids.size() <= index)
+			break;
+		textures.Load(index);
+	}
+
+	// Load Assets
+	ImportAllAssets("Assets");
 
 	return true;
 }
@@ -102,7 +111,7 @@ ResourceType ModuleResources::GetResourceType(const char* path) //***put inside 
 	}
 }
 
-void ModuleResources::LoadAllAssets(const char* path)
+void ModuleResources::ImportAllAssets(const char* path)
 {
 	std::vector<std::string> ignore_ext;
 	ignore_ext.push_back("meta");

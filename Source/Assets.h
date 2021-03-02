@@ -27,7 +27,6 @@ public:
 	void DrawIcons(std::vector<std::string> current_list, uint columns);
 	void DrawList(std::vector<std::string> current_list);
 
-
 	//void ImportAsset(const PathNode& node);
 	//Resource* GetSelectedResource();
 
@@ -47,6 +46,7 @@ private:
 	std::string GetNameWithCount(const std::string name) const; //get name with count
 	std::string GetIconList(const ResourceType type) const; //get icon for list view mode
 	ImVec4 GetIconColor(const ResourceType type) const; //get icon color for list view mode
+	uint32_t GetNodeImage(const ResourceType type) const; //get image texture for icon view mode
 
 	bool IsChildOf(const size_t node, const char* child_name) const; //check if node is child or child of childs of parent
 	int FindNode(const char* name, std::vector<std::string> list) const; //get node pos in list (returns -1 if not found)
