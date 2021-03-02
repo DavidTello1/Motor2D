@@ -26,6 +26,7 @@ public:
 	// Utility functions
 	bool AddPath(const char* path_or_zip);
 	bool Exists(const char* file) const { return PHYSFS_exists(file) != 0; }
+	uint64_t GetLastModTime(const char* path) { return PHYSFS_getLastModTime(path); }
 	void NormalizePath(std::string& full_path) const;
 	void ToLower(std::string& full_path) const;
 
@@ -45,8 +46,7 @@ public:
 	const char* GetReadPaths() const;
 	const char* GetActualPath() const { return PHYSFS_getUserDir(); }
 
-	// Assets
+	// Assets ***MOVE TO MODULE RESOURCES
 	AssetNode GetAllFiles(const char* directory, std::vector<std::string>* filter_ext = nullptr, std::vector<std::string>* ignore_ext = nullptr); //filter if you only want specific extensions or ignore if you want to ignore specific extensions
-	uint64_t GetLastModTime(const char* path) { return PHYSFS_getLastModTime(path); }
 	ResourceType GetType(const char* path) const; //get node type
 };

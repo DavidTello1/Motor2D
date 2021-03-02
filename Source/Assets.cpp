@@ -169,6 +169,11 @@ void Assets::ChildHierarchy()
 	// --- MENU BAR ---
 	if (ImGui::BeginMenuBar())
 	{
+		if (ImGui::MenuItem("Import")) // Import
+		{
+			// Open Explorer to Select File
+			// ImportFromExplorer(selected_file)
+		}
 		if (ImGui::BeginMenu("Filters")) // Filters
 		{
 			if (ImGui::MenuItem("None", NULL, filter == ResourceType::UNKNOWN))			filter = ResourceType::UNKNOWN;
@@ -262,43 +267,17 @@ void Assets::ChildIcons()
 	else
 		current_list = nodes.name;
 
-	//***separate into different branches (only check is_list_view once)
-	size_t aux_current_folder = current_folder;
-	for (size_t i = 0, size = current_list.size(); i < size; ++i)
+	// Draw
+	if (is_list_view) // List View
 	{
-		if (current_folder != aux_current_folder) // Current folder has changed
-			break;
-
-		// Filter
-		int index = FindNode(current_list[i].c_str(), nodes.name);
-		if (index != -1)
-		{
-			if (index == 0 || (filter != ResourceType::UNKNOWN && filter != nodes.type[index]) || !searcher.PassFilter(nodes.name[index].c_str()))
-				continue;
-
-			// Draw
-			if (is_list_view) // List View
-			{
-				ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 2);
-				DrawNodeList(index);
-			}
-			else // Icon View
-			{
-				float pos = ImGui::GetCursorPosX();
-				DrawNodeIcon(index);
-
-				// Columns
-				if (columns > 0 && (i + 1) % columns != 0)
-				{
-					ImGui::SameLine();
-					ImGui::SetCursorPosX(pos + node_size + 5);
-				}
-			}
-		}
+		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 2);
+		DrawList(current_list);
 	}
+	else // Icon View
+		DrawIcons(current_list, columns);
 
 	// Unselect nodes when clicking on empty space
-	if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup | ImGuiHoveredFlags_AllowWhenBlockedByActiveItem) && 
+	if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup | ImGuiHoveredFlags_AllowWhenBlockedByActiveItem) &&
 		ImGui::IsMouseClicked(0) && !ImGui::IsAnyItemHovered() && !ImGui::GetIO().KeyCtrl && !ImGui::GetIO().KeyShift && !is_any_hover)
 		UnSelectAll();
 
@@ -355,7 +334,10 @@ void Assets::DrawHierarchy(size_t index)
 
 	// Indent
 	ImGui::SameLine();
-	float indent = pos.x + 14 * GetNumParents(index);
+	uint num_parents = GetNumParents(index);
+	float indent = pos.x + 15 * num_parents;
+	if (num_parents == 1)
+		indent += 2;
 	if (nodes.childs[index].empty())
 		indent += 16;
 	ImGui::SetCursorPosX(indent);
@@ -397,211 +379,195 @@ void Assets::DrawHierarchy(size_t index)
 	}
 }
 
-void Assets::DrawNodeIcon(size_t index)
+void Assets::DrawIcons(std::vector<std::string> current_list, uint columns)
 {
-	bg_color.w = 0.0f;
-	border_color.w = 0.0f;
-	node_size = icon_size + 25.0f;
-	ImVec2 pos = ImGui::GetCursorPos();
-
-	// Dummy
-	ImGui::Dummy(ImVec2(node_size,node_size));
-
-	// Handle Selection
-	HandleSelection(index);
-
-	// Draw Highlight
-	if (nodes.state[index] != State::RENAME)
+	size_t aux_current_folder = current_folder;
+	for (size_t i = 0, list_size = current_list.size(); i < list_size; ++i)
 	{
-		ImGui::GetWindowDrawList()->AddRectFilled(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), ImColor(bg_color), 3.0f);
-		ImGui::GetWindowDrawList()->AddRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), ImColor(border_color), 3.0f);
-	}
+		if (current_folder != aux_current_folder) // Current folder has changed
+			break;
 
-	// Draw Actual Node
-	ImGui::SetCursorPos(ImVec2(pos.x + (node_size - icon_size) / 2, pos.y));
-	ImGui::BeginGroup();
-	ImGui::SetCursorPosY(pos.y + 5);
-
-	// Transparent Image if node is cut
-	if (nodes.state[index] == State::CUT) 
-		ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.5f);
-
-	// Image
-	ImGui::Image((ImTextureID)0, ImVec2((float)icon_size, (float)icon_size), ImVec2(0, 1), ImVec2(1, 0));
-
-	if (nodes.state[index] == State::CUT)
-		ImGui::PopStyleVar();
-
-	// Stop Rename if Clicked
-	if (ImGui::IsItemClicked() && nodes.state[index] == State::RENAME)
-		nodes.state[index] = State::SELECTED;
-
-	// Text
-	if (nodes.state[index] != State::RENAME)
-	{
-		std::string text = nodes.name[index];
-		uint text_size = (uint)ImGui::CalcTextSize(text.c_str()).x;
-		uint max_size = (uint)(node_size - 7 - ImGui::CalcTextSize("...").x) / 7;
-		ImGui::SetCursorPosX(pos.x + 7);
-		
-		// Get Final Text Displayed
-		if (text_size > node_size - 14)
-			text = text.substr(0, max_size) + "...";
-		else
-			ImGui::SetCursorPosX(pos.x + (node_size - text_size) / 2);
-		ImGui::Text(text.c_str());
-
-		// Show full name (Tooltip)
-		if (ImGui::IsItemHovered() && !ImGui::IsMouseDragging(0))
+		// Filter
+		int index = FindNode(current_list[i].c_str(), nodes.name);
+		if (index != -1)
 		{
-			ImGui::BeginTooltip();
-			ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-			ImGui::TextUnformatted(nodes.name[index].c_str());
-			ImGui::PopTextWrapPos();
-			ImGui::EndTooltip();
+			if (index == 0 || (filter != ResourceType::UNKNOWN && filter != nodes.type[index]) || !searcher.PassFilter(nodes.name[index].c_str()))
+				continue;
+
+			bg_color.w = 0.0f;
+			border_color.w = 0.0f;
+			node_size = icon_size + 25.0f;
+			ImVec2 pos = ImGui::GetCursorPos();
+			float column_pos = pos.x;
+
+			// Dummy
+			ImGui::Dummy(ImVec2(node_size, node_size));
+
+			// Handle Selection
+			HandleSelection(index);
+
+			// Draw Highlight
+			if (nodes.state[index] != State::RENAME)
+			{
+				ImGui::GetWindowDrawList()->AddRectFilled(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), ImColor(bg_color), 3.0f);
+				ImGui::GetWindowDrawList()->AddRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), ImColor(border_color), 3.0f);
+			}
+
+			// Draw Actual Node
+			ImGui::SetCursorPos(ImVec2(pos.x + (node_size - icon_size) / 2, pos.y));
+			ImGui::BeginGroup();
+			ImGui::SetCursorPosY(pos.y + 5);
+
+			// Transparent Image if node is cut
+			if (nodes.state[index] == State::CUT)
+				ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.5f);
+
+			// Image
+			ImGui::Image((ImTextureID)0, ImVec2((float)icon_size, (float)icon_size), ImVec2(0, 1), ImVec2(1, 0));
+
+			if (nodes.state[index] == State::CUT)
+				ImGui::PopStyleVar();
+
+			// Stop Rename if Clicked
+			if (ImGui::IsItemClicked() && nodes.state[index] == State::RENAME)
+				nodes.state[index] = State::SELECTED;
+
+			// Text
+			if (nodes.state[index] != State::RENAME)
+			{
+				std::string text = nodes.name[index];
+				uint text_size = (uint)ImGui::CalcTextSize(text.c_str()).x;
+				uint max_size = (uint)(node_size - 7 - ImGui::CalcTextSize("...").x) / 7;
+				ImGui::SetCursorPosX(pos.x + 7);
+
+				// Get Final Text Displayed
+				if (text_size > node_size - 14)
+					text = text.substr(0, max_size) + "...";
+				else
+					ImGui::SetCursorPosX(pos.x + (node_size - text_size) / 2);
+				ImGui::Text(text.c_str());
+
+				// Show full name (Tooltip)
+				if (ImGui::IsItemHovered() && !ImGui::IsMouseDragging(0))
+				{
+					ImGui::BeginTooltip();
+					ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+					ImGui::TextUnformatted(nodes.name[index].c_str());
+					ImGui::PopTextWrapPos();
+					ImGui::EndTooltip();
+				}
+			}
+			else // Rename
+				Rename(index, pos);
+
+			ImGui::EndGroup();
+
+			// Update Selected Nodes List
+			int position = FindNode(nodes.name[index].c_str(), selected_nodes);
+			if ((nodes.state[index] == State::SELECTED || nodes.state[index] == State::DRAGGING) && position == -1)
+				selected_nodes.push_back(nodes.name[index]);
+			else if (nodes.state[index] != State::SELECTED && nodes.state[index] != State::DRAGGING && position != -1)
+				selected_nodes.erase(selected_nodes.begin() + position);
+
+			// Columns
+			if (columns > 0 && (i + 1) % columns != 0)
+			{
+				ImGui::SameLine();
+				ImGui::SetCursorPosX(column_pos + node_size + 5);
+			}
 		}
 	}
-	else // Rename
-		Rename(index, pos);
-
-	ImGui::EndGroup();
-
-	// Update Selected Nodes List
-	int position = FindNode(nodes.name[index].c_str(), selected_nodes);
-	if ((nodes.state[index] == State::SELECTED || nodes.state[index] == State::DRAGGING) && position == -1)
-		selected_nodes.push_back(nodes.name[index]);
-	else if (nodes.state[index] != State::SELECTED && nodes.state[index] != State::DRAGGING && position != -1)
-		selected_nodes.erase(selected_nodes.begin() + position);
 }
 
-void Assets::DrawNodeList(size_t index)
+void Assets::DrawList(std::vector<std::string> current_list)
 {
-	//ImVec4 text_color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
-	//bg_color.w = 0.0f;
-	//border_color.w = 0.0f;
-	//ImVec2 pos = ImGui::GetCursorPos();
-	//ImVec2 size = ImVec2(ImGui::GetContentRegionAvailWidth(), 20);
-	//bool tooltip = true;
+	size_t aux_current_folder = current_folder;
+	for (size_t i = 0, list_size = current_list.size(); i < list_size; ++i)
+	{
+		if (current_folder != aux_current_folder) // Current folder has changed
+			break;
 
-	//// Dummy
-	//ImGui::Dummy(size);
+		// Filter
+		int index = FindNode(current_list[i].c_str(), nodes.name);
+		if (index != -1)
+		{
+			if (index == 0 || (filter != ResourceType::UNKNOWN && filter != nodes.type[index]) || !searcher.PassFilter(nodes.name[index].c_str()))
+				continue;
 
-	////Drag and Drop
-	//if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_AcceptNoDrawDefaultRect | ImGuiDragDropFlags_SourceAllowNullID)) // Source
-	//{
-	//	ImGui::SetDragDropPayload("AssetNode", &node.name, sizeof(std::string));
+			ImVec4 text_color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+			bg_color.w = 0.0f;
+			border_color.w = 0.0f;
+			ImVec2 pos = ImGui::GetCursorPos();
+			ImVec2 size = ImVec2(ImGui::GetContentRegionAvailWidth(), 20);
+			bool tooltip = true;
 
-	//	if (!selected_nodes.empty()) // Popup text
-	//	{
-	//		if (selected_nodes.size() == 1)
-	//			ImGui::Text(selected_nodes[0]->name.c_str());
-	//		else
-	//			ImGui::Text(std::to_string(selected_nodes.size()).c_str());
-	//	}
-	//	else
-	//		ImGui::Text(node.name.c_str());
+			// Dummy
+			ImGui::Dummy(size);
 
-	//	if (!node.selected && !selected_nodes.empty() && !ImGui::GetIO().KeyCtrl && !ImGui::GetIO().KeyShift) // Selection
-	//		UnSelectAll();
-	//	node.selected = true;
+			// Handle Selection
+			HandleSelection(index);
 
-	//	ImGui::EndDragDropSource();
-	//}
-	//if (ImGui::BeginDragDropTarget() && node.type == ResourceType::FOLDER) // Target
-	//{
-	//	if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("AssetNode"))
-	//	{
-	//		for (AssetNode* selected_node : selected_nodes)
-	//			Cut(*selected_node, node);
-	//	}
-	//	bg_color.w = 0.3f;
-	//	ImGui::EndDragDropTarget();
-	//}
+			// Draw Highlight
+			if (nodes.state[index] != State::RENAME)
+			{
+				ImGui::GetWindowDrawList()->AddRectFilled(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), ImColor(bg_color), 3.0f);
+				ImGui::GetWindowDrawList()->AddRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), ImColor(border_color), 3.0f);
+			}
 
-	//// Handle Selection
-	//HandleSelection(node);
+			// Draw Actual Node
+			ImGui::SetCursorPos(ImVec2(pos.x + (node_size - icon_size) / 2, pos.y));
 
-	//// Draw Highlight
-	//if (!node.rename)
-	//{
-	//	ImGui::GetWindowDrawList()->AddRectFilled(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), ImColor(bg_color), 3.0f);
-	//	ImGui::GetWindowDrawList()->AddRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), ImColor(border_color), 3.0f);
-	//}
+			ImGui::BeginGroup();
+			ImGui::SetCursorPosY(pos.y + 4);
 
-	//// Draw Actual Node
-	//ImGui::SetCursorPos(ImVec2(pos.x + (node_size - icon_size) / 2, pos.y));
+			// Transparent Text if node is cut
+			if (nodes.state[index] == State::CUT)
+				text_color = ImVec4(0.6f, 0.6f, 0.6f, 1.0f);
 
-	//ImGui::BeginGroup();
-	//ImGui::SetCursorPosY(pos.y + 4);
+			if (nodes.state[index] != State::RENAME)
+			{
+				// Text
+				ImVec4 icon_color = GetIconColor(nodes.type[index]);
+				std::string icon = GetIconList(nodes.type[index]);
+				std::string text = nodes.name[index];
+				uint text_size = (uint)ImGui::CalcTextSize(std::string(icon + " " + text).c_str()).x;
+				int max_size = (int)(size.x - 7 - ImGui::CalcTextSize("...").x) / 7;
+				ImGui::SetCursorPosX(pos.x + 7);
 
-	//if (node.cut)
-	//	text_color = ImVec4(0.6f, 0.6f, 0.6f, 1.0f);
+				if (max_size >= 3 && text_size > size.x - 14)
+					text = text.substr(0, max_size) + "...";
+				else if (max_size < 3)
+					text = "...";
+				else
+					tooltip = false;
 
-	//if (!node.rename)
-	//{
-	//	// Text
-	//	ImVec4 icon_color = GetIconColor(node.type);
-	//	std::string icon = GetIconList(node.type);
-	//	std::string text = node.name;
-	//	uint text_size = (uint)ImGui::CalcTextSize(std::string(icon + " " + text).c_str()).x;
-	//	int max_size = (int)(size.x - 7 - ImGui::CalcTextSize("...").x) / 7;
-	//	ImGui::SetCursorPosX(pos.x + 7);
+				ImGui::TextColored(icon_color, icon.c_str());
+				ImGui::SameLine();
+				ImGui::TextColored(text_color, text.c_str());
+			}
+			else // Rename
+				Rename(index, pos);
 
-	//	if (max_size >= 3 && text_size > size.x - 14)
-	//		text = text.substr(0, max_size) + "...";
-	//	else if (max_size < 3)
-	//		text = "...";
-	//	else
-	//		tooltip = false;
+			ImGui::EndGroup();
 
-	//	ImGui::TextColored(icon_color, icon.c_str());
-	//	ImGui::SameLine();
-	//	ImGui::TextColored(text_color, text.c_str());
-	//}
-	//else // Rename
-	//{
-	//	char buffer[128];
-	//	sprintf_s(buffer, 128, "%s", node.name.c_str());
+			// Show full name
+			if (tooltip && ImGui::IsItemHovered() && !ImGui::IsMouseDragging(0))
+			{
+				ImGui::BeginTooltip();
+				ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+				ImGui::TextUnformatted(nodes.name[index].c_str());
+				ImGui::PopTextWrapPos();
+				ImGui::EndTooltip();
+			}
 
-	//	ImGui::SetCursorPosX(pos.x);
-	//	if (ImGui::InputText("##RenameAsset", buffer, IM_ARRAYSIZE(buffer), ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll))
-	//	{
-	//		node.rename = false;
-	//		if (buffer != node.name)
-	//		{
-	//			node.name = GetNameWithCount(buffer);
-	//			std::string new_name = node.path.substr(0, node.path.find_last_of("/") + 1) + node.name;
-	//			MoveFile(node.path.c_str(), new_name.c_str());
-	//			node.path = new_name;
-
-	//			for (AssetNode* child : node.childs)
-	//				UpdatePath(*child, node.path);
-	//		}
-	//	}
-	//	if (ImGui::IsItemClicked() || is_rename_flag)
-	//	{
-	//		is_rename_flag = false;
-	//		ImGui::SetKeyboardFocusHere(-1);
-	//	}
-	//}
-	//ImGui::EndGroup();
-
-	//// Show full name
-	//if (tooltip && ImGui::IsItemHovered() && !ImGui::IsMouseDragging(0))
-	//{
-	//	ImGui::BeginTooltip();
-	//	ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-	//	ImGui::TextUnformatted(node.name.c_str());
-	//	ImGui::PopTextWrapPos();
-	//	ImGui::EndTooltip();
-	//}
-
-	//// Update Selected Nodes List
-	//int position = FindNode(node, selected_nodes);
-	//if (node.selected && position == -1)
-	//	selected_nodes.push_back(&node);
-	//else if (!node.selected && position != -1)
-	//	selected_nodes.erase(selected_nodes.begin() + position);
+			// Update Selected Nodes List
+			int position = FindNode(nodes.name[index].c_str(), selected_nodes);
+			if ((nodes.state[index] == State::SELECTED || nodes.state[index] == State::DRAGGING) && position == -1)
+				selected_nodes.push_back(nodes.name[index]);
+			else if (nodes.state[index] != State::SELECTED && nodes.state[index] != State::DRAGGING && position != -1)
+				selected_nodes.erase(selected_nodes.begin() + position);
+		}
+	}
 }
 
 // --- MAIN HELPERS ---
@@ -1072,9 +1038,9 @@ size_t Assets::CreateNode(std::string name_, size_t parent_index)
 void Assets::DeleteNodes(std::vector<std::string> nodes_list)
 {
 	int index = 0;
-	while (index != -1 && !nodes_list.empty())
+	for (size_t i = 0, size = nodes_list.size(); i < size; ++i)
 	{
-		index = FindNode(nodes_list[0].c_str(), nodes.name);
+		index = FindNode(nodes_list[i].c_str(), nodes.name);
 		if (index != -1)
 		{
 			// Delete node from parent's child list
@@ -1094,10 +1060,8 @@ void Assets::DeleteNodes(std::vector<std::string> nodes_list)
 			if (!nodes.childs[index].empty())
 				DeleteNodes(nodes.childs[index]);
 
-			// Delete node data
 			App->file_system->Remove(nodes.path[index].c_str());
 			nodes.Remove(index);
-			nodes_list.erase(nodes_list.begin());
 		}
 	}
 	nodes_list.clear();

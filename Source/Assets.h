@@ -24,8 +24,8 @@ public:
 	void ChildIcons();
 
 	void DrawHierarchy(size_t index);
-	void DrawNodeIcon(size_t index);
-	void DrawNodeList(size_t index);
+	void DrawIcons(std::vector<std::string> current_list, uint columns);
+	void DrawList(std::vector<std::string> current_list);
 
 
 	//void ImportAsset(const PathNode& node);
