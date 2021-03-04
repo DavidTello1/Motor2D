@@ -1,10 +1,5 @@
 #pragma once
-#include "Globals.h"
-#include "Config.h"
-
-#include "Glew/include/glew.h"
-#include <vector>
-#include <string>
+#include "Application.h"
 
 struct ResourceData
 {
@@ -17,8 +12,8 @@ struct ResourceData
 	void Add(const char* assets_path, const char* library_folder, const char* extension, UID id = 0) 
 	{
 		UID uid = id;
-		if (uid == 0 || (!ids.empty() && GetIndexFromID(id) == -1)) {}
-			//uid = GenerateUID()
+		if (uid == 0 || (!ids.empty() && GetIndexFromID(id) == -1))
+			uid = App->GenerateUID();
 
 		ids.push_back(uid);
 		files_assets.push_back(assets_path);
@@ -36,7 +31,7 @@ struct ResourceData
 
 	int GetIndexFromID(UID id)
 	{
-		for (size_t index = 0, size = ids.size(); index <= size; ++index)
+		for (size_t index = 0, size = ids.size(); index < size; ++index)
 		{
 			if (id == ids[index])
 				return index;
@@ -46,7 +41,7 @@ struct ResourceData
 
 	int GetIndexFromPath(const char* path)
 	{
-		for (size_t index = 0, size = files_assets.size(); index <= size; ++index)
+		for (size_t index = 0, size = files_assets.size(); index < size; ++index)
 		{
 			if (path == files_assets[index])
 				return index;
@@ -105,12 +100,10 @@ struct ResourceTexture //***maybe have the functions inside a struct
 		texture.buffer.push_back(0);
 	}
 
-	bool Create(const char* path, UID uid = 0, bool save_meta = true);
+	bool Create(const char* path, UID uid = 0);
 	void Remove(size_t index);
 
-	bool Import(size_t index) const;
-	void SaveMeta(size_t index) const;
-
+	bool Save() const;
 	bool Load(size_t index);
 	void UnLoad(size_t index);
 };

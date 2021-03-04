@@ -4,7 +4,7 @@
 #include <vector>
 
 class GameObject;
-class Hierarchy;
+class PanelHierarchy;
 //class ModuleResources;
 //class ComponentRenderer;
 //class ComponentMesh;

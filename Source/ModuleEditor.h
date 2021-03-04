@@ -7,12 +7,12 @@
 #define MENUBAR_SIZE 19
 
 class Panel;
-class Toolbar;
-class Configuration;
-class Console;
-class Hierarchy;
-class Assets;
-class Resources;
+class PanelToolbar;
+class PanelConfiguration;
+class PanelConsole;
+class PanelHierarchy;
+class PanelAssets;
+class PanelResources;
 //class Inspector;
 //class Viewport;
 
@@ -53,12 +53,12 @@ private:
 
 public:
 	Panel* focused_panel = nullptr;
-	Toolbar* panel_toolbar = nullptr;
-	Configuration* panel_configuration = nullptr;
-	Console* panel_console = nullptr;
-	Hierarchy* panel_hierarchy = nullptr;
-	Assets* panel_assets = nullptr;
-	Resources* panel_resources = nullptr;
+	PanelToolbar* panel_toolbar = nullptr;
+	PanelConfiguration* panel_configuration = nullptr;
+	PanelConsole* panel_console = nullptr;
+	PanelHierarchy* panel_hierarchy = nullptr;
+	PanelAssets* panel_assets = nullptr;
+	PanelResources* panel_resources = nullptr;
 	//Inspector* panel_inspector = nullptr;
 	//Viewport* panel_scene = nullptr;
 	//Game* panel_game = nullptr;

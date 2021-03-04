@@ -14,7 +14,7 @@ GameObject::GameObject(const char* Name, GameObject* Parent)
 {
 	LOG("Created object", 'd');
 
-	uid = App->random->Int();
+	//uid = App->random->Int();
 	name = Name;
 
 	is_selected = false;
@@ -99,7 +99,7 @@ GameObject::~GameObject()
 //	{
 //		new_component = new ComponentCamera(this);
 //		components.push_back(new_component);
-//		App->resources->LoadResource("Assets/camera_mesh.fbx", Component::Type::Mesh, true, this);
+//		App->resources->LoadResource("PanelAssets/camera_mesh.fbx", Component::Type::Mesh, true, this);
 //		return new_component;
 //	}
 //	return nullptr;

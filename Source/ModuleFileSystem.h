@@ -4,9 +4,6 @@
 #include "PhysFS/include/physfs.h"
 #include <vector>
 
-struct AssetNode;
-enum class ResourceType;
-
 class ModuleFileSystem : public Module
 {
 public:
@@ -45,8 +42,4 @@ public:
 	const char* GetWritePath() const { return PHYSFS_getWriteDir(); }
 	const char* GetReadPaths() const;
 	const char* GetActualPath() const { return PHYSFS_getUserDir(); }
-
-	// Assets ***MOVE TO MODULE RESOURCES
-	AssetNode GetAllFiles(const char* directory, std::vector<std::string>* filter_ext = nullptr, std::vector<std::string>* ignore_ext = nullptr); //filter if you only want specific extensions or ignore if you want to ignore specific extensions
-	ResourceType GetType(const char* path) const; //get node type
 };

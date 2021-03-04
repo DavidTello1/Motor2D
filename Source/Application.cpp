@@ -11,7 +11,7 @@
 #include "Config.h"
 
 #include <windows.h>
-#include "MathGeoLib/include/Algorithm/Random/LCG.h"
+#include <time.h>
 
 #include "mmgr/mmgr.h"
 
@@ -26,7 +26,10 @@ Application::Application()
 	last_fps = -1;
 	capped_ms = 1000 / 60;
 	fps_counter = 0;
-	random = new math::LCG();
+
+	//pcg32_random_t rng1, rng2;
+	pcg32_srandom_r(&rng1, time(NULL), (intptr_t)&rng1);
+	pcg32_srandom_r(&rng2, time(NULL), (intptr_t)&rng2);
 
 	logs.reserve(MAX_LOG_SIZE + 1);
 
@@ -52,7 +55,7 @@ Application::~Application()
 	for (Module* mod : modules)
 		RELEASE(mod);
 	
-	RELEASE(random);
+	//RELEASE(random);
 }
 
 // ---------------------------------------------
@@ -88,7 +91,7 @@ bool Application::Init()
 		if (!App->file_system->Exists("imgui.ini"))
 		{
 			// Save ini file
-			std::string ini = "[Window][DockSpace]\nPos=0,61\nSize=1108,587\nCollapsed=0\n\n[Window][Console]\nPos=0,560\nSize=1400,220\nCollapsed=0\nDockId=0x00000003,0\n\n[Window][Hierarchy]\nPos=0,19\nSize=258,539\nCollapsed=0\nDockId=0x00000004,0\n\n[Window][Debug##Default]\nPos=60,60\nSize=400,400\nCollapsed=0\n\n[Window][Dear ImGui Metrics]\nPos=60,60\nSize=338,239\nCollapsed=0\n\n[Window][Dear ImGui Demo]\nPos=650,20\nSize=550,680\nCollapsed=0\n\n[Window][Configuration]\nPos=360,100\nSize=650,500\nCollapsed=0\n\n[Window][ï„œConsole]\nPos=0,560\nSize=1400,220\nCollapsed=0\n\n[Window][î €Configuration]\nPos=360,100\nSize=650,500\nCollapsed=0\n\n[Window][ïƒ‰Hierarchy]\nPos=0,20\nSize=265,540\nCollapsed=0\n\n[Window][ï„œ Console]\nPos=0,560\nSize=1400,220\nCollapsed=0\n\n[Window][ïƒ‰ Hierarchy]\nPos=0,20\nSize=265,540\nCollapsed=0\n\n[Window][î € Configuration]\nPos=360,100\nSize=650,500\nCollapsed=0\n\n[Window][ï€ Console]\nPos=0,566\nSize=1400,214\nCollapsed=0\nDockId=0x578CAA54,0\n\n[Window][ï€€ Configuration]\nPos=67,90\nSize=650,500\nCollapsed=0\n\n[Window][ï€‚ Hierarchy]\nPos=0,61\nSize=224,393\nCollapsed=0\nDockId=0x00000006,0\n\n[Window][ï€… Assets]\nPos=0,456\nSize=1108,192\nCollapsed=0\nDockId=0x00000002,1\n\n[Window][Assets_Hierarchy]\nPos=0,475\nSize=248,173\nCollapsed=0\nDockId=0x00000009\n\n[Window][Assets_Icons]\nPos=250,475\nSize=858,173\nCollapsed=0\nDockId=0x0000000A\n\n[Window][###Console]\nPos=0,456\nSize=1108,192\nCollapsed=0\nDockId=0x00000002,0\n\n[Window][ï‚ Toolbar]\nPos=57,156\nSize=1152,79\nCollapsed=0\n\n[Window][Toolbar]\nSize=1152,62\nCollapsed=0\nDockId=0x0000000B\n\n[Docking][Data]\nDockSpace     ID=0x006DCF07 Window=0x58EF55FC Pos=0,475 Size=1108,173 Split=X\n  DockNode    ID=0x00000009 Parent=0x006DCF07 SizeRef=248,179 NoTabBar=1 Selected=0x684F8E27\n  DockNode    ID=0x0000000A Parent=0x006DCF07 SizeRef=1134,179 CentralNode=1 NoTabBar=1 Selected=0xB99294EB\nDockSpace     ID=0x578CAA54 Pos=0,0 Size=1152,648 Split=Y\n  DockNode    ID=0x00000001 Parent=0x578CAA54 SizeRef=1400,539 Split=X\n    DockNode  ID=0x00000004 Parent=0x00000001 SizeRef=258,539 Selected=0x788BAA0D\n    DockNode  ID=0x00000005 Parent=0x00000001 SizeRef=1140,539 CentralNode=1\n  DockNode    ID=0x00000003 Parent=0x578CAA54 SizeRef=1400,220 Selected=0xF9BEF62A\nDockSpace     ID=0xC82E6A9B Window=0x9A404470 Pos=0,61 Size=1108,587 Split=Y\n  DockNode    ID=0x00000008 Parent=0xC82E6A9B SizeRef=1152,389 Split=X\n    DockNode  ID=0x00000006 Parent=0x00000008 SizeRef=224,581 Selected=0x18083233\n    DockNode  ID=0x00000007 Parent=0x00000008 SizeRef=926,581 CentralNode=1\n  DockNode    ID=0x00000002 Parent=0xC82E6A9B SizeRef=1152,190 Selected=0x58EF55FC\nDockSpace     ID=0xEC501347 Pos=0,0 Size=1152,648 Split=Y\n  DockNode    ID=0x0000000B Parent=0xEC501347 SizeRef=1152,62 NoCloseButton=1\n  DockNode    ID=0x0000000C Parent=0xEC501347 SizeRef=1152,565 CentralNode=1\n\n";
+			std::string ini = "[Window][DockSpace]\nPos=0,61\nSize=1108,587\nCollapsed=0\n\n[Window][Console]\nPos=0,560\nSize=1400,220\nCollapsed=0\nDockId=0x00000003,0\n\n[Window][Hierarchy]\nPos=0,19\nSize=258,539\nCollapsed=0\nDockId=0x00000004,0\n\n[Window][Debug##Default]\nPos=60,60\nSize=400,400\nCollapsed=0\n\n[Window][Dear ImGui Metrics]\nPos=60,60\nSize=338,239\nCollapsed=0\n\n[Window][Dear ImGui Demo]\nPos=650,20\nSize=550,680\nCollapsed=0\n\n[Window][PanelConfiguration]\nPos=360,100\nSize=650,500\nCollapsed=0\n\n[Window][ï„œConsole]\nPos=0,560\nSize=1400,220\nCollapsed=0\n\n[Window][î €PanelConfiguration]\nPos=360,100\nSize=650,500\nCollapsed=0\n\n[Window][ïƒ‰Hierarchy]\nPos=0,20\nSize=265,540\nCollapsed=0\n\n[Window][ï„œ Console]\nPos=0,560\nSize=1400,220\nCollapsed=0\n\n[Window][ïƒ‰ Hierarchy]\nPos=0,20\nSize=265,540\nCollapsed=0\n\n[Window][î € PanelConfiguration]\nPos=360,100\nSize=650,500\nCollapsed=0\n\n[Window][ï€ Console]\nPos=0,566\nSize=1400,214\nCollapsed=0\nDockId=0x578CAA54,0\n\n[Window][ï€€ PanelConfiguration]\nPos=67,90\nSize=650,500\nCollapsed=0\n\n[Window][ï€‚ Hierarchy]\nPos=0,61\nSize=224,393\nCollapsed=0\nDockId=0x00000006,0\n\n[Window][ï€… Assets]\nPos=0,456\nSize=1108,192\nCollapsed=0\nDockId=0x00000002,1\n\n[Window][Assets_Hierarchy]\nPos=0,475\nSize=248,173\nCollapsed=0\nDockId=0x00000009\n\n[Window][Assets_Icons]\nPos=250,475\nSize=858,173\nCollapsed=0\nDockId=0x0000000A\n\n[Window][###Console]\nPos=0,456\nSize=1108,192\nCollapsed=0\nDockId=0x00000002,0\n\n[Window][ï‚ Toolbar]\nPos=57,156\nSize=1152,79\nCollapsed=0\n\n[Window][Toolbar]\nSize=1152,62\nCollapsed=0\nDockId=0x0000000B\n\n[Docking][Data]\nDockSpace     ID=0x006DCF07 Window=0x58EF55FC Pos=0,475 Size=1108,173 Split=X\n  DockNode    ID=0x00000009 Parent=0x006DCF07 SizeRef=248,179 NoTabBar=1 Selected=0x684F8E27\n  DockNode    ID=0x0000000A Parent=0x006DCF07 SizeRef=1134,179 CentralNode=1 NoTabBar=1 Selected=0xB99294EB\nDockSpace     ID=0x578CAA54 Pos=0,0 Size=1152,648 Split=Y\n  DockNode    ID=0x00000001 Parent=0x578CAA54 SizeRef=1400,539 Split=X\n    DockNode  ID=0x00000004 Parent=0x00000001 SizeRef=258,539 Selected=0x788BAA0D\n    DockNode  ID=0x00000005 Parent=0x00000001 SizeRef=1140,539 CentralNode=1\n  DockNode    ID=0x00000003 Parent=0x578CAA54 SizeRef=1400,220 Selected=0xF9BEF62A\nDockSpace     ID=0xC82E6A9B Window=0x9A404470 Pos=0,61 Size=1108,587 Split=Y\n  DockNode    ID=0x00000008 Parent=0xC82E6A9B SizeRef=1152,389 Split=X\n    DockNode  ID=0x00000006 Parent=0x00000008 SizeRef=224,581 Selected=0x18083233\n    DockNode  ID=0x00000007 Parent=0x00000008 SizeRef=926,581 CentralNode=1\n  DockNode    ID=0x00000002 Parent=0xC82E6A9B SizeRef=1152,190 Selected=0x58EF55FC\nDockSpace     ID=0xEC501347 Pos=0,0 Size=1152,648 Split=Y\n  DockNode    ID=0x0000000B Parent=0xEC501347 SizeRef=1152,62 NoCloseButton=1\n  DockNode    ID=0x0000000C Parent=0xEC501347 SizeRef=1152,565 CentralNode=1\n\n";
 			uint ini_size = 2750;
 			App->file_system->Save("imgui.ini", ini.data(), ini_size);
 
@@ -301,4 +304,15 @@ void Application::ClearLog()
 	logs.clear();
 
 	new_logs = 0;
+}
+
+// ---------------------------------------------
+UID Application::GenerateUID()
+{
+	UID id = 0;
+	uint32_t part1 = pcg32_random_r(&rng1);
+	uint32_t part2 = pcg32_random_r(&rng1);
+
+	id = (UID) part1 << 32 | part2;;
+	return id;
 }

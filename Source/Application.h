@@ -2,7 +2,7 @@
 #include "Globals.h"
 #include "Timer.h"
 
-#include "MathGeoLib/include/MathGeoLibFwd.h"
+#include "PCG/pcg_basic.h"
 #include <string>
 #include <vector>
 
@@ -23,7 +23,6 @@ class ModuleFileSystem;
 class ModuleResources;
 
 class Config;
-class LCG;
 
 class Application
 {
@@ -52,16 +51,13 @@ public:
 	void AddLog(const char* icon, const char* time, const char* message);
 	void ClearLog();
 	std::vector<Log> GetLog() { return logs; }
-	math::LCG& Random() { return *random; }
+	UID GenerateUID();
 
 private:
 	void PrepareUpdate();
 	void FinishUpdate();
 
 public:
-	math::LCG* random = nullptr;
-	uint new_logs;
-
 	ModuleWindow* window;
 	ModuleInput* input;
 	//ModuleSceneBase* scene_base;
@@ -71,6 +67,9 @@ public:
 	ModuleEditor* editor;
 	ModuleFileSystem* file_system;
 	ModuleResources* resources;
+
+	pcg32_random_t rng1, rng2; 
+	uint new_logs;
 
 private:
 	Timer	ms_timer;

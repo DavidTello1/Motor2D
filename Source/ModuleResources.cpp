@@ -2,7 +2,12 @@
 #include "ModuleFileSystem.h"
 #include "ModuleResources.h"
 
+#include "Config.h"
 #include "AssetNode.h"
+#include "Icons.h"
+
+#include "Imgui/imgui.h"
+#include <windows.h>
 
 #include "mmgr/mmgr.h"
 
@@ -74,12 +79,14 @@ bool ModuleResources::ImportFromExplorer(std::string path, UID uid)
 
 bool ModuleResources::ImportFromAssets(const char* path, UID uid, bool save_meta)
 {
+	bool ret = false;
+	ResourceData data;
 	switch (GetResourceType(path))
 	{
-	case ResourceType::FOLDER:		break;
+	case ResourceType::FOLDER:		ret = true; save_meta = false; break;
 	case ResourceType::SCENE:		break;
 	case ResourceType::PREFAB:		break;
-	case ResourceType::TEXTURE:		return textures.Create(path, uid, save_meta);
+	case ResourceType::TEXTURE:		ret = textures.Create(path, uid); data = textures.data; break;
 	case ResourceType::MATERIAL:	break;
 	case ResourceType::ANIMATION:	break;
 	case ResourceType::TILEMAP:		break;
@@ -88,10 +95,123 @@ bool ModuleResources::ImportFromAssets(const char* path, UID uid, bool save_meta
 	case ResourceType::SHADER:		break;
 	}
 
-	LOG("Importing of [%s] FAILED", path, 'e');
-	return false;
+	if (ret == false)
+	{
+		LOG("Importing of [%s] FAILED", path, 'e');
+	}
+	else if (save_meta == true)
+	{
+		SaveMeta(textures.data, data.ids.size() - 1);
+	}
+	return ret;
 }
 
+AssetNode ModuleResources::GetAllFiles(const char* directory, std::vector<std::string>* filter_ext, std::vector<std::string>* ignore_ext)
+{
+	AssetNode nodes;
+
+	if (App->file_system->Exists(directory)) //check if directory exists
+	{
+		// Create AssetNode and initialize
+		ResourceType type = GetResourceType(directory);
+		std::vector<std::string> empty_childs;
+
+		std::string parent = directory;
+		parent = parent.substr(0, parent.find_last_of("/"));
+		parent = parent.substr(parent.find_last_of("/") + 1);
+
+		std::string name = App->file_system->GetFileName(directory);
+		if (name == "")
+		{
+			name = directory;
+			parent = "";
+		}
+		size_t index = nodes.Add(directory, name, type, empty_childs, parent);
+
+		// Get Folder Content
+		std::vector<std::string> file_list, dir_list;
+		App->file_system->GetFolderContent(directory, file_list, dir_list);
+
+		//Adding all child directories
+		for (std::string dir : dir_list)
+		{
+			std::string str = directory + std::string("/") + dir;
+			AssetNode child = GetAllFiles(str.c_str(), filter_ext, ignore_ext);
+
+			for (size_t i = 0, size = child.name.size(); i < size; ++i)
+			{
+				nodes.Add(child.path[i], child.name[i], child.type[i], child.childs[i], child.parent[i]);
+
+				if (child.parent[i] == nodes.name[index])
+					nodes.childs[index].push_back(child.name[i]);
+			}
+		}
+
+		//Adding all child files
+		for (std::string file : file_list)
+		{
+			bool filter = true, discard = false;
+			if (filter_ext != nullptr)
+				filter = App->file_system->CheckExtension(file.c_str(), *filter_ext); //check if file_ext == filter_ext
+			else if (ignore_ext != nullptr)
+				discard = App->file_system->CheckExtension(file.c_str(), *ignore_ext); //check if file_ext == ignore_ext
+
+			if (filter == true && discard == false)
+			{
+				std::string str = directory + std::string("/") + file;
+				AssetNode child = GetAllFiles(str.c_str(), filter_ext, ignore_ext);
+
+				for (size_t i = 0, size = child.name.size(); i < size; ++i)
+				{
+					nodes.Add(child.path[i], child.name[i], child.type[i], child.childs[i], child.parent[i]);
+
+					if (child.parent[i] == nodes.name[index])
+						nodes.childs[index].push_back(child.name[i]);
+				}
+			}
+		}
+	}
+	else
+		LOG("Error retrieving files", 'e');
+
+	return nodes;
+}
+
+ResourceType ModuleResources::GetType(const char* path) const
+{
+	std::string extension = App->file_system->GetExtension(path);
+
+	if		(extension == EXTENSION_FOLDER)		return ResourceType::FOLDER;
+	else if (extension == EXTENSION_SCENE)		return ResourceType::SCENE;
+	else if (extension == EXTENSION_PREFAB)		return ResourceType::PREFAB;
+	else if (extension == EXTENSION_TEXTURE)	return ResourceType::TEXTURE;
+	else if (extension == EXTENSION_MATERIAL)	return ResourceType::MATERIAL;
+	else if (extension == EXTENSION_ANIMATION)	return ResourceType::ANIMATION;
+	else if (extension == EXTENSION_TILEMAP)	return ResourceType::TILEMAP;
+	else if (extension == EXTENSION_AUDIO)		return ResourceType::AUDIO;
+	else if (extension == EXTENSION_SCRIPT)		return ResourceType::SCRIPT;
+	else if (extension == EXTENSION_SHADER)		return ResourceType::SHADER;
+	else										return ResourceType::UNKNOWN;
+}
+
+void ModuleResources::SaveMeta(ResourceData data, size_t index) const
+{
+	// Create Config file
+	Config config;
+	config.AddUID("ID", data.ids[index]);
+	config.AddString("AssetsFile", data.files_assets[index].c_str());
+	config.AddString("LibraryFile", data.files_library[index].c_str());
+	config.AddDouble("Date", App->file_system->GetLastModTime(data.files_assets[index].c_str()));
+
+	// Save as .meta file
+	char* buffer = nullptr;
+	uint size = config.Save(&buffer, "meta file");
+	if (size > 0)
+	{
+		std::string path = data.files_assets[index] + ".meta";
+		App->file_system->Save(path.c_str(), buffer, size);
+	}
+}
 
 ResourceType ModuleResources::GetResourceType(const char* path) //***put inside ImportResource() to avoid unnecessary branching
 {
@@ -127,6 +247,7 @@ size_t ModuleResources::GetResourceIndex(ResourceType type, const char* path)
 	case ResourceType::SHADER:		break;
 	default:						break;
 	}
+	return 0;
 }
 
 void ModuleResources::ImportAllAssets(const char* path)
@@ -135,7 +256,7 @@ void ModuleResources::ImportAllAssets(const char* path)
 	ignore_ext.push_back("meta");
 
 	// Get All Files
-	AssetNode assets = App->file_system->GetAllFiles(path, nullptr, &ignore_ext);
+	AssetNode assets = GetAllFiles(path, nullptr, &ignore_ext);
 
 	for (size_t index = 0, size = assets.name.size(); index < size; ++index)
 	{

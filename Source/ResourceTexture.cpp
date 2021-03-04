@@ -1,21 +1,16 @@
 #include "Resource.h"
-
-#include "Application.h"
 #include "ModuleFileSystem.h"
 
 #define STB_IMAGE_IMPLEMENTATION    
 #include "stb_image.h"
+#include "Glew/include/glew.h"
 
 #include "mmgr/mmgr.h"
 
-bool ResourceTexture::Create(const char* path, UID uid, bool save_meta)
+bool ResourceTexture::Create(const char* path, UID uid)
 {
-	UID id = uid;
-	size_t index = data.files_library.size();
-	Add(path, LIBRARY_TEXTURE_FOLDER, EXTENSION_TEXTURE, uid); //initialize data
-
-	if (save_meta)
-		SaveMeta(index);
+	Add(path, LIBRARY_TEXTURE_FOLDER, EXTENSION_TEXTURE, uid); // Initialize Data
+	Save(); // Save Library File
 
 	return true;
 }
@@ -29,28 +24,11 @@ void ResourceTexture::Remove(size_t index)
 	texture.height.erase(texture.height.begin() + index);
 }
 
-bool ResourceTexture::Import(size_t index) const
+bool ResourceTexture::Save() const
 {
+	//App->file_system->Save(data.files_library.back().c_str(), this, sizeof(ResourceTexture)); //***CHANGE TO STB SAVEFILE
+
 	return true;
-}
-
-void ResourceTexture::SaveMeta(size_t index) const
-{
-	// Create Config file
-	Config config;
-	config.AddUID("ID", data.ids[index]);
-	config.AddString("AssetsFile", data.files_assets[index].c_str());
-	config.AddString("LibraryFile", data.files_library[index].c_str());
-	config.AddDouble("Date", App->file_system->GetLastModTime(data.files_assets[index].c_str()));
-
-	// Save as .meta file
-	char* buffer = nullptr;
-	uint size = config.Save(&buffer, "meta file");
-	if (size > 0)
-	{
-		std::string path = data.files_assets[index] + ".meta";
-		App->file_system->Save(path.c_str(), buffer, size);
-	}
 }
 
 bool ResourceTexture::Load(size_t index)

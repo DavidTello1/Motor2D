@@ -7,12 +7,12 @@
 //#include "ModuleScene.h"
 #include "Config.h"
 
-#include "Toolbar.h"
-#include "Configuration.h"
-#include "Console.h"
-#include "Hierarchy.h"
-#include "Assets.h"
-#include "Resources.h"
+#include "PanelToolbar.h"
+#include "PanelConfiguration.h"
+#include "PanelConsole.h"
+#include "PanelHierarchy.h"
+#include "PanelAssets.h"
+#include "PanelResources.h"
 //#include "Inspector.h"
 //#include "Viewport.h"
 
@@ -70,12 +70,12 @@ bool ModuleEditor::Init(Config* config)
 	ImGui::StyleColorsNew();
 
 	// Create panels
-	panels.push_back(panel_toolbar = new Toolbar());
-	panels.push_back(panel_configuration = new Configuration());
-	panels.push_back(panel_console = new Console());
-	panels.push_back(panel_hierarchy = new Hierarchy());
-	panels.push_back(panel_assets = new Assets());
-	panels.push_back(panel_resources = new Resources());
+	panels.push_back(panel_toolbar = new PanelToolbar());
+	panels.push_back(panel_configuration = new PanelConfiguration());
+	panels.push_back(panel_console = new PanelConsole());
+	panels.push_back(panel_hierarchy = new PanelHierarchy());
+	panels.push_back(panel_assets = new PanelAssets());
+	panels.push_back(panel_resources = new PanelResources());
 	//panels.push_back(panel_inspector = new Inspector());
 	//panels.push_back(panel_viewport = new Viewport());
 
