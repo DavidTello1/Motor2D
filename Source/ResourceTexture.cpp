@@ -17,6 +17,7 @@ bool ResourceTexture::Create(const char* path, UID uid)
 
 void ResourceTexture::Remove(size_t index)
 {
+	UnLoad(index);
 	data.Remove(index);
 
 	texture.buffer.erase(texture.buffer.begin() + index);

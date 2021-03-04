@@ -417,7 +417,7 @@ void ModuleEditor::DrawPanels()
 
 				ImGui::End();
 			}
- 			else if (panels[i]->GetName() == "Assets") // Assets
+ 			else if (panels[i]->GetName() == "Assets" || panels[i]->GetName() == "Resources") // Assets & Resources
 			{
 				ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
 				ImGui::Begin(name.c_str(), &panels[i]->active, panels[i]->flags);
