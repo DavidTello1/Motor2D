@@ -1,8 +1,8 @@
 #include "PanelResources.h"
 #include "Resource.h"
-
 #include "Application.h"
 #include "ModuleResources.h"
+
 #include "ModuleEditor.h"
 #include "PanelAssets.h"
 
@@ -62,14 +62,14 @@ void PanelResources::Draw()
 		{
 		case ResourceType::FOLDER:		break;
 		case ResourceType::SCENE:		break;
-		case ResourceType::PREFAB:		break;
-		case ResourceType::TEXTURE:		/*DrawOptionsTexture(index);*/ break;
-		case ResourceType::MATERIAL:	break;
-		case ResourceType::ANIMATION:	break;
-		case ResourceType::TILEMAP:		break;
-		case ResourceType::AUDIO:		break;
-		case ResourceType::SCRIPT:		break;
-		case ResourceType::SHADER:		break;
+		case ResourceType::PREFAB:		DrawOptionsPrefab(index);	 break;
+		case ResourceType::TEXTURE:		DrawOptionsTexture(index);	 break;
+		case ResourceType::MATERIAL:	DrawOptionsMaterial(index);  break;
+		case ResourceType::ANIMATION:	DrawOptionsAnimation(index); break;
+		case ResourceType::TILEMAP:		DrawOptionsTilemap(index);	 break;
+		case ResourceType::AUDIO:		DrawOptionsAudio(index);	 break;
+		case ResourceType::SCRIPT:		DrawOptionsScript(index);	 break;
+		case ResourceType::SHADER:		DrawOptionsShader(index);	 break;
 		default:						break;
 		}
 	}
@@ -91,14 +91,14 @@ void PanelResources::Draw()
 		{
 		case ResourceType::FOLDER:		break;
 		case ResourceType::SCENE:		break;
-		case ResourceType::PREFAB:		break;
-		case ResourceType::TEXTURE:		/*DrawPreviewTexture(index);*/ break;
-		case ResourceType::MATERIAL:	break;
-		case ResourceType::ANIMATION:	break;
-		case ResourceType::TILEMAP:		break;
-		case ResourceType::AUDIO:		break;
-		case ResourceType::SCRIPT:		break;
-		case ResourceType::SHADER:		break;
+		case ResourceType::PREFAB:		DrawPreviewPrefab(index);	 break;
+		case ResourceType::TEXTURE:		DrawPreviewTexture(index);	 break;
+		case ResourceType::MATERIAL:	DrawPreviewMaterial(index);	 break;
+		case ResourceType::ANIMATION:	DrawPreviewAnimation(index); break;
+		case ResourceType::TILEMAP:		DrawPreviewTilemap(index);	 break;
+		case ResourceType::AUDIO:		DrawPreviewAudio(index);	 break;
+		case ResourceType::SCRIPT:		DrawPreviewScript(index);	 break;
+		case ResourceType::SHADER:		DrawPreviewShader(index);	 break;
 		default:						break;
 		}
 	}
@@ -116,33 +116,6 @@ void PanelResources::Save(Config* config) const
 void PanelResources::Load(Config* config)
 {
 }
-
-//void PanelResources::DrawResourceData(ResourceType type, size_t index)
-//{
-//	ResourceData data;
-//	switch (type)
-//	{
-//	case ResourceType::FOLDER:		return;
-//	case ResourceType::SCENE:		break;
-//	case ResourceType::PREFAB:		break;
-//	case ResourceType::TEXTURE:		data = App->resources->textures.data; break;
-//	case ResourceType::MATERIAL:	break;
-//	case ResourceType::ANIMATION:	break;
-//	case ResourceType::TILEMAP:		break;
-//	case ResourceType::AUDIO:		break;
-//	case ResourceType::SCRIPT:		break;
-//	case ResourceType::SHADER:		break;
-//	default:						return;
-//	}
-//
-//	ImGui::Text("Name: %s", App->file_system->GetFileName(data.files_assets[index].c_str()).c_str());
-//	ImGui::Text("UID: %l", data.ids[index]);
-//	ImGui::Text("Assets File: %s", data.files_assets[index].c_str());
-//	ImGui::Text("Library File: %s", data.files_library[index].c_str());
-//	ImGui::Text("Size: ");
-//	ImGui::Text("Times Loaded: %d", data.times_loaded[index]);
-//	ImGui::Separator();
-//}
 
 void PanelResources::DockSpace()
 {
@@ -165,4 +138,70 @@ void PanelResources::DockSpace()
 	}
 	else
 		ImGui::DockSpace(dock_space, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_NoSplit);
+}
+
+// --- IMPORTING OPTIONS ---
+void PanelResources::DrawOptionsPrefab(size_t index)
+{
+}
+
+void PanelResources::DrawOptionsTexture(size_t index)
+{
+}
+
+void PanelResources::DrawOptionsMaterial(size_t index)
+{
+}
+
+void PanelResources::DrawOptionsAnimation(size_t index)
+{
+}
+
+void PanelResources::DrawOptionsTilemap(size_t index)
+{
+}
+
+void PanelResources::DrawOptionsAudio(size_t index)
+{
+}
+
+void PanelResources::DrawOptionsScript(size_t index)
+{
+}
+
+void PanelResources::DrawOptionsShader(size_t index)
+{
+}
+
+// --- PREVIEW ---
+void PanelResources::DrawPreviewPrefab(size_t index) 
+{
+}
+
+void PanelResources::DrawPreviewTexture(size_t index) 
+{
+}
+
+void PanelResources::DrawPreviewMaterial(size_t index) 
+{
+}
+
+void PanelResources::DrawPreviewAnimation(size_t index) 
+{
+}
+
+void PanelResources::DrawPreviewTilemap(size_t index) 
+{
+}
+
+void PanelResources::DrawPreviewAudio(size_t index) 
+{
+}
+
+void PanelResources::DrawPreviewScript(size_t index) 
+{
+}
+
+void PanelResources::DrawPreviewShader(size_t index) 
+{
 }

@@ -7,11 +7,13 @@
 #include "ModuleRenderer.h"
 #include "ModuleEditor.h"
 #include "ModuleFileSystem.h"
+#include "ModuleResources.h"
+
+#include "AssetNode.h"
+#include "Resource.h"
 
 #include "Imgui/imgui_internal.h"
 #include "gpudetect/DeviceId.h"
-#include "Glew/include/glew.h"
-//#include "Devil/include/IL/il.h"
 
 #include "mmgr/mmgr.h"
 
@@ -45,36 +47,15 @@ void PanelConfiguration::Draw()
 	// Child Index
 	ImGui::BeginChild("Index", ImVec2(ImGui::GetWindowContentRegionWidth() * 0.3f, 0), true);
 	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(20, 15));
-	static int selected = 0;
-	if (ImGui::Selectable("Application", selected == 0)) {
-		curr_index = Index::APPLICATION;
-		layouts = GetLayouts();
-		selected = 0;
-	}
-	else if (ImGui::Selectable("Memory", selected == 1)) {
-		curr_index = Index::MEMORY;
-		selected = 1;
-	}
-	else if (ImGui::Selectable("Hardware", selected == 2)) {
-		curr_index = Index::HARDWARE;
-		selected = 2;
-	}
-	else if (ImGui::Selectable("Window", selected == 3)) {
-		curr_index = Index::WINDOW;
-		selected = 3;
-	}
-	else if (ImGui::Selectable("Input", selected == 4)) {
-		curr_index = Index::INPUT_DRAW;
-		selected = 4;
-	}
-	else if (ImGui::Selectable("File System", selected == 5)) {
-		curr_index = Index::FILESYSTEM;
-		selected = 5;
-	}
-	else if (ImGui::Selectable("Resources", selected == 6)) {
-		curr_index = Index::RESOURCES;
-		selected = 6;
-	}
+
+	if		(ImGui::Selectable("Application", curr_index == Index::APPLICATION)) { curr_index = Index::APPLICATION; layouts = GetLayouts(); }
+	else if (ImGui::Selectable("Memory", curr_index == Index::MEMORY))			   curr_index = Index::MEMORY;
+	else if (ImGui::Selectable("Hardware", curr_index == Index::HARDWARE))		   curr_index = Index::HARDWARE;
+	else if (ImGui::Selectable("Window", curr_index == Index::WINDOW))			   curr_index = Index::WINDOW;
+	else if (ImGui::Selectable("Input", curr_index == Index::INPUT_DRAW))		   curr_index = Index::INPUT_DRAW;
+	else if (ImGui::Selectable("File System", curr_index == Index::FILESYSTEM))    curr_index = Index::FILESYSTEM; 
+	else if (ImGui::Selectable("Resources", curr_index == Index::RESOURCES))	   curr_index = Index::RESOURCES;
+
 	ImGui::PopStyleVar();
 	ImGui::EndChild();
 	ImGui::SameLine();
@@ -83,40 +64,24 @@ void PanelConfiguration::Draw()
 	ImGui::BeginChild("Content");
 	switch (curr_index)
 	{
-	case Index::APPLICATION:
-		DrawApplication();
-		break;
-	case Index::MEMORY:
-		DrawMemory();
-		break;
-	case Index::HARDWARE:
-		DrawHardware();
-		break;
-	case Index::WINDOW:
-		DrawWindow();
-		break;
-	case Index::INPUT_DRAW:
-		DrawInput();
-		break;
-	case Index::FILESYSTEM:
-		DrawFileSystem();
-		break;
-	case Index::RESOURCES:
-		DrawResources();
-		break;
-	default:
-		break;
+	case Index::APPLICATION: DrawApplication(); break;
+	case Index::MEMORY:		 DrawMemory();		break;
+	case Index::HARDWARE:	 DrawHardware();	break;
+	case Index::WINDOW:		 DrawWindow();		break;
+	case Index::INPUT_DRAW:  DrawInput();		break;
+	case Index::FILESYSTEM:  DrawFileSystem();	break;
+	case Index::RESOURCES:	 DrawResources();	break;
+	default: break;
 	}
 
 	// Buttons
 	static ImVec2 size = ImGui::GetContentRegionAvail();
 	static float pos = 0.0f;
-
 	ImGui::SetCursorPos(ImVec2(size.x / 3, float(height - 57))); // accept
 	pos = ImGui::GetCursorPosX();
 	if (ImGui::Button("Accept", ImVec2(size.x / 3, 22)))
 	{
-		LOG("Saved PanelConfiguration", 'v');
+		LOG("Saved Configuration", 'v');
 		App->SavePrefs(current_layout.c_str());
 		active = false;
 		ImGui::CloseCurrentPopup();
@@ -202,7 +167,7 @@ void PanelConfiguration::DrawApplication()
 	static float size = ImGui::GetContentRegionAvail().x;
 
 	float pos = ImGui::GetCursorPosX();
-	if (ImGui::Button("Load", ImVec2(size / 3, 0)))
+	if (ImGui::Button("Load", ImVec2(size / 3, 0)) && current_layout != selected_layout)
 	{
 		if (App->LoadPrefs(selected_layout.c_str()))
 			current_layout = selected_layout;
@@ -436,8 +401,6 @@ void PanelConfiguration::DrawWindow()
 
 void PanelConfiguration::DrawInput()
 {
-	//ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10);
-
 	// Mouse Position
 	int mouse_x, mouse_y;
 	App->input->GetMousePosition(mouse_x, mouse_y);
@@ -509,8 +472,6 @@ void PanelConfiguration::DrawInput()
 	// Input Log
 	ImGui::Text("Input Log");
 	ImGui::BeginChild("InputLog", ImVec2(0, ImGui::GetContentRegionAvail().y - 30), true);
-	
-
 	ImGui::EndChild();
 }
 
@@ -540,64 +501,109 @@ void PanelConfiguration::DrawFileSystem()
 
 void PanelConfiguration::DrawResources()
 {
-	// Selected Resource
-	uint image = 0;
-	//if (selected_resource)
-	//	image = selected_resource->texture;
-	ImGui::Image((ImTextureID)image, ImVec2(120,120), ImVec2(0, 1), ImVec2(1, 0)); // Image
-	ImGui::SameLine();
+	static uint image = 0;
+	static ResourceData data;
+	static ResourceType type = ResourceType::UNKNOWN;
+	static size_t index = 0;
 
-	ImVec2 pos = ImGui::GetCursorPos();
-	ImGui::Text("Name:");
-	//if (selected_resource)
-	//{
-	//	ImGui::SameLine();
-	//	ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), selected_resource->name);
-	//}
+	// Image
+	if (image != 0)
+	{
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+		ImGui::BeginChild("ResourceImage", ImVec2(110, 110));
+		ImGui::PopStyleVar();
+		ImGui::Image((ImTextureID)image, ImVec2(110, 110), ImVec2(0, 1), ImVec2(1, 0)); // Image
+		ImGui::EndChild();
+		ImGui::SameLine();
+	}
 
-	ImGui::SetCursorPos(ImVec2(pos.x, pos.y + 20));
-	ImGui::Text("UID:");
-	//if (selected_resource)
-	//{
-	//	ImGui::SameLine();
-	//	ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), selected_resource->UID);
-	//}
+	// Resources Data
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+	ImGui::BeginChild("ResourcesData", ImVec2(0, 110), false, ImGuiWindowFlags_HorizontalScrollbar);
+	ImGui::PopStyleVar();
 
-	ImGui::SetCursorPos(ImVec2(pos.x, pos.y + 40));
-	ImGui::Text("Size:");
-	//if (selected_resource)
-	//{
-	//	ImGui::SameLine();
-	//	ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), selected_resource->size);
-	//}
+	switch (type)
+	{
+	case ResourceType::SCENE:		break;
+	case ResourceType::PREFAB:		break;
+	case ResourceType::TEXTURE:		data = App->resources->textures.data; image = App->resources->textures.texture.buffer[index]; break;
+	case ResourceType::MATERIAL:	break;
+	case ResourceType::ANIMATION:	break;
+	case ResourceType::TILEMAP:		break;
+	case ResourceType::AUDIO:		break;
+	case ResourceType::SCRIPT:		break;
+	case ResourceType::SHADER:		break;
+	default:						break;
+	}
 
-	ImGui::SetCursorPos(ImVec2(pos.x, pos.y + 60));
-	ImGui::Text("Times Loaded:");
-	//if (selected_resource)
-	//{
-	//	ImGui::SameLine();
-	//	ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), selected_resource->times_loaded);
-	//}
+	if (!data.ids.empty())
+	{
+		ImVec2 pos = ImGui::GetCursorPos();
+		ImGui::Text("UID:");
+		ImGui::SameLine();
+		ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), std::to_string(data.ids[index]).c_str());
 
-	ImGui::SetCursorPos(ImVec2(pos.x, pos.y + 80));
-	ImGui::Text("Original File:");
-	//if (selected_resource)
-	//{
-	//	ImGui::SameLine();
-	//	ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), selected_resource->original_file);
-	//}
+		ImGui::SetCursorPos(ImVec2(pos.x, pos.y + 20));
+		ImGui::Text("Size:");
+		ImGui::SameLine();
+		ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "%d", data.size[index]);
 
-	ImGui::SetCursorPos(ImVec2(pos.x, pos.y + 100));
-	ImGui::Text("Exported File:");
-	//if (selected_resource)
-	//{
-	//	ImGui::SameLine();
-	//	ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), selected_resource->exported_file);
-	//}
+		ImGui::SetCursorPos(ImVec2(pos.x, pos.y + 40));
+		ImGui::Text("Times Loaded:");
+		ImGui::SameLine();
+		ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "%d", data.times_loaded[index]);
+
+		ImGui::SetCursorPos(ImVec2(pos.x, pos.y + 60));
+		ImGui::Text("Original File:");
+		ImGui::SameLine();
+		ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), data.files_assets[index].c_str());
+
+		ImGui::SetCursorPos(ImVec2(pos.x, pos.y + 80));
+		ImGui::Text("Exported File:");
+		ImGui::SameLine();
+		ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), data.files_library[index].c_str());
+	}
+	else
+	{
+		ImVec2 pos = ImGui::GetCursorPos();
+		ImGui::Text("UID:");
+		ImGui::SetCursorPos(ImVec2(pos.x, pos.y + 20));
+		ImGui::Text("Size:");
+		ImGui::SetCursorPos(ImVec2(pos.x, pos.y + 40));
+		ImGui::Text("Times Loaded:");
+		ImGui::SetCursorPos(ImVec2(pos.x, pos.y + 60));
+		ImGui::Text("Original File:");
+		ImGui::SetCursorPos(ImVec2(pos.x, pos.y + 80));
+		ImGui::Text("Exported File:");
+	}
+	ImGui::EndChild();
+
+	// Combo
+	const char* items[] = { "Scenes", "Prefabs", "Textures", "Materials", "Animations", "Tilemaps", "Audios", "Scripts", "Shaders" };
+	static int current_item = 0;
+	ImGui::SetNextItemWidth(150);
+	ImGui::Combo("##ResourceCombo", &current_item, items, IM_ARRAYSIZE(items));
+	type = ResourceType(current_item + 1);
 
 	// Resources List
-	ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10);
 	ImGui::BeginChild("ResourcesList", ImVec2(0, ImGui::GetContentRegionAvail().y - 30), true);
+
+	for (size_t i = 0, list_size = data.ids.size(); i < list_size; ++i)
+	{
+		//if (type == ResourceType::TEXTURE && i <= RESERVED_RESOURCES) // Hide internal textures //***UNCOMMENT
+		//	continue;
+
+		std::string name = data.files_assets[i].substr(data.files_assets[i].find_last_of("/") + 1);
+		if (ImGui::Selectable(name.c_str(), index == i, ImGuiSelectableFlags_SpanAvailWidth))
+			index = i;
+	}
+
+	//// Change Shown Resource with ArrowButtons
+	//if (App->input->GetKey(SDL_SCANCODE_DOWN) == KEY_DOWN && index < data.ids.size() - 1)	
+	//	index++;
+	//else if (App->input->GetKey(SDL_SCANCODE_UP) == KEY_DOWN && index > 0)	
+	//	index--;
+
 	ImGui::EndChild();
 }
 

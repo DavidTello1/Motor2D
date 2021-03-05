@@ -13,8 +13,9 @@ class PanelConsole;
 class PanelHierarchy;
 class PanelAssets;
 class PanelResources;
-//class Inspector;
-//class Viewport;
+class PanelScene;
+//class PanelGame;
+//class PanelInspector;
 
 struct ImGuiWindowClass;
 
@@ -59,19 +60,19 @@ public:
 	PanelHierarchy* panel_hierarchy = nullptr;
 	PanelAssets* panel_assets = nullptr;
 	PanelResources* panel_resources = nullptr;
-	//Inspector* panel_inspector = nullptr;
-	//Viewport* panel_scene = nullptr;
-	//Game* panel_game = nullptr;
+	//PanelScene* panel_scene = nullptr;
+	//PanelGame* panel_game = nullptr;
+	//PanelInspector* panel_inspector = nullptr;
 
 	bool is_auto_select = false;
-	bool is_about = false;
-	bool ini_change = false;
 
+private:
+	bool is_about = false;
+	bool is_close = false;
+
+	bool ini_change = false;
 	std::string ini;
 	uint ini_size = 0;
 
-private:
 	std::vector<Panel*> panels;
-
-	bool close = false;
 };

@@ -105,6 +105,4 @@ private:
 	bool show_window = false;
 	bool show_input = false;
 	bool show_filesystem = false;
-
-	//Resource* selected_resource = nullptr;
 };

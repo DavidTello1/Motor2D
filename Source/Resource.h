@@ -7,6 +7,7 @@ struct ResourceData
 	std::vector<std::string> files_assets;
 	std::vector<std::string> files_library;
 	std::vector<int> times_loaded;
+	std::vector<int> size;
 
 	// --------------
 	void Add(const char* assets_path, const char* library_folder, const char* extension, UID id = 0) 
@@ -19,6 +20,7 @@ struct ResourceData
 		files_assets.push_back(assets_path);
 		files_library.push_back(library_folder + std::to_string(uid) + extension);
 		times_loaded.push_back(0);
+		size.push_back(0);
 	}
 
 	void Remove(size_t index)
@@ -27,6 +29,7 @@ struct ResourceData
 		files_assets.erase(files_assets.begin() + index);
 		files_library.erase(files_library.begin() + index);
 		times_loaded.erase(times_loaded.begin() + index);
+		size.erase(size.begin() + index);
 	}
 
 	int GetIndexFromID(UID id)

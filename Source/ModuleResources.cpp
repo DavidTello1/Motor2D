@@ -31,7 +31,7 @@ bool ModuleResources::Start(Config* config)
 {
 	// Import & Load Engine Assets
 	ImportAllAssets("Settings/Icons/Assets");
-	for (size_t index = 0; index < RESERVED_RESOURCES; ++index)
+	for (size_t index = 0; index <= RESERVED_RESOURCES; ++index)
 	{
 		if (textures.data.ids.size() <= index)
 			break;

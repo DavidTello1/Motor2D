@@ -13,8 +13,9 @@
 #include "PanelHierarchy.h"
 #include "PanelAssets.h"
 #include "PanelResources.h"
-//#include "Inspector.h"
-//#include "Viewport.h"
+//#include "PanelScene.h"
+//#include "PanelGame.h"
+//#include "PanelInspector.h"
 
 #include "Imgui/imgui_internal.h"
 #include "imgui/imgui_impl_sdl.h"
@@ -127,7 +128,7 @@ bool ModuleEditor::PostUpdate(float dt)
 	//// End the frame
 	//panel_viewport->PostUpdate();
 
-	if (close)
+	if (is_close)
 		return false;
 
 	return true;
@@ -343,6 +344,9 @@ void ModuleEditor::DrawMenuBar()
 			ImGui::MenuItem("Hierarchy", NULL, &GetPanel(3)->active);
 			ImGui::MenuItem("Assets", NULL, &GetPanel(4)->active);
 			ImGui::MenuItem("Resources", NULL, &GetPanel(5)->active);
+			ImGui::MenuItem("Scene", NULL, &GetPanel(6)->active);
+			ImGui::MenuItem("Game", NULL, &GetPanel(7)->active);
+			ImGui::MenuItem("Inspector", NULL, &GetPanel(8)->active);
 
 			ImGui::EndMenu();
 		}
@@ -393,7 +397,6 @@ void ModuleEditor::DrawPanels()
 				{
 					panel_configuration->GetLayouts(); //update layouts when opened
 				}
-
 				if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows))
 					focused_panel = panels[i];
 
@@ -515,7 +518,7 @@ void ModuleEditor::ConfirmExit()
 	static float pos = 0.0f;
 
 	if (App->input->GetKey(SDL_SCANCODE_RETURN) == KEY_DOWN || App->input->GetKey(SDL_SCANCODE_SPACE) == KEY_DOWN)
-		close = true;
+		is_close = true;
 
 	ImGui::OpenPopup("Quit");
 	if (ImGui::BeginPopupModal("Quit", &App->input->quit, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove))
@@ -532,7 +535,7 @@ void ModuleEditor::ConfirmExit()
 			ImGui::CloseCurrentPopup();
 
 			LOG("Saving Application and Exiting",);
-			close = true;
+			is_close = true;
 		}
 		ImGui::SameLine();
 
@@ -543,7 +546,7 @@ void ModuleEditor::ConfirmExit()
 			ImGui::CloseCurrentPopup();
 
 			LOG("Exiting Application");
-			close = true;
+			is_close = true;
 		}
 		ImGui::SameLine();
 
@@ -551,7 +554,7 @@ void ModuleEditor::ConfirmExit()
 		if (ImGui::Button("Cancel", ImVec2(size.x / 3, 22)))
 		{
 			ImGui::CloseCurrentPopup();
-			close = false;
+			is_close = false;
 			App->input->quit = false;
 		}
 		ImGui::EndPopup();
