@@ -60,7 +60,7 @@ public:
 	PanelHierarchy* panel_hierarchy = nullptr;
 	PanelAssets* panel_assets = nullptr;
 	PanelResources* panel_resources = nullptr;
-	//PanelScene* panel_scene = nullptr;
+	PanelScene* panel_scene = nullptr;
 	//PanelGame* panel_game = nullptr;
 	//PanelInspector* panel_inspector = nullptr;
 

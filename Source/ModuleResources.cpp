@@ -201,7 +201,7 @@ void ModuleResources::SaveMeta(ResourceData data, size_t index) const
 	config.AddUID("ID", data.ids[index]);
 	config.AddString("AssetsFile", data.files_assets[index].c_str());
 	config.AddString("LibraryFile", data.files_library[index].c_str());
-	config.AddDouble("Date", App->file_system->GetLastModTime(data.files_assets[index].c_str()));
+	config.AddDouble("Date", (double)App->file_system->GetLastModTime(data.files_assets[index].c_str()));
 
 	// Save as .meta file
 	char* buffer = nullptr;

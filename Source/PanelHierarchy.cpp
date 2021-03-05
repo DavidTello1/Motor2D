@@ -189,6 +189,7 @@ void PanelHierarchy::DrawNode(HierarchyNode* node)
 	// Drag&Drop selectable (top of node)
 	ImGui::SetCursorPos(ImVec2(pos_x + 15, ImGui::GetCursorPosY() - 3));
 	float width = bg.Max.x - 53;
+	if (width <= 0.0f) width = 0.01f;
 	if (ImGui::InvisibleButton(std::string(name + "dnd").c_str(), ImVec2(width, 3)))
 	{
 		node->selected = !node->selected;

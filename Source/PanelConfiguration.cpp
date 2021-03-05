@@ -28,7 +28,7 @@ PanelConfiguration::PanelConfiguration() : Panel("PanelConfiguration", ICON_CONF
 	selected_layout = current_layout;
 	layouts = GetLayouts();
 
-	active = true; //***CHANGE TO FALSE
+	active = false;
 	flags = ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDocking;
 
 	GetHardware(); //init hardware detection
@@ -167,7 +167,7 @@ void PanelConfiguration::DrawApplication()
 	static float size = ImGui::GetContentRegionAvail().x;
 
 	float pos = ImGui::GetCursorPosX();
-	if (ImGui::Button("Load", ImVec2(size / 3, 0)) && current_layout != selected_layout)
+	if (ImGui::Button("Load", ImVec2(size / 3, 0)))
 	{
 		if (App->LoadPrefs(selected_layout.c_str()))
 			current_layout = selected_layout;

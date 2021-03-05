@@ -13,7 +13,7 @@
 #include "PanelHierarchy.h"
 #include "PanelAssets.h"
 #include "PanelResources.h"
-//#include "PanelScene.h"
+#include "PanelScene.h"
 //#include "PanelGame.h"
 //#include "PanelInspector.h"
 
@@ -45,19 +45,12 @@ bool ModuleEditor::Init(Config* config)
 
 	ini = config->GetString("ini", "error");
 	ini_size = config->GetUInt("ini_size", 0);
-
 	if (ini == "error" || ini_size == 0.0f)
 	{
 		LOG("Error loading ini file", 'e');
-		if (App->file_system->Exists("imgui.ini"))
-			ImGui::LoadIniSettingsFromDisk("imgui.ini");
 	}
 	else
-	{
 		ImGui::LoadIniSettingsFromMemory(ini.c_str(), ini_size);
-		if (!App->file_system->Exists("imgui.ini"))
-			App->file_system->Save("imgui.ini", ini.data(), ini_size);
-	}
 
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable keyboard controls
 	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
@@ -77,8 +70,9 @@ bool ModuleEditor::Init(Config* config)
 	panels.push_back(panel_hierarchy = new PanelHierarchy());
 	panels.push_back(panel_assets = new PanelAssets());
 	panels.push_back(panel_resources = new PanelResources());
+	panels.push_back(panel_scene = new PanelScene());
+	//panels.push_back(panel_game = new PanelGame());
 	//panels.push_back(panel_inspector = new Inspector());
-	//panels.push_back(panel_viewport = new Viewport());
 
 	return true;
 }
@@ -345,8 +339,8 @@ void ModuleEditor::DrawMenuBar()
 			ImGui::MenuItem("Assets", NULL, &GetPanel(4)->active);
 			ImGui::MenuItem("Resources", NULL, &GetPanel(5)->active);
 			ImGui::MenuItem("Scene", NULL, &GetPanel(6)->active);
-			ImGui::MenuItem("Game", NULL, &GetPanel(7)->active);
-			ImGui::MenuItem("Inspector", NULL, &GetPanel(8)->active);
+			//ImGui::MenuItem("Game", NULL, &GetPanel(7)->active);
+			//ImGui::MenuItem("Inspector", NULL, &GetPanel(8)->active);
 
 			ImGui::EndMenu();
 		}
@@ -420,7 +414,7 @@ void ModuleEditor::DrawPanels()
 
 				ImGui::End();
 			}
- 			else if (panels[i]->GetName() == "Assets" || panels[i]->GetName() == "Resources") // Assets & Resources
+ 			else if (panels[i]->GetName() == "Assets" || panels[i]->GetName() == "Resources" || panels[i]->GetName() == "Scene")
 			{
 				ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
 				ImGui::Begin(name.c_str(), &panels[i]->active, panels[i]->flags);
