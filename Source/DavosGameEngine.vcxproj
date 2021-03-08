@@ -76,6 +76,8 @@
   <ItemGroup>
     <ClInclude Include="Application.h" />
     <ClInclude Include="AssetNode.h" />
+    <ClInclude Include="Camera.h" />
+    <ClInclude Include="ModuleCamera.h" />
     <ClInclude Include="PanelAssets.h" />
     <ClInclude Include="Color.h" />
     <ClInclude Include="Config.h" />
@@ -122,6 +124,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Application.cpp" />
+    <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="ModuleCamera.cpp" />
     <ClCompile Include="PanelAssets.cpp" />
     <ClCompile Include="Color.cpp" />
     <ClCompile Include="Config.cpp" />

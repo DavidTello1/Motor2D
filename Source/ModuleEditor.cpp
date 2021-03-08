@@ -56,7 +56,7 @@ bool ModuleEditor::Init(Config* config)
 	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
 
-	ImGui_ImplSDL2_InitForOpenGL(App->window->GetWindow(), App->renderer->context);
+	ImGui_ImplSDL2_InitForOpenGL(App->window->GetWindow(), App->renderer->GetContext());
 	LOG("Loading ImGui");
 	ImGui_ImplOpenGL3_Init();
 
