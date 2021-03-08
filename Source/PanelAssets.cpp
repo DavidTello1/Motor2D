@@ -87,14 +87,14 @@ void PanelAssets::Shortcuts()
 		if (!aux_nodes.empty())
 		{
 			for (std::string aux : aux_nodes)
-				SetState(aux, State::IDLE);
+				SetState(aux, AN_State::IDLE);
 		}
 		aux_nodes = selected_nodes;
 		is_cut = true;
 		is_copy = false;
 
 		for (std::string aux : aux_nodes)
-			SetState(aux, State::CUT);
+			SetState(aux, AN_State::CUT);
 	}
 
 	// Copy
@@ -119,7 +119,7 @@ void PanelAssets::Shortcuts()
 				{
 					if (current_folder != pos && !IsChildOf(pos, nodes.name[current_folder].c_str()))
 						Cut(pos, current_folder);
-					nodes.state[pos] = State::IDLE;
+					nodes.state[pos] = AN_State::IDLE;
 				}
 			}
 		}
@@ -407,7 +407,7 @@ void PanelAssets::DrawIcons(std::vector<std::string> current_list, uint columns)
 			HandleSelection(index);
 
 			// Draw Highlight
-			if (nodes.state[index] != State::RENAME)
+			if (nodes.state[index] != AN_State::RENAME)
 			{
 				ImGui::GetWindowDrawList()->AddRectFilled(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), ImColor(bg_color), 3.0f);
 				ImGui::GetWindowDrawList()->AddRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), ImColor(border_color), 3.0f);
@@ -419,21 +419,21 @@ void PanelAssets::DrawIcons(std::vector<std::string> current_list, uint columns)
 			ImGui::SetCursorPosY(pos.y + 5);
 
 			// Transparent Image if node is cut
-			if (nodes.state[index] == State::CUT)
+			if (nodes.state[index] == AN_State::CUT)
 				ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.5f);
 
 			// Image
 			ImGui::Image((ImTextureID)GetNodeImage(nodes.type[index]), ImVec2((float)icon_size, (float)icon_size), ImVec2(0, 1), ImVec2(1, 0));
 
-			if (nodes.state[index] == State::CUT)
+			if (nodes.state[index] == AN_State::CUT)
 				ImGui::PopStyleVar();
 
 			// Stop Rename if Clicked
-			if (ImGui::IsItemClicked() && nodes.state[index] == State::RENAME)
-				nodes.state[index] = State::SELECTED;
+			if (ImGui::IsItemClicked() && nodes.state[index] == AN_State::RENAME)
+				nodes.state[index] = AN_State::SELECTED;
 
 			// Text
-			if (nodes.state[index] != State::RENAME)
+			if (nodes.state[index] != AN_State::RENAME)
 			{
 				std::string text = nodes.name[index];
 				uint text_size = (uint)ImGui::CalcTextSize(text.c_str()).x;
@@ -464,9 +464,9 @@ void PanelAssets::DrawIcons(std::vector<std::string> current_list, uint columns)
 
 			// Update Selected Nodes List
 			int position = FindNode(nodes.name[index].c_str(), selected_nodes);
-			if ((nodes.state[index] == State::SELECTED || nodes.state[index] == State::DRAGGING) && position == -1)
+			if ((nodes.state[index] == AN_State::SELECTED || nodes.state[index] == AN_State::DRAGGING) && position == -1)
 				selected_nodes.push_back(nodes.name[index]);
-			else if (nodes.state[index] != State::SELECTED && nodes.state[index] != State::DRAGGING && position != -1)
+			else if (nodes.state[index] != AN_State::SELECTED && nodes.state[index] != AN_State::DRAGGING && position != -1)
 				selected_nodes.erase(selected_nodes.begin() + position);
 
 			// Columns
@@ -508,7 +508,7 @@ void PanelAssets::DrawList(std::vector<std::string> current_list)
 			HandleSelection(index);
 
 			// Draw Highlight
-			if (nodes.state[index] != State::RENAME)
+			if (nodes.state[index] != AN_State::RENAME)
 			{
 				ImGui::GetWindowDrawList()->AddRectFilled(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), ImColor(bg_color), 3.0f);
 				ImGui::GetWindowDrawList()->AddRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(), ImColor(border_color), 3.0f);
@@ -521,10 +521,10 @@ void PanelAssets::DrawList(std::vector<std::string> current_list)
 			ImGui::SetCursorPosY(pos.y + 4);
 
 			// Transparent Text if node is cut
-			if (nodes.state[index] == State::CUT)
+			if (nodes.state[index] == AN_State::CUT)
 				text_color = ImVec4(0.6f, 0.6f, 0.6f, 1.0f);
 
-			if (nodes.state[index] != State::RENAME)
+			if (nodes.state[index] != AN_State::RENAME)
 			{
 				// Text
 				ImVec4 icon_color = GetIconColor(nodes.type[index]);
@@ -562,9 +562,9 @@ void PanelAssets::DrawList(std::vector<std::string> current_list)
 
 			// Update Selected Nodes List
 			int position = FindNode(nodes.name[index].c_str(), selected_nodes);
-			if ((nodes.state[index] == State::SELECTED || nodes.state[index] == State::DRAGGING) && position == -1)
+			if ((nodes.state[index] == AN_State::SELECTED || nodes.state[index] == AN_State::DRAGGING) && position == -1)
 				selected_nodes.push_back(nodes.name[index]);
-			else if (nodes.state[index] != State::SELECTED && nodes.state[index] != State::DRAGGING && position != -1)
+			else if (nodes.state[index] != AN_State::SELECTED && nodes.state[index] != AN_State::DRAGGING && position != -1)
 				selected_nodes.erase(selected_nodes.begin() + position);
 		}
 	}
@@ -591,10 +591,10 @@ void PanelAssets::HandleSelection(size_t index)
 		}
 
 		// Selection
-		if (nodes.state[index] != State::DRAGGING && nodes.state[index] != State::SELECTED && !selected_nodes.empty() && 
+		if (nodes.state[index] != AN_State::DRAGGING && nodes.state[index] != AN_State::SELECTED && !selected_nodes.empty() && 
 			!ImGui::GetIO().KeyCtrl && !ImGui::GetIO().KeyShift) 
 			UnSelectAll();
-		nodes.state[index] = State::DRAGGING;
+		nodes.state[index] = AN_State::DRAGGING;
 
 		ImGui::EndDragDropSource();
 	}
@@ -617,16 +617,16 @@ void PanelAssets::HandleSelection(size_t index)
 	if (ImGui::IsItemHovered()) // Hover
 	{
 		is_any_hover = true;
-		if (ImGui::IsMouseClicked(0) && nodes.state[index] != State::RENAME) // Left Click
+		if (ImGui::IsMouseClicked(0) && nodes.state[index] != AN_State::RENAME) // Left Click
 		{
 			//***Show in Resources Panel
 
 			if (ImGui::GetIO().KeyCtrl) // Multiple Selection (Ctrl)
 			{
-				if (nodes.state[index] == State::SELECTED)
-					nodes.state[index] = State::IDLE;
+				if (nodes.state[index] == AN_State::SELECTED)
+					nodes.state[index] = AN_State::IDLE;
 				else
-					nodes.state[index] = State::SELECTED;
+					nodes.state[index] = AN_State::SELECTED;
 			}
 			else if (ImGui::GetIO().KeyShift && !selected_nodes.empty()) // Multiple Selection (Shift)
 			{
@@ -634,28 +634,28 @@ void PanelAssets::HandleSelection(size_t index)
 				if (index < pos)
 				{
 					for (size_t i = index; i < pos; ++i)
-						nodes.state[i] = State::SELECTED;
+						nodes.state[i] = AN_State::SELECTED;
 				}
 				else
 				{
 					for (size_t i = index; i >= pos; --i)
-						nodes.state[i] = State::SELECTED;
+						nodes.state[i] = AN_State::SELECTED;
 				}
 			}
 		}
 		if (ImGui::IsMouseReleased(0)) // Single Selection (Left Release)
 		{
-			if (!ImGui::GetIO().KeyCtrl && !ImGui::GetIO().KeyShift && nodes.state[index] != State::DRAGGING && nodes.state[index] != State::RENAME)
+			if (!ImGui::GetIO().KeyCtrl && !ImGui::GetIO().KeyShift && nodes.state[index] != AN_State::DRAGGING && nodes.state[index] != AN_State::RENAME)
 			{
 				UnSelectAll();
-				nodes.state[index] = State::SELECTED;
+				nodes.state[index] = AN_State::SELECTED;
 			}
 		}
 		else if (ImGui::IsMouseClicked(1)) // Right Click
 		{
-			if (selected_nodes.size() <= 1 || nodes.state[index] != State::SELECTED)
+			if (selected_nodes.size() <= 1 || nodes.state[index] != AN_State::SELECTED)
 				UnSelectAll();
-			nodes.state[index] = State::SELECTED;
+			nodes.state[index] = AN_State::SELECTED;
 		}
 
 		if (ImGui::IsMouseDoubleClicked(0)) // Double Click
@@ -680,7 +680,7 @@ void PanelAssets::HandleSelection(size_t index)
 		bg_color.w = 0.3f;
 	}
 
-	if (nodes.state[index] == State::SELECTED || nodes.state[index] == State::DRAGGING) // Color
+	if (nodes.state[index] == AN_State::SELECTED || nodes.state[index] == AN_State::DRAGGING) // Color
 	{
 		bg_color.w = 0.5f;
 		border_color.w = 1.0f;
@@ -697,13 +697,13 @@ bool PanelAssets::DrawRightClick()
 			{
 				size_t index = CreateNode("Folder", current_folder);
 				UnSelectAll();
-				nodes.state[index] = State::SELECTED;
+				nodes.state[index] = AN_State::SELECTED;
 			}
 			if (ImGui::MenuItem("Script")) //script
 			{
 				size_t index = CreateNode("Script.scr", current_folder);
 				UnSelectAll();
-				nodes.state[index] = State::SELECTED;
+				nodes.state[index] = AN_State::SELECTED;
 			}
 
 			ImGui::EndMenu();
@@ -715,14 +715,14 @@ bool PanelAssets::DrawRightClick()
 			if (!aux_nodes.empty())
 			{
 				for (std::string aux : aux_nodes)
-					SetState(aux, State::IDLE);
+					SetState(aux, AN_State::IDLE);
 			}
 			aux_nodes = selected_nodes;
 			is_cut = true;
 			is_copy = false;
 
 			for (std::string aux : aux_nodes)
-				SetState(aux, State::CUT);
+				SetState(aux, AN_State::CUT);
 		}
 		if (ImGui::MenuItem("Copy", "Ctrl+C", false, !selected_nodes.empty())) //copy
 		{
@@ -741,7 +741,7 @@ bool PanelAssets::DrawRightClick()
 					{
 						if (current_folder != pos && !IsChildOf(pos, nodes.name[current_folder].c_str()))
 							Cut(pos, current_folder);
-						nodes.state[pos] = State::IDLE;
+						nodes.state[pos] = AN_State::IDLE;
 					}
 				}
 			}
@@ -766,7 +766,7 @@ bool PanelAssets::DrawRightClick()
 		if (ImGui::MenuItem("Rename", NULL, false, selected_nodes.size() == 1)) //rename
 		{
 			is_rename_flag = true;
-			SetState(selected_nodes[0], State::RENAME);
+			SetState(selected_nodes[0], AN_State::RENAME);
 		}
 
 		if (ImGui::MenuItem("Delete", "Supr", false, !selected_nodes.empty())) //delete
@@ -1226,7 +1226,7 @@ void PanelAssets::UpdatePath(size_t index, std::string path, std::string parent)
 	}
 }
 
-void PanelAssets::SetState(std::string name, State state)
+void PanelAssets::SetState(std::string name, AN_State state)
 {
 	int pos = FindNode(name.c_str(), nodes.name);
 	if (pos != -1)
@@ -1236,15 +1236,15 @@ void PanelAssets::SetState(std::string name, State state)
 void PanelAssets::SelectAll()
 {
 	for (size_t index = 0, size = nodes.name.size(); index < size; ++index)
-		nodes.state[index] = State::SELECTED;
+		nodes.state[index] = AN_State::SELECTED;
 }
 
 void PanelAssets::UnSelectAll()
 {
 	for (size_t index = 0, size = nodes.name.size(); index < size; ++index)
 	{
-		if (nodes.state[index] != State::CUT)
-			nodes.state[index] = State::IDLE;
+		if (nodes.state[index] != AN_State::CUT)
+			nodes.state[index] = AN_State::IDLE;
 	}
 	selected_nodes.clear();
 }
@@ -1398,7 +1398,7 @@ void PanelAssets::Rename(size_t index, ImVec2 pos)
 	ImGui::SetNextItemWidth(node_size);
 	if (ImGui::InputText("##RenameAsset", buffer, IM_ARRAYSIZE(buffer), ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll))
 	{
-		nodes.state[index] = State::SELECTED;
+		nodes.state[index] = AN_State::SELECTED;
 		if (buffer != nodes.name[index])
 		{
 			std::string old_name = nodes.name[index];

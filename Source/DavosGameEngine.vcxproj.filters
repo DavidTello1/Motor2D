@@ -287,5 +287,8 @@
     <ClCompile Include="ModuleCamera.cpp">
       <Filter>Sources\Modules</Filter>
     </ClCompile>
+    <ClCompile Include="HierarchyNode.cpp">
+      <Filter>Sources\Tools</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

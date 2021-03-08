@@ -1,113 +1,89 @@
 #pragma once
-#include "Imgui/imgui.h"
-
-#include "Icons.h"
+#include "Globals.h"
 #include <string>
 #include <vector>
 
-class GameObject;
-//class ResourceScene;
-//class Prefab;
+struct ImVec4;
 
-class HierarchyNode
-{
-public:
-	enum class NodeType {
-		NONE,
-		FOLDER,
-		GAMEOBJECT,
-		SCENE,
-		PREFAB
-	};
-
-	HierarchyNode() {};
-	virtual ~HierarchyNode() {};
-
-public:
-	NodeType type = NodeType::NONE;
-	std::string name = "node";
-	std::string icon = "";
-	uint count = 0;
-
-	HierarchyNode* parent = nullptr;
-	std::vector<HierarchyNode*> childs;
-
-	int pos = -1;
-	int indent = -1;
-
-	bool rename = false;
-	bool selected = false;
-	bool is_open = true;
-	bool is_shown = true;
-
-	ImVec4 color = ImVec4(0.06f, 0.06f, 0.06f, 0.94f);
+struct PositionSort {
+	bool operator()(int const& pos1, int const& pos2) //true if pos1 > pos2
+	{
+		return (pos1 > pos2) ? true : false;
+	}
 };
 
-//--- FOLDER ---
-class NodeFolder : public HierarchyNode
-{
-public:
-	NodeFolder(HierarchyNode* Parent = nullptr, std::string Name = "Folder") {
-		type = NodeType::FOLDER;
-		name = Name;
-		icon = ICON_FOLDER;
-		parent = Parent;
+struct IndentSort {
+	bool operator()(int const& indent1, int const& indent2) //true if indent1 < indent2
+	{
+		return (indent1 < indent2) ? true : false;
 	}
-
-	virtual ~NodeFolder() {};
 };
 
-//--- GAMEOBJECT ---
-class NodeGameObject : public HierarchyNode
-{
-public:
-	NodeGameObject(GameObject* obj, HierarchyNode* Parent = nullptr, std::string Name = "GameObject") {
-		type = NodeType::GAMEOBJECT;
-		name = Name;
-		icon = ICON_GAMEOBJECT;
-		parent = Parent;
-		gameobject = obj;
-	}
-
-	virtual ~NodeGameObject() {};
-
-public:
-	GameObject* gameobject = nullptr;
+enum class NodeType {
+	FOLDER,
+	GAMEOBJECT,
+	PREFAB
 };
 
-//--- SCENE ---
-class NodeScene : public HierarchyNode
-{
-public:
-	NodeScene(/*ResourceScene* Scene,*/ std::string Name = "Scene") {
-		type = NodeType::SCENE;
-		name = Name;
-		icon = ICON_SCENE_OBJ;
-		parent = nullptr;
-		//scene = Scene;
-	}
-
-	virtual ~NodeScene() {};
-
-public:
-	//ResourceScene* scene = nullptr;
-	bool is_saved = true;
+enum NodeFlags {
+	OPEN = 1 << 0,
+	HIDDEN = 1 << 1,
 };
 
-//--- PREFAB ---
-class NodePrefab : public HierarchyNode
+enum class HN_State {
+	IDLE,
+	SELECTED,
+	DRAGGING,
+	RENAME,
+	CUT
+};
+
+struct HierarchyNodeData // Data
 {
-public:
-	NodePrefab(/*Prefab* prefab_,*/ HierarchyNode* Parent = nullptr, std::string Name = "Prefab") {
-		type = NodeType::PREFAB;
-		name = Name;
-		icon = ICON_PREFAB;
-		parent = Parent;
-		//prefab = prefab_;
-	}
+	std::vector<std::string> name;
+	std::vector<NodeType> type;
+	std::vector<HN_State> state;
+	std::vector<int> flags;
 
-	virtual ~NodePrefab() {};
+	std::vector<ImVec4> color;
+	std::vector<int> pos;
+	std::vector<int> indent;
 
-public:
-	//Prefab* prefab = nullptr;
+	std::vector<std::string> parent;
+	std::vector<std::vector<std::string>> childs;
+};
+
+struct HierarchyNode // Node
+{
+	HierarchyNodeData data;
+
+	//----------------------------
+	void DrawNode(size_t index);
+	int FindNode(std::string name, std::vector<std::string> list) const; //get node pos in list (returns -1 if not found)
+
+	size_t CreateNode(std::string name, NodeType type, std::vector<std::string> childs, int parent_index = -1, int flags = 0, HN_State state = HN_State::IDLE);
+	void DeleteNodes(std::vector<std::string> nodes, bool reorder = true);
+	void DuplicateNodes(std::vector<std::string> nodes, int parent_index = -1);
+	//void MoveNode(size_t index, size_t parent_index, int pos = -1, int indent = -1); //move node (if pos or indent is -1 they will be set according to parent)
+
+	//void HandleSelection(size_t index); //selection states
+	void SetState(HN_State state, std::vector<std::string> list);
+
+	//uint GetNameCount(const std::string name) const; //get name count
+
+	//// --- NODE POS ---
+	//void ReorderNodes(size_t index, bool is_delete = false); //update nodes pos
+	uint RecursivePos(size_t index); //set node pos in CreateNode()
+	//void UpdateNode(size_t index); //update nodes pos and indent
+
+	//// --- CHILDS (CONNECTOR LINES) ---
+	//std::vector<std::string> GetHiddenNodes() const; //get all hidden nodes in hierarchy
+	//std::vector<std::string> GetAllChilds(size_t node) const; //get childs (including childs of childs)
+	//std::vector<std::string> GetClosedChilds(size_t node) const; //returns all closed childs (including childs of childs)
+	//std::string GetLastChild(size_t node) const; //get last child (including childs of childs)
+	//bool IsChildOf(size_t parent, size_t node) const; //check if node is child of parent (including if it is child of childs)
+
+	//// --- SORTERS ---
+	//void SortByPosition() const; //order by position (smaller to bigger)
+	//void SortByIndent() const; //order by indent (lower to higher)
 };

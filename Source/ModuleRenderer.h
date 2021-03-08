@@ -1,8 +1,8 @@
 #pragma once
 #include "Module.h"
 
-//typedef void *SDL_GLContext;
-class Camera;
+typedef void *SDL_GLContext;
+struct Camera;
 
 class ModuleRenderer : public Module
 {

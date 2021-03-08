@@ -53,7 +53,7 @@ private:
 	bool IsChildOf(const size_t node, const char* child_name) const; //check if node is child or child of childs of parent
 	void UpdatePath(size_t index, std::string path, std::string parent); //update path
 
-	void SetState(std::string name, State state);
+	void SetState(std::string name, AN_State state);
 	void SelectAll();
 	void UnSelectAll();
 	void Cut(size_t node, size_t parent); //paste cut nodes

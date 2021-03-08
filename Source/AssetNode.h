@@ -17,7 +17,7 @@ enum class ResourceType {
 	UNKNOWN
 };
 
-enum class State {
+enum class AN_State {
 	IDLE,
 	SELECTED,
 	DRAGGING,
@@ -30,14 +30,14 @@ struct AssetNode
 	std::vector<std::string> name;
 	std::vector<std::string> path;
 	std::vector<ResourceType> type;
-	std::vector<State> state;
+	std::vector<AN_State> state;
 	std::vector<bool> open;
 
 	std::vector<std::string> parent;
 	std::vector <std::vector<std::string>> childs;
 
 	//----------------------------
-	size_t Add(std::string path_, std::string name_, ResourceType type_, std::vector<std::string> childs_, std::string parent_ = "", State state_ = State::IDLE, bool open_ = false)
+	size_t Add(std::string path_, std::string name_, ResourceType type_, std::vector<std::string> childs_, std::string parent_ = "", AN_State state_ = AN_State::IDLE, bool open_ = false)
 	{
 		name.push_back(name_);
 		path.push_back(path_);

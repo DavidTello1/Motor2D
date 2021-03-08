@@ -4,9 +4,9 @@
 #include <vector>
 #include <string>
 
-struct ComponentTransform;
-struct ComponentRenderer;
-struct ComponentCamera;
+//struct ComponentTransform;
+//struct ComponentRenderer;
+//struct ComponentCamera;
 
 struct GameObjects
 {
@@ -29,7 +29,7 @@ struct GameObjects
 	std::vector<int> flags;
 	std::vector<int> components;
 
-	std::vector<ComponentTransform> transforms;
-	std::vector<ComponentRenderer> renderers;
-	std::vector<ComponentCamera> cameras;
+	//std::vector<ComponentTransform> transforms;
+	//std::vector<ComponentRenderer> renderers;
+	//std::vector<ComponentCamera> cameras;
 };

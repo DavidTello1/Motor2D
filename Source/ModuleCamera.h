@@ -3,7 +3,7 @@
 
 #include <vector>
 
-class Camera;
+struct Camera;
 
 class ModuleCamera : public Module
 {
