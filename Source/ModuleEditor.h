@@ -37,20 +37,18 @@ public:
 
 	void Draw();
 
-	// Panels
-	Panel* GetPanel(uint ID);
-
-	// Utilities
-	void CreateLink(const char* text, const char* url, bool bullet = false);
 	void LogFPS(float fps, float ms);
+
+	Panel* GetPanel(uint ID);
 
 private:
 	void DrawMenuBar();
 	void DrawAbout();
-
 	void DrawPanels();
-	void ConfirmExit();
+
 	void Shortcuts();
+	void ConfirmExit();
+	void CreateLink(const char* text, const char* url, bool bullet = false);
 
 public:
 	Panel* focused_panel = nullptr;
@@ -63,8 +61,6 @@ public:
 	PanelScene* panel_scene = nullptr;
 	//PanelGame* panel_game = nullptr;
 	//PanelInspector* panel_inspector = nullptr;
-
-	bool is_auto_select = false;
 
 private:
 	bool is_about = false;

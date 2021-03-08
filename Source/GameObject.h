@@ -1,12 +1,16 @@
 #pragma once
+#include "Globals.h"
+
+#include <vector>
+#include <string>
+
+struct ComponentTransform;
+struct ComponentRenderer;
+struct ComponentCamera;
 
 struct GameObjects
 {
-	//friend class ModuleScene;
-	//friend class ResourceScene;
-	//ALIGN_CLASS_TO_16 //for float4x4 & aabb
-
-	enum ComponentFlags
+	enum Components
 	{
 		COMPONENT_TRANSFORM = 1 << 0,
 		COMPONENT_RENDERER = 1 << 1,
@@ -23,9 +27,9 @@ struct GameObjects
 	std::vector<UID> ids;
 	std::vector<std::string> names;
 	std::vector<int> flags;
-	std::vector<int> component_flags;
+	std::vector<int> components;
 
-	//std::vector<ComponentTransform> transforms;
-	//std::vector<ComponentRenderer> renderers;
-
+	std::vector<ComponentTransform> transforms;
+	std::vector<ComponentRenderer> renderers;
+	std::vector<ComponentCamera> cameras;
 };

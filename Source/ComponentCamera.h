@@ -1,7 +1,7 @@
 #pragma once
 #include "Globals.h"
 
-class Camera
+struct Camera
 {
 //	//friend class ModuleCamera;
 //

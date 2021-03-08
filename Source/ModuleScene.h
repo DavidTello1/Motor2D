@@ -1,22 +1,10 @@
 #pragma once
 #include "Module.h"
 
-#include <vector>
+#include "GameObject.h"
 
-class GameObject;
-class PanelHierarchy;
-//class ModuleResources;
-//class ComponentRenderer;
-//class ComponentMesh;
-//class ComponentCamera;
-
-//enum SceneState {
-//	EDIT,
-//	START,
-//	PLAY,
-//	PAUSE,
-//	STOP
-//};
+//struct SystemCamera;
+//struct SystemRender;
 
 class ModuleScene : public Module
 {
@@ -24,30 +12,76 @@ public:
 	ModuleScene(bool start_enabled = true);
 	~ModuleScene();
 
-	//bool Init(Config * config);
-	//bool Start(Config* config = nullptr);
-	//bool Update(float dt);
-	//bool PostUpdate(float dt);
-	//bool CleanUp();
+	bool Init(Config* config = nullptr) override;
+	bool Start(Config* config = nullptr) override;
+	bool Update(float dt) override;
+	bool PostUpdate(float dt) override;
+	bool CleanUp() override;
 
-	//bool Draw();
+	void Load(Config* config) override;
+	void Save(Config* config) const override;
 
-	//const char* GetName() { return scene_name.c_str(); }
-	//void SetSceneName(const char* name) { scene_name = name; }
+	void Draw();
 
-	//GameObject* GetGameObject(UID id);
-	//GameObject* CreateGameObject(const char* name = "GameObject", GameObject* parent = nullptr, bool visible = false);
-	//void DeleteGameObject(GameObject* obj);
+private:
+	int GetGameObjectByID(UID id)
+	{
+		for (size_t index = 0, size = objects.ids.size(); index < size; ++index)
+		{
+			if (objects.ids[index] == id)
+				return index;
+		}
+		return -1;
+	}
 
-	//void DeleteSelected();
-	//void UnSelectAll(GameObject* keep_selected = nullptr);
+	int GetGameObjectByName(std::string name)
+	{
+		for (size_t index = 0, size = objects.ids.size(); index < size; ++index)
+		{
+			if (objects.names[index] == name)
+				return index;
+		}
+		return -1;
+	}
 
-public:
-	std::string scene_name;
+	size_t CreateGameObject(UID id_, std::string name_, int flags_, int components_)
+	{
+		objects.ids.push_back(id_);
+		objects.names.push_back(name_);
+		objects.flags.push_back(flags_);
+		objects.components.push_back(components_);
 
-	//static SceneState state;
-	//static const char* state_to_string[STOP + 1];
+		return objects.ids.size() - 1;
+	}
 
-	//std::vector<ResourceScene*> scenes;
-	//ResourceScene* current_scene;
+	void DeleteGameObject(size_t index)
+	{
+		objects.ids.erase(objects.ids.begin() + index);
+		objects.names.erase(objects.names.begin() + index);
+		objects.flags.erase(objects.flags.begin() + index);
+		objects.components.erase(objects.components.begin() + index);
+
+		//unsubscribe from components' systems
+	}
+
+	void DeleteAllGameObjects()
+	{
+		objects.ids.clear();
+		objects.names.clear();
+		objects.flags.clear();
+		objects.components.clear();
+
+		objects.ids.shrink_to_fit();
+		objects.names.shrink_to_fit();
+		objects.flags.shrink_to_fit();
+		objects.components.shrink_to_fit();
+	}
+
+
+private:
+	UID current_scene;
+	GameObjects objects;
+
+	//SystemRender render_system;
+	//SystemCamera camera_system;
 };

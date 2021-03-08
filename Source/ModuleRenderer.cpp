@@ -1,12 +1,14 @@
-#include "Application.h"
 #include "ModuleRenderer.h"
+#include "Application.h"
 #include "ModuleWindow.h"
+#include "ModuleScene.h"
 #include "ModuleEditor.h"
+
 #include "ModuleInput.h" //***MOVE TO PANELSCENE (SHORTCUTS)
 #include "Config.h"
 
 //#include "PanelScene.h"
-#include "Camera.h"
+//#include "ComponentCamera.h"
 
 #include "Glew/include/glew.h"
 #pragma comment (lib, "glu32.lib")
@@ -191,6 +193,7 @@ void ModuleRenderer::DrawScene()
 	glClear(GL_COLOR_BUFFER_BIT);
 	glClear(GL_DEPTH_BUFFER_BIT);
 
+	// Grid
 	if (drawGrid)
 	{
 		glLineWidth(1.0f);
@@ -211,9 +214,8 @@ void ModuleRenderer::DrawScene()
 	if (App->input->GetKey(SDL_SCANCODE_G) == KEY_DOWN) //***MOVE TO PANELSCENE (SHORTCUTS)
 		drawGrid = !drawGrid;
 
-	//DrawAllMeshes();
-	//DrawAllParticles();
-	//DrawAllBox();
+	// Draw Scene
+	App->scene->Draw();
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	glClearColor(0.278f, 0.278f, 0.278f, 0.278f);

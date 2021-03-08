@@ -53,28 +53,6 @@ struct ResourceData
 	}
 };
 
-
-//struct ResourceFolder
-//{
-//	ResourceData data;
-//	std::vector<std::vector<UID>> childs;
-//
-//	//--------------------------
-//	void Add(const char* assets_path, const char* library_folder, const char* extension, UID id = 0)
-//	{
-//		data.Add(assets_path, library_folder, extension, id);
-//
-//		std::vector<UID> children;
-//		childs.push_back(children);
-//	}
-//
-//	void AddChild(size_t index, UID id)
-//	{
-//		childs[index].push_back(id);
-//	}
-//};
-
-
 struct ResourceTexture //***maybe have the functions inside a struct
 {
 	//enum
@@ -109,4 +87,13 @@ struct ResourceTexture //***maybe have the functions inside a struct
 	bool Save() const;
 	bool Load(size_t index);
 	void UnLoad(size_t index);
+};
+
+struct ResourceScene 
+{
+	ResourceData data;
+
+	struct SceneData {
+		//GameObjects objects;
+	} scene;
 };

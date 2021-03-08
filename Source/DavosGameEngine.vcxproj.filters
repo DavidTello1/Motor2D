@@ -13,35 +13,38 @@
     <Filter Include="Sources\Modules">
       <UniqueIdentifier>{7b418be2-1631-4a31-9ef2-8a8b234a7339}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Sources\Resources">
+      <UniqueIdentifier>{e72c8f7b-e6de-4913-83bc-16ef4e168bcb}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Sources\External Libraries">
+      <UniqueIdentifier>{afc36133-f401-499a-aa33-0da1e500fb52}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Sources\External Libraries\ImGui">
+      <UniqueIdentifier>{e54c4b1a-b820-4264-be67-383d2a988bfe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Sources\External Libraries\mmgr">
+      <UniqueIdentifier>{1bf0de0d-49d5-400f-b1db-7d11412e6830}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Sources\External Libraries\gpudetect">
+      <UniqueIdentifier>{956fdc9f-efb4-41fa-b7b3-798bc3567716}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Sources\External Libraries\parson">
+      <UniqueIdentifier>{60413707-f765-4b6f-b9d7-74ec9d1253e7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Sources\External Libraries\Glew">
+      <UniqueIdentifier>{2b224b9b-42f6-4e8a-bbe9-3034ab84d34f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Sources\External Libraries\PCG">
+      <UniqueIdentifier>{3ef39b52-eb97-4076-aeeb-25020126cd87}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Sources\GameObjects">
       <UniqueIdentifier>{20c1a264-ac97-4187-a9eb-c9c77bf32138}</UniqueIdentifier>
     </Filter>
     <Filter Include="Sources\GameObjects\Components">
       <UniqueIdentifier>{6edd2410-b93c-4746-b8d2-0fa80fbf668d}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Sources\Libraries">
-      <UniqueIdentifier>{afc36133-f401-499a-aa33-0da1e500fb52}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Sources\Libraries\ImGui">
-      <UniqueIdentifier>{e54c4b1a-b820-4264-be67-383d2a988bfe}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Sources\Libraries\mmgr">
-      <UniqueIdentifier>{1bf0de0d-49d5-400f-b1db-7d11412e6830}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Sources\Libraries\gpudetect">
-      <UniqueIdentifier>{956fdc9f-efb4-41fa-b7b3-798bc3567716}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Sources\Libraries\parson">
-      <UniqueIdentifier>{60413707-f765-4b6f-b9d7-74ec9d1253e7}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Sources\Libraries\Glew">
-      <UniqueIdentifier>{2b224b9b-42f6-4e8a-bbe9-3034ab84d34f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Sources\Resources">
-      <UniqueIdentifier>{e72c8f7b-e6de-4913-83bc-16ef4e168bcb}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Sources\Libraries\PCG">
-      <UniqueIdentifier>{3ef39b52-eb97-4076-aeeb-25020126cd87}</UniqueIdentifier>
+    <Filter Include="Sources\GameObjects\Systems">
+      <UniqueIdentifier>{fc304d01-8bd4-4d8c-a462-4c0da5ac956b}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -55,46 +58,46 @@
       <Filter>Sources\Tools</Filter>
     </ClInclude>
     <ClInclude Include="Imgui\imconfig.h">
-      <Filter>Sources\Libraries\ImGui</Filter>
+      <Filter>Sources\External Libraries\ImGui</Filter>
     </ClInclude>
     <ClInclude Include="Imgui\imgui.h">
-      <Filter>Sources\Libraries\ImGui</Filter>
+      <Filter>Sources\External Libraries\ImGui</Filter>
     </ClInclude>
     <ClInclude Include="Imgui\imgui_impl_sdl.h">
-      <Filter>Sources\Libraries\ImGui</Filter>
+      <Filter>Sources\External Libraries\ImGui</Filter>
     </ClInclude>
     <ClInclude Include="Imgui\imgui_internal.h">
-      <Filter>Sources\Libraries\ImGui</Filter>
+      <Filter>Sources\External Libraries\ImGui</Filter>
     </ClInclude>
     <ClInclude Include="Imgui\imstb_rectpack.h">
-      <Filter>Sources\Libraries\ImGui</Filter>
+      <Filter>Sources\External Libraries\ImGui</Filter>
     </ClInclude>
     <ClInclude Include="Imgui\imstb_textedit.h">
-      <Filter>Sources\Libraries\ImGui</Filter>
+      <Filter>Sources\External Libraries\ImGui</Filter>
     </ClInclude>
     <ClInclude Include="Imgui\imstb_truetype.h">
-      <Filter>Sources\Libraries\ImGui</Filter>
+      <Filter>Sources\External Libraries\ImGui</Filter>
     </ClInclude>
     <ClInclude Include="Imgui\imgui_impl_opengl3.h">
-      <Filter>Sources\Libraries\ImGui</Filter>
+      <Filter>Sources\External Libraries\ImGui</Filter>
     </ClInclude>
     <ClInclude Include="mmgr\mmgr.h">
-      <Filter>Sources\Libraries\mmgr</Filter>
+      <Filter>Sources\External Libraries\mmgr</Filter>
     </ClInclude>
     <ClInclude Include="mmgr\nommgr.h">
-      <Filter>Sources\Libraries\mmgr</Filter>
+      <Filter>Sources\External Libraries\mmgr</Filter>
     </ClInclude>
     <ClInclude Include="gpudetect\DeviceId.h">
-      <Filter>Sources\Libraries\gpudetect</Filter>
+      <Filter>Sources\External Libraries\gpudetect</Filter>
     </ClInclude>
     <ClInclude Include="gpudetect\dxgi1_4.h">
-      <Filter>Sources\Libraries\gpudetect</Filter>
+      <Filter>Sources\External Libraries\gpudetect</Filter>
     </ClInclude>
     <ClInclude Include="Config.h">
       <Filter>Sources\Tools</Filter>
     </ClInclude>
     <ClInclude Include="parson\parson.h">
-      <Filter>Sources\Libraries\parson</Filter>
+      <Filter>Sources\External Libraries\parson</Filter>
     </ClInclude>
     <ClInclude Include="Color.h">
       <Filter>Sources\Tools</Filter>
@@ -136,16 +139,16 @@
       <Filter>Sources\Tools</Filter>
     </ClInclude>
     <ClInclude Include="Glew\include\eglew.h">
-      <Filter>Sources\Libraries\Glew</Filter>
+      <Filter>Sources\External Libraries\Glew</Filter>
     </ClInclude>
     <ClInclude Include="Glew\include\glew.h">
-      <Filter>Sources\Libraries\Glew</Filter>
+      <Filter>Sources\External Libraries\Glew</Filter>
     </ClInclude>
     <ClInclude Include="Glew\include\glxew.h">
-      <Filter>Sources\Libraries\Glew</Filter>
+      <Filter>Sources\External Libraries\Glew</Filter>
     </ClInclude>
     <ClInclude Include="Glew\include\wglew.h">
-      <Filter>Sources\Libraries\Glew</Filter>
+      <Filter>Sources\External Libraries\Glew</Filter>
     </ClInclude>
     <ClInclude Include="ModuleResources.h">
       <Filter>Sources\Modules</Filter>
@@ -154,10 +157,10 @@
       <Filter>Sources\Resources</Filter>
     </ClInclude>
     <ClInclude Include="stb_image.h">
-      <Filter>Sources\Libraries</Filter>
+      <Filter>Sources\External Libraries</Filter>
     </ClInclude>
     <ClInclude Include="PCG\pcg_basic.h">
-      <Filter>Sources\Libraries\PCG</Filter>
+      <Filter>Sources\External Libraries\PCG</Filter>
     </ClInclude>
     <ClInclude Include="PanelAssets.h">
       <Filter>Sources\Panels</Filter>
@@ -183,7 +186,13 @@
     <ClInclude Include="ModuleCamera.h">
       <Filter>Sources\Modules</Filter>
     </ClInclude>
-    <ClInclude Include="Camera.h">
+    <ClInclude Include="ComponentCamera.h">
+      <Filter>Sources\GameObjects\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="ComponentTransform.h">
+      <Filter>Sources\GameObjects\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="ComponentRenderer.h">
       <Filter>Sources\GameObjects\Components</Filter>
     </ClInclude>
   </ItemGroup>
@@ -195,34 +204,34 @@
       <Filter>Sources</Filter>
     </ClCompile>
     <ClCompile Include="Imgui\imgui.cpp">
-      <Filter>Sources\Libraries\ImGui</Filter>
+      <Filter>Sources\External Libraries\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="Imgui\imgui_demo.cpp">
-      <Filter>Sources\Libraries\ImGui</Filter>
+      <Filter>Sources\External Libraries\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="Imgui\imgui_draw.cpp">
-      <Filter>Sources\Libraries\ImGui</Filter>
+      <Filter>Sources\External Libraries\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="Imgui\imgui_impl_sdl.cpp">
-      <Filter>Sources\Libraries\ImGui</Filter>
+      <Filter>Sources\External Libraries\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="Imgui\imgui_widgets.cpp">
-      <Filter>Sources\Libraries\ImGui</Filter>
+      <Filter>Sources\External Libraries\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="Imgui\imgui_impl_opengl3.cpp">
-      <Filter>Sources\Libraries\ImGui</Filter>
+      <Filter>Sources\External Libraries\ImGui</Filter>
     </ClCompile>
     <ClCompile Include="mmgr\mmgr.cpp">
-      <Filter>Sources\Libraries\mmgr</Filter>
+      <Filter>Sources\External Libraries\mmgr</Filter>
     </ClCompile>
     <ClCompile Include="gpudetect\DeviceId.cpp">
-      <Filter>Sources\Libraries\gpudetect</Filter>
+      <Filter>Sources\External Libraries\gpudetect</Filter>
     </ClCompile>
     <ClCompile Include="Config.cpp">
       <Filter>Sources\Tools</Filter>
     </ClCompile>
     <ClCompile Include="parson\parson.c">
-      <Filter>Sources\Libraries\parson</Filter>
+      <Filter>Sources\External Libraries\parson</Filter>
     </ClCompile>
     <ClCompile Include="Color.cpp">
       <Filter>Sources\Tools</Filter>
@@ -242,9 +251,6 @@
     <ClCompile Include="ModuleRenderer.cpp">
       <Filter>Sources\Modules</Filter>
     </ClCompile>
-    <ClCompile Include="GameObject.cpp">
-      <Filter>Sources\GameObjects</Filter>
-    </ClCompile>
     <ClCompile Include="ModuleScene.cpp">
       <Filter>Sources\Modules</Filter>
     </ClCompile>
@@ -255,7 +261,7 @@
       <Filter>Sources\Resources</Filter>
     </ClCompile>
     <ClCompile Include="PCG\pcg_basic.c">
-      <Filter>Sources\Libraries\PCG</Filter>
+      <Filter>Sources\External Libraries\PCG</Filter>
     </ClCompile>
     <ClCompile Include="PanelAssets.cpp">
       <Filter>Sources\Panels</Filter>
@@ -280,9 +286,6 @@
     </ClCompile>
     <ClCompile Include="ModuleCamera.cpp">
       <Filter>Sources\Modules</Filter>
-    </ClCompile>
-    <ClCompile Include="Camera.cpp">
-      <Filter>Sources\GameObjects\Components</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

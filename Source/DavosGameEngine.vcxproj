@@ -76,7 +76,9 @@
   <ItemGroup>
     <ClInclude Include="Application.h" />
     <ClInclude Include="AssetNode.h" />
-    <ClInclude Include="Camera.h" />
+    <ClInclude Include="ComponentCamera.h" />
+    <ClInclude Include="ComponentRenderer.h" />
+    <ClInclude Include="ComponentTransform.h" />
     <ClInclude Include="ModuleCamera.h" />
     <ClInclude Include="PanelAssets.h" />
     <ClInclude Include="Color.h" />
@@ -124,14 +126,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Application.cpp" />
-    <ClCompile Include="Camera.cpp" />
     <ClCompile Include="ModuleCamera.cpp" />
     <ClCompile Include="PanelAssets.cpp" />
     <ClCompile Include="Color.cpp" />
     <ClCompile Include="Config.cpp" />
     <ClCompile Include="PanelConfiguration.cpp" />
     <ClCompile Include="PanelConsole.cpp" />
-    <ClCompile Include="GameObject.cpp" />
     <ClCompile Include="gpudetect\DeviceId.cpp" />
     <ClCompile Include="PanelHierarchy.cpp" />
     <ClCompile Include="Imgui\imgui.cpp" />

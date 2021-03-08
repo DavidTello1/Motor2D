@@ -51,6 +51,7 @@ public:
 	void AddLog(const char* icon, const char* time, const char* message);
 	void ClearLog();
 	std::vector<Log> GetLog() { return logs; }
+
 	UID GenerateUID();
 
 private:

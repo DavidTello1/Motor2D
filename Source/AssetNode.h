@@ -36,9 +36,6 @@ struct AssetNode
 	std::vector<std::string> parent;
 	std::vector <std::vector<std::string>> childs;
 
-	//uint icon = 0;
-	//uint count = 0;
-
 	//----------------------------
 	size_t Add(std::string path_, std::string name_, ResourceType type_, std::vector<std::string> childs_, std::string parent_ = "", State state_ = State::IDLE, bool open_ = false)
 	{
