@@ -1,5 +1,4 @@
 #include "PanelResources.h"
-#include "Resource.h"
 #include "Application.h"
 #include "ModuleResources.h"
 

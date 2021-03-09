@@ -1,4 +1,4 @@
-#include "Resource.h"
+#include "ResourceTexture.h"
 #include "ModuleFileSystem.h"
 
 #define STB_IMAGE_IMPLEMENTATION    

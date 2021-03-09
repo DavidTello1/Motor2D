@@ -26,6 +26,7 @@ struct GameObjects
 
 	std::vector<UID> ids;
 	std::vector<std::string> names;
+	std::vector<int> layers;
 	std::vector<int> flags;
 	std::vector<int> components;
 

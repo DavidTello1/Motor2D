@@ -40,7 +40,7 @@ void PanelHierarchy::Draw()
 		scene_name = "Default Scene";
 	else
 	{
-		int scene_index = App->resources->scenes.data.GetIndexFromID(App->scene->current_scene);
+		scene_index = App->resources->scenes.data.GetIndexFromID(App->scene->current_scene);
 		if (scene_index != -1)
 			scene_name = App->resources->scenes.data.names[scene_index];
 		else
@@ -174,7 +174,7 @@ void PanelHierarchy::DrawSceneNode()
 
 	ImGui::SetCursorPos(ImVec2(position, limit.y + 1));
 	ImGui::InvisibleButton(ICON_OPTIONS, ImVec2(14, 19));
-	ShowSceneOptions(App->scene->current_scene); //*** NOT APPLY STYLE
+	ShowSceneOptions(scene_index); //*** NOT APPLY STYLE
 	ImGui::SameLine();
 
 	ImGui::SetCursorPosX(position);
@@ -190,6 +190,10 @@ void PanelHierarchy::DrawRightClick()
 	{
 		CreateMenu();
 
+		if (ImGui::MenuItem("Create Prefab", NULL, false, !nodes.selected_nodes.empty())) //create prefab
+		{
+			//CreatePrefab(name, object, folder);
+		} 
 		if (ImGui::MenuItem("Duplicate", "Ctrl+D", false, !nodes.selected_nodes.empty())) //duplicate
 			nodes.DuplicateNodes(nodes.selected_nodes);
 
@@ -319,7 +323,14 @@ void PanelHierarchy::CreateMenu()
 			if (!nodes.selected_nodes.empty())
 				parent = nodes.selected_nodes[0];
 
-			nodes.CreateNode("", NodeType::FOLDER, empty_childs, parent);
+			nodes.CreateNode(NodeType::FOLDER, empty_childs, "", parent, 0, HN_State::SELECTED);
+
+			if (!nodes.selected_nodes.empty())
+			{
+				int index = nodes.FindNode(nodes.selected_nodes[0], nodes.data.name);
+				if (index != -1)
+					nodes.data.state[index] = HN_State::IDLE;
+			}
 		}
 
 		if (ImGui::MenuItem("GameObject"))
@@ -329,7 +340,14 @@ void PanelHierarchy::CreateMenu()
 			if (!nodes.selected_nodes.empty())
 				parent = nodes.selected_nodes[0];
 
-			nodes.CreateNode("", NodeType::GAMEOBJECT, empty_childs, parent);
+			nodes.CreateNode(NodeType::GAMEOBJECT, empty_childs, "", parent, 0, HN_State::SELECTED);
+
+			if (!nodes.selected_nodes.empty())
+			{
+				int index = nodes.FindNode(nodes.selected_nodes[0], nodes.data.name);
+				if (index != -1)
+					nodes.data.state[index] = HN_State::IDLE;
+			}
 		}
 		ImGui::EndMenu();
 	}

@@ -118,8 +118,10 @@
     <ClInclude Include="PanelScene.h" />
     <ClInclude Include="parson\parson.h" />
     <ClInclude Include="PCG\pcg_basic.h" />
-    <ClInclude Include="Resource.h" />
+    <ClInclude Include="ResourceData.h" />
     <ClInclude Include="PanelResources.h" />
+    <ClInclude Include="ResourceScene.h" />
+    <ClInclude Include="ResourceTexture.h" />
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="Timer.h" />
     <ClInclude Include="PanelToolbar.h" />
@@ -144,6 +146,7 @@
     <ClCompile Include="PanelScene.cpp" />
     <ClCompile Include="PCG\pcg_basic.c" />
     <ClCompile Include="PanelResources.cpp" />
+    <ClCompile Include="ResourceScene.cpp" />
     <ClCompile Include="ResourceTexture.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="mmgr\mmgr.cpp" />

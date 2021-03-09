@@ -13,9 +13,9 @@ struct PositionSort {
 };
 
 struct IndentSort {
-	bool operator()(int const& indent1, int const& indent2) //true if indent1 < indent2
+	bool operator()(std::pair<std::string, int> const& indent1, std::pair<std::string, int> const& indent2) //true if indent1 < indent2
 	{
-		return (indent1 < indent2) ? true : false;
+		return (indent1.second > indent2.second) ? true : false;
 	}
 };
 
@@ -62,7 +62,7 @@ struct HierarchyNode // Node
 	void DrawNode(size_t index);
 	int FindNode(std::string name, std::vector<std::string> list) const; //get node pos in list (returns -1 if not found)
 
-	size_t CreateNode(std::string name, NodeType type, std::vector<std::string> childs, std::string parent = "", int flags = 0, HN_State state = HN_State::IDLE);
+	size_t CreateNode(NodeType type, std::vector<std::string> childs, std::string name = "", std::string parent = "", int flags = 0, HN_State state = HN_State::IDLE);
 	void DeleteNodes(std::vector<std::string> nodes, bool reorder = true);
 	void DuplicateNodes(std::vector<std::string> nodes, int parent_index = -1);
 	void RenameNode(size_t index);
@@ -87,5 +87,5 @@ struct HierarchyNode // Node
 
 	//// --- SORTERS ---
 	//void SortByPosition() const; //order by position (smaller to bigger)
-	//void SortByIndent() const; //order by indent (lower to higher)
+	std::vector<std::string> SortByIndent(std::vector<std::string> list) const; //order by indent (lower to higher)
 };

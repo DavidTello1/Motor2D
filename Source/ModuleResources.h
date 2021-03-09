@@ -1,6 +1,7 @@
 #pragma once
 #include "Module.h"
-#include "Resource.h"
+#include "ResourceScene.h"
+#include "ResourceTexture.h"
 
 #define RESERVED_RESOURCES 11 // Icons for Panel Assets (10) + Engine Icon (1)
 

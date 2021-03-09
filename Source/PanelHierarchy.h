@@ -32,6 +32,7 @@ public:
 
 private:
 	std::string scene_name = "Default Scene";
+	int scene_index = -1;
 	bool is_scene_saved = true;
 	bool is_scene_hidden = false;
 

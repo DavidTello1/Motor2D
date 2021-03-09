@@ -10,7 +10,7 @@
 #include "ModuleResources.h"
 
 #include "AssetNode.h"
-#include "Resource.h"
+#include "ResourceData.h"
 
 #include "Imgui/imgui_internal.h"
 #include "gpudetect/DeviceId.h"

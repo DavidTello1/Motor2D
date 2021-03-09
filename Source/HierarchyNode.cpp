@@ -26,7 +26,7 @@ void HierarchyNode::DrawNode(size_t index)
 
 	// Shown Icon
 	float pos_x = ImGui::GetCursorPosX();
-	if (ImGui::InvisibleButton(std::string(data.name[index] + ICON_SHOW).c_str(), ImVec2(15, height)))
+	if (ImGui::InvisibleButton(std::string(data.name[index] + ICON_SHOW).c_str(), ImVec2(16, height)))
 	{
 		if (data.flags[index] & NodeFlags::HIDDEN)
 			data.flags[index] &= ~NodeFlags::HIDDEN;
@@ -142,8 +142,8 @@ void HierarchyNode::DrawNode(size_t index)
 	else
 	{
 		// Arrow Icon
-		pos_x = ImGui::GetCursorPosX();
-		if (ImGui::InvisibleButton(std::string(data.name[index] + ICON_ARROW_OPEN).c_str(), ImVec2(15, height)))
+		pos_x = ImGui::GetCursorPosX() - 1;
+		if (ImGui::InvisibleButton(std::string(data.name[index] + ICON_ARROW_OPEN).c_str(), ImVec2(16, height)))
 		{
 			if (data.flags[index] & NodeFlags::OPEN)
 				data.flags[index] &= ~NodeFlags::OPEN;
@@ -157,14 +157,14 @@ void HierarchyNode::DrawNode(size_t index)
 		if (ImGui::IsItemHovered())
 		{
 			is_hovered = true;
-			if (data.flags[index] == NodeFlags::OPEN)
+			if (data.flags[index] & NodeFlags::OPEN)
 				ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), ICON_ARROW_OPEN);
 			else
 				ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), ICON_ARROW_CLOSED);
 		}
 		else
 		{
-			if (data.flags[index] == NodeFlags::OPEN)
+			if (data.flags[index] & NodeFlags::OPEN)
 				ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.8f), ICON_ARROW_OPEN);
 			else
 				ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.8f), ICON_ARROW_CLOSED);
@@ -244,7 +244,7 @@ int HierarchyNode::FindNode(std::string name, std::vector<std::string> list) con
 	return -1;
 }
 
-size_t HierarchyNode::CreateNode(std::string name_, NodeType type_, std::vector<std::string> childs_, std::string parent, int flags_, HN_State state_)
+size_t HierarchyNode::CreateNode(NodeType type_, std::vector<std::string> childs_, std::string name_, std::string parent, int flags_, HN_State state_)
 {
 	size_t index = data.name.size();
 
@@ -281,8 +281,6 @@ size_t HierarchyNode::CreateNode(std::string name_, NodeType type_, std::vector<
 			data.flags[parent_index] |= NodeFlags::OPEN; //set parent open
 		}
 	}
-	SetState(HN_State::IDLE, data.name); // UnSelectAll
-	data.state[index] = HN_State::SELECTED;
 
 	//ReorderNodes(index);
 
@@ -339,22 +337,35 @@ void HierarchyNode::DeleteNodes(std::vector<std::string> nodes_list, bool reorde
 }
 
 void HierarchyNode::DuplicateNodes(std::vector<std::string> nodes_list, int parent_index)
-{
+{		
+	// Reorder list by indent (parents first)
+	if (nodes_list.size() > 1)
+		nodes_list = SortByIndent(nodes_list);
+
 	for (uint i = 0; i < nodes_list.size(); ++i)
 	{
+		// Get node index in main list
 		int index = FindNode(nodes_list[i], data.name);
 		if (index == -1)
 			continue;
 
 		// Parent
-		if (parent_index == -1 && data.parent[index] != "") // if parent is null make root
-			parent_index = FindNode(nodes_list[i], data.name);
-
-		// Create Node
 		std::vector<std::string> empty_childs;
-		size_t new_index = CreateNode(data.name[index], data.type[index], empty_childs, data.name[parent_index]);
+		std::string parent_name = "";
 
-		// Selected (unselect source node)
+		if (parent_index == -1 && data.parent[index] != "") // if parent is null make root
+		{
+			int pos = FindNode(data.parent[index], data.name);
+			if (pos != -1)
+				parent_name = data.name[pos];
+		}
+		else if (parent_index != -1) // parent not null
+			parent_name = data.name[parent_index];
+
+		// Create Node			
+		size_t new_index = CreateNode(data.type[index], empty_childs, data.name[index], parent_name, 0, HN_State::SELECTED);
+
+		// Unselect source node
 		data.state[index] = HN_State::IDLE;
 
 		// Childs
@@ -435,7 +446,14 @@ void HierarchyNode::HandleSelection(size_t index, bool is_hovered)
 		}
 		else if (ImGui::IsMouseClicked(0)) // Multiple Selection
 		{
-			if (ImGui::GetIO().KeyShift && !selected_nodes.empty()) // Multiple Selection (Shift)
+			if (ImGui::GetIO().KeyCtrl) // Multiple Selection (Ctrl)
+			{
+				if (data.state[index] == HN_State::SELECTED)
+					data.state[index] = HN_State::IDLE;
+				else
+					data.state[index] = HN_State::SELECTED;
+			}
+			else if (ImGui::GetIO().KeyShift && !selected_nodes.empty()) // Multiple Selection (Shift)
 			{
 				int pos = FindNode(selected_nodes.back().c_str(), data.name);
 				if (pos != -1)
@@ -455,10 +473,15 @@ void HierarchyNode::HandleSelection(size_t index, bool is_hovered)
 		}
 		else if (ImGui::IsMouseReleased(0)) // Single selection
 		{
-			if (!ImGui::GetIO().KeyCtrl && !ImGui::GetIO().KeyShift && data.state[index] != HN_State::DRAGGING && data.state[index] != HN_State::RENAME)
+			if (!ImGui::GetIO().KeyCtrl && !ImGui::GetIO().KeyShift &&  data.state[index] != HN_State::DRAGGING && data.state[index] != HN_State::RENAME)
 			{
+				bool selected = (data.state[index] == HN_State::SELECTED);
 				SetState(HN_State::IDLE, data.name);
-				data.state[index] = HN_State::SELECTED;
+
+				if (selected && selected_nodes.size() <= 1)
+					data.state[index] = HN_State::IDLE;
+				else
+					data.state[index] = HN_State::SELECTED;
 			}
 		}
 		else if (ImGui::IsMouseClicked(1)) // Right Click (select item to show options)
@@ -719,21 +742,27 @@ uint HierarchyNode::RecursivePos(size_t index)
 //		ListOrder.pop();
 //	}
 //}
-//
-//void HierarchyNode::SortByIndent() const
-//{
-//	std::priority_queue<int, std::vector<int>, IndentSort> ListOrder;
-//
-//	for (int pos : data.pos) //push nodes into Ordered List
-//	{
-//		ListOrder.push(pos);
-//	}
-//
-//	list.clear(); //clear list
-//
-//	while (ListOrder.empty() == false) //push Ordered List into New List
-//	{
-//		list.push_back(ListOrder.top());
-//		ListOrder.pop();
-//	}
-//}
+
+std::vector<std::string> HierarchyNode::SortByIndent(std::vector<std::string> list) const
+{
+	std::priority_queue<std::pair<std::string, int>, std::vector<std::pair<std::string, int>>, IndentSort> ListOrder;
+
+	for (std::string name : list) //push nodes into Ordered List
+	{
+		int pos = FindNode(name, data.name);
+		if (pos == -1)
+			continue;
+
+		ListOrder.push({ name, data.indent[pos] });
+	}
+
+	list.clear(); //clear list
+
+	while (ListOrder.empty() == false) //push Ordered List into New List
+	{
+		list.push_back(ListOrder.top().first);
+		ListOrder.pop();
+	}
+
+	return list;
+}
