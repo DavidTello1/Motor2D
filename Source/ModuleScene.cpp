@@ -6,6 +6,7 @@
 
 ModuleScene::ModuleScene(bool start_enabled) : Module("Scene", start_enabled)
 {
+	current_scene = 0;
 }
 
 ModuleScene::~ModuleScene()

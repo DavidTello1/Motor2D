@@ -15,6 +15,7 @@ public:
 	void Load(Config* config) override;
 
 private:
+	void DrawSceneNode();
 	void DrawConnectorLines(size_t index, ImDrawList* draw_list); //draw connector lines when node is open
 
 	void DrawRightClick(); //only draws if right click is pressed, returns true if drawn
@@ -30,8 +31,11 @@ public:
 	static const uint default_pos_y = 20;
 
 private:
-	HierarchyNode nodes;
-	std::vector<std::string> selected_nodes;
+	std::string scene_name = "Default Scene";
+	bool is_scene_saved = true;
+	bool is_scene_hidden = false;
 
-	std::vector<std::string> hidden_childs;
+	HierarchyNode nodes;
+
+	//std::vector<std::string> hidden_childs;
 };

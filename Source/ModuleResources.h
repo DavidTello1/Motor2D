@@ -33,13 +33,13 @@ public:
 
 private:
 	void ImportAllAssets(const char* path);
-	bool ImportFromAssets(const char* path, UID uid = 0, bool save_meta = true); // Creates file in /Library and a .meta in /Assets (if bool is true)
+	bool ImportFromAssets(const char* path, const char* name, UID uid = 0, bool save_meta = true); // Creates file in /Library and a .meta in /Assets (if bool is true)
 
 	//void CleanMeta(); // Remove .meta files of resources that no longer exist in /Assets
 	//void CleanLibrary(); // Remove Library-Resources that no longer exist in /Assets
 
 public:
+	ResourceScene scenes;
 	ResourceTexture textures;
-
 	//std::vector<UID> loaded_resources;
 };

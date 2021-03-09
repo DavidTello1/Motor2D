@@ -7,9 +7,9 @@
 
 #include "mmgr/mmgr.h"
 
-bool ResourceTexture::Create(const char* path, UID uid)
+bool ResourceTexture::Create(const char* path, const char* name, UID uid)
 {
-	Add(path, LIBRARY_TEXTURE_FOLDER, EXTENSION_TEXTURE, uid); // Initialize Data
+	Add(path, name, LIBRARY_TEXTURE_FOLDER, EXTENSION_TEXTURE, uid); // Initialize Data
 	Save(); // Save Library File
 
 	return true;

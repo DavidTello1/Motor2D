@@ -78,8 +78,10 @@ private:
 	}
 
 
-private:
+public:
 	UID current_scene;
+	
+private:
 	GameObjects objects;
 
 	//SystemRender render_system;

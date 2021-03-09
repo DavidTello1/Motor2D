@@ -2,7 +2,8 @@
 #include "Application.h"
 #include "ModuleInput.h"
 #include "ModuleEditor.h"
-//#include "ModuleScene.h"
+#include "ModuleScene.h"
+#include "ModuleResources.h"
 #include "GameObject.h"
 
 #include "Imgui/imgui_internal.h"
@@ -18,6 +19,8 @@ PanelHierarchy::PanelHierarchy() : Panel("Hierarchy", ICON_HIERARCHY, 3)
 	pos_y = default_pos_y;
 
 	flags = ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_NoCollapse;
+
+	scene_name = "Default Scene";
 }
 
 PanelHierarchy::~PanelHierarchy()
@@ -32,6 +35,18 @@ void PanelHierarchy::Draw()
 	static ImGuiContext& g = *GImGui;
 	static ImGuiWindow* window = g.CurrentWindow;
 
+	// Get Scene Name
+	if (App->scene->current_scene == 0)
+		scene_name = "Default Scene";
+	else
+	{
+		int scene_index = App->resources->scenes.data.GetIndexFromID(App->scene->current_scene);
+		if (scene_index != -1)
+			scene_name = App->resources->scenes.data.names[scene_index];
+		else
+			scene_name = "Default Scene";
+	}
+
 	// Allow selection & show options with right click
 	if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup) && ImGui::IsMouseClicked(1))
 		ImGui::SetWindowFocus();
@@ -42,6 +57,8 @@ void PanelHierarchy::Draw()
 	// Draw Nodes
 	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(-2, 3));
 	ImVec2 pos = ImGui::GetCursorPos();
+
+	DrawSceneNode(); // Draw Scene Node
 
 	HierarchyNodeData data = nodes.data;
 	for (size_t index = 0, size = data.name.size(); index < size; ++index)
@@ -112,91 +129,129 @@ void PanelHierarchy::Load(Config* config)
 {
 }
 
+void PanelHierarchy::DrawSceneNode()
+{
+	// Main Variables
+	static ImGuiContext& g = *GImGui;
+	static ImGuiWindow* window = g.CurrentWindow;
+	const float height = g.FontSize + g.Style.FramePadding.y;
+
+	// Background
+	ImVec2 pos = window->DC.CursorPos;
+	ImRect bg(ImVec2(pos.x - 10, pos.y - g.Style.FramePadding.y), ImVec2(pos.x + ImGui::GetWindowWidth() + ImGui::GetScrollX(), pos.y + height));
+	window->DrawList->AddRectFilled(bg.Min, bg.Max, ImColor(ImVec4(0.25f, 0.25, 0.25f, 1.0f)));
+
+	// Shown Icon
+	float pos_x = ImGui::GetCursorPosX();
+	if (ImGui::InvisibleButton(std::string(scene_name + ICON_SHOW).c_str(), ImVec2(15, height)))
+		is_scene_hidden = !is_scene_hidden;
+	ImGui::SameLine();
+
+	ImGui::SetCursorPosX(pos_x);
+	if (ImGui::IsItemHovered())
+		is_scene_hidden ? ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), ICON_HIDE) : ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), ICON_SHOW);
+	else
+		is_scene_hidden ? ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.5f), ICON_HIDE) : ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.0f), ICON_SHOW);
+	ImGui::SameLine();
+
+	// Node Icon
+	ImGui::SetCursorPosX(pos_x + 19);
+	ImGui::Text(ICON_SCENE_OBJ);
+	ImGui::SameLine(0.0f, 3.0f);
+
+	// Name
+	if (is_scene_saved == false)
+		ImGui::TextColored(ImVec4(1.0f, 0.5f, 0.0f, 1.0f), scene_name.c_str());
+	else
+		ImGui::Text(scene_name.c_str());
+	ImGui::SameLine();
+
+	// Options
+	ImVec2 limit = ImGui::GetCursorPos();
+	float position = ImGui::GetWindowWidth() - 22;
+	if (position < limit.x + 5)
+		position = limit.x + 5;
+
+	ImGui::SetCursorPos(ImVec2(position, limit.y + 1));
+	ImGui::InvisibleButton(ICON_OPTIONS, ImVec2(14, 19));
+	ShowSceneOptions(App->scene->current_scene); //*** NOT APPLY STYLE
+	ImGui::SameLine();
+
+	ImGui::SetCursorPosX(position);
+	if (ImGui::IsItemHovered())
+		ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), ICON_OPTIONS);
+	else
+		ImGui::TextColored(ImVec4(0.9f, 0.9f, 0.9f, 0.5f), ICON_OPTIONS);
+}
+
 void PanelHierarchy::DrawRightClick()
 {
-	//if (ImGui::BeginPopupContextWindow("Hierarchy"))
-	//{
-	//	CreateMenu();
+	if (ImGui::BeginPopupContextWindow("Hierarchy"))
+	{
+		CreateMenu();
 
-	//	if (ImGui::MenuItem("Duplicate", "Ctrl+D", false, !selected_nodes.empty())) //duplicate
-	//		DuplicateNodes(selected_nodes);
+		if (ImGui::MenuItem("Duplicate", "Ctrl+D", false, !nodes.selected_nodes.empty())) //duplicate
+			nodes.DuplicateNodes(nodes.selected_nodes);
 
-	//	ImGui::Separator();
+		ImGui::Separator();
 
-	//	if (ImGui::MenuItem("Cut", "Ctrl+X", false, !selected_nodes.empty())) //cut
-	//	{
-	//	}
-	//	if (ImGui::MenuItem("Copy", "Ctrl+C", false, !selected_nodes.empty())) //copy
-	//	{
-	//	}
-	//	if (ImGui::MenuItem("Paste", "Ctrl+V", false, false)) //paste
-	//	{
-	//	}
-	//	ImGui::Separator();
+		if (ImGui::MenuItem("Cut", "Ctrl+X", false, !nodes.selected_nodes.empty())) //cut
+		{
+		}
+		if (ImGui::MenuItem("Copy", "Ctrl+C", false, !nodes.selected_nodes.empty())) //copy
+		{
+		}
+		if (ImGui::MenuItem("Paste", "Ctrl+V", false, false)) //paste
+		{
+		}
+		ImGui::Separator();
 
-	//	if (ImGui::MenuItem("Select All", NULL, false, !nodes.empty())) //select all
-	//		SelectAll();
+		if (ImGui::MenuItem("Select All", NULL, false, !nodes.data.name.empty())) //select all
+			nodes.SetState(HN_State::SELECTED, nodes.data.name);
 
-	//	if (ImGui::MenuItem("Rename", NULL, false, selected_nodes.size() == 1)) //rename
-	//		selected_nodes.front()->rename = true;
+		if (ImGui::MenuItem("Rename", NULL, false, nodes.selected_nodes.size() == 1)) //rename
+		{
+			int pos = nodes.FindNode(nodes.selected_nodes[0], nodes.data.name);
+			if (pos != -1)
+				nodes.data.state[pos] = HN_State::RENAME;
+		}
 
-	//	if (ImGui::MenuItem("Delete", "Supr", false, !selected_nodes.empty())) //delete
-	//	{
-	//		DeleteNodes(selected_nodes);
-	//		selected_nodes.clear();
-	//	}
-	//	ImGui::Separator();
+		if (ImGui::MenuItem("Delete", "Supr", false, !nodes.selected_nodes.empty())) //delete
+		{
+			nodes.DeleteNodes(nodes.selected_nodes);
+			nodes.selected_nodes.clear();
+		}
+		ImGui::Separator();
 
-	//	if (ImGui::MenuItem("Search", "Ctrl+F")) //search
-	//	{
+		if (ImGui::MenuItem("Search", "Ctrl+F")) //search
+		{
 
-	//	}
+		}
 
-	//	ImGui::EndPopup();
-	//}
+		ImGui::EndPopup();
+	}
 }
 
 void PanelHierarchy::ShowSceneOptions(size_t index)
 {
 	if (ImGui::BeginPopupContextItem(0,0))
 	{
-		//NodeScene* scene_node = (NodeScene*)node;
-
-		//if (ImGui::MenuItem("Set Active Scene"))
-		//	current_scene = node;
-		//ImGui::Separator();
-
-		if (ImGui::MenuItem("Save Scene", NULL, false/*, !scene_node->is_saved*/))
+		if (ImGui::MenuItem("Save Scene", NULL, false, !is_scene_saved))
 		{}
 
 		if (ImGui::MenuItem("Save Scene As"))
 		{}
-
-		if (ImGui::MenuItem("Save All"))
-		{}
 		ImGui::Separator();
 
-		if (ImGui::MenuItem("Unload Scene"))
+		if (ImGui::MenuItem("Remove Scene"))
 		{}
 
-		if (ImGui::MenuItem("Remove Scene"))
-		{
-			//if scene nodes is the only scene, delete and create default scene
-			//if scene node is current_scene -> change to first scene in nodes
-			std::vector<HierarchyNode*>list;
-			//push back scene node and all its childs and childs of childs
-			//DeleteNodes(list);
-		}
-
-		if (ImGui::MenuItem("Discard Changes", NULL, false/*, !scene_node->is_saved*/))
+		if (ImGui::MenuItem("Discard Changes", NULL, false, !is_scene_saved))
 		{}
 		ImGui::Separator();
 
 		if (ImGui::MenuItem("Show in Assets"))
 		{}
-
-		CreateMenu();
-
 		ImGui::EndPopup();
 	}
 }
@@ -255,22 +310,29 @@ void PanelHierarchy::DrawConnectorLines(size_t index, ImDrawList* draw_list)
 // --- NODE CREATION ---
 void PanelHierarchy::CreateMenu()
 {
-	//if (ImGui::BeginMenu("Create")) //create
-	//{
-	//	if (ImGui::MenuItem("Folder"))
-	//		CreateNode(HierarchyNode::NodeType::FOLDER);
+	if (ImGui::BeginMenu("Create")) //create
+	{
+		if (ImGui::MenuItem("Folder"))
+		{
+			std::vector<std::string> empty_childs;
+			std::string parent = "";
+			if (!nodes.selected_nodes.empty())
+				parent = nodes.selected_nodes[0];
 
-	//	if (ImGui::MenuItem("Scene"))
-	//		CreateNode(HierarchyNode::NodeType::SCENE);
+			nodes.CreateNode("", NodeType::FOLDER, empty_childs, parent);
+		}
 
-	//	if (ImGui::MenuItem("GameObject"))
-	//		CreateNode(HierarchyNode::NodeType::GAMEOBJECT);
+		if (ImGui::MenuItem("GameObject"))
+		{
+			std::vector<std::string> empty_childs;
+			std::string parent = "";
+			if (!nodes.selected_nodes.empty())
+				parent = nodes.selected_nodes[0];
 
-	//	//if (ImGui::MenuItem("Prefab"))
-	//	//	CreateNode(HierarchyNode::NodeType::PREFAB);
-
-	//	ImGui::EndMenu();
-	//}
+			nodes.CreateNode("", NodeType::GAMEOBJECT, empty_childs, parent);
+		}
+		ImGui::EndMenu();
+	}
 }
 
 void PanelHierarchy::Scroll(ImVec2 pos)

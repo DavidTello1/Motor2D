@@ -56,20 +56,22 @@ struct HierarchyNodeData // Data
 struct HierarchyNode // Node
 {
 	HierarchyNodeData data;
+	std::vector<std::string> selected_nodes;
 
 	//----------------------------
 	void DrawNode(size_t index);
 	int FindNode(std::string name, std::vector<std::string> list) const; //get node pos in list (returns -1 if not found)
 
-	size_t CreateNode(std::string name, NodeType type, std::vector<std::string> childs, int parent_index = -1, int flags = 0, HN_State state = HN_State::IDLE);
+	size_t CreateNode(std::string name, NodeType type, std::vector<std::string> childs, std::string parent = "", int flags = 0, HN_State state = HN_State::IDLE);
 	void DeleteNodes(std::vector<std::string> nodes, bool reorder = true);
 	void DuplicateNodes(std::vector<std::string> nodes, int parent_index = -1);
+	void RenameNode(size_t index);
 	//void MoveNode(size_t index, size_t parent_index, int pos = -1, int indent = -1); //move node (if pos or indent is -1 they will be set according to parent)
 
-	//void HandleSelection(size_t index); //selection states
+	void HandleSelection(size_t index, bool is_hovered); //selection states
 	void SetState(HN_State state, std::vector<std::string> list);
 
-	//uint GetNameCount(const std::string name) const; //get name count
+	std::string GetNameCount(const std::string name) const; //get name count
 
 	//// --- NODE POS ---
 	//void ReorderNodes(size_t index, bool is_delete = false); //update nodes pos

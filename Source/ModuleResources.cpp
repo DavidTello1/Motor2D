@@ -67,17 +67,18 @@ bool ModuleResources::ImportFromExplorer(std::string path, UID uid)
 	App->file_system->NormalizePath(full_path);
 
 	// Get File Name
-	full_path = ASSETS_FOLDER + App->file_system->GetFileName(full_path.c_str());
+	std::string file_name = App->file_system->GetFileName(full_path.c_str());
+	full_path = ASSETS_FOLDER + file_name;
 	App->file_system->NormalizePath(full_path);
 
 	// Copy file to Assets Folder & Import
 	if (App->file_system->CopyFromOutside(path.c_str(), full_path.c_str()) == true)
-		return ImportFromAssets(full_path.c_str(), uid);
+		return ImportFromAssets(full_path.c_str(), file_name.c_str(), uid);
 
 	return false;
 }
 
-bool ModuleResources::ImportFromAssets(const char* path, UID uid, bool save_meta)
+bool ModuleResources::ImportFromAssets(const char* path, const char* name, UID uid, bool save_meta)
 {
 	bool ret = false;
 	ResourceData data;
@@ -86,7 +87,7 @@ bool ModuleResources::ImportFromAssets(const char* path, UID uid, bool save_meta
 	case ResourceType::FOLDER:		ret = true; save_meta = false; break;
 	case ResourceType::SCENE:		break;
 	case ResourceType::PREFAB:		break;
-	case ResourceType::TEXTURE:		ret = textures.Create(path, uid); data = textures.data; break;
+	case ResourceType::TEXTURE:		ret = textures.Create(path, name, uid); data = textures.data; break;
 	case ResourceType::MATERIAL:	break;
 	case ResourceType::ANIMATION:	break;
 	case ResourceType::TILEMAP:		break;
@@ -278,14 +279,14 @@ void ModuleResources::ImportAllAssets(const char* path)
 			{
 				// Check if Last Modification Time has changed
 				if (App->file_system->GetLastModTime(assets.path[index].c_str()) != meta_data.GetInt("Date"))
-					ImportFromAssets(assets.path[index].c_str(), uid); // Import File and Save .meta
+					ImportFromAssets(assets.path[index].c_str(), assets.name[index].c_str(), uid); // Import File and Save .meta
 			}
 			else
-				ImportFromAssets(assets.path[index].c_str(), uid, false); // Import File and NOT Save .meta
+				ImportFromAssets(assets.path[index].c_str(), assets.name[index].c_str(), uid, false); // Import File and NOT Save .meta
 
 			RELEASE_ARRAY(buffer);
 		}
 		else
-			ImportFromAssets(assets.path[index].c_str()); // Import File and Save .meta
+			ImportFromAssets(assets.path[index].c_str(), assets.name[index].c_str()); // Import File and Save .meta
 	}
 }
