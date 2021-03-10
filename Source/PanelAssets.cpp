@@ -458,7 +458,10 @@ void PanelAssets::DrawIcons(std::vector<std::string> current_list, uint columns)
 				}
 			}
 			else // Rename
-				Rename(index, pos);
+			{
+				ImGui::SetCursorPosX(pos.x);
+				Rename(index);
+			}
 
 			ImGui::EndGroup();
 
@@ -524,15 +527,19 @@ void PanelAssets::DrawList(std::vector<std::string> current_list)
 			if (nodes.state[index] == AN_State::CUT)
 				text_color = ImVec4(0.6f, 0.6f, 0.6f, 1.0f);
 
+			// Icon
+			ImVec4 icon_color = GetIconColor(nodes.type[index]);
+			std::string icon = GetIconList(nodes.type[index]);
+			ImGui::TextColored(icon_color, icon.c_str());
+			ImGui::SameLine();
+
 			if (nodes.state[index] != AN_State::RENAME)
 			{
 				// Text
-				ImVec4 icon_color = GetIconColor(nodes.type[index]);
-				std::string icon = GetIconList(nodes.type[index]);
 				std::string text = nodes.name[index];
-				uint text_size = (uint)ImGui::CalcTextSize(std::string(icon + " " + text).c_str()).x;
+				uint text_size = (uint)ImGui::CalcTextSize(text.c_str()).x;
 				int max_size = (int)(size.x - 7 - ImGui::CalcTextSize("...").x) / 7;
-				ImGui::SetCursorPosX(pos.x + 7);
+				//ImGui::SetCursorPosX(pos.x + 7);
 
 				if (max_size >= 3 && text_size > size.x - 14)
 					text = text.substr(0, max_size) + "...";
@@ -541,12 +548,13 @@ void PanelAssets::DrawList(std::vector<std::string> current_list)
 				else
 					tooltip = false;
 
-				ImGui::TextColored(icon_color, icon.c_str());
-				ImGui::SameLine();
 				ImGui::TextColored(text_color, text.c_str());
 			}
 			else // Rename
-				Rename(index, pos);
+			{
+				ImGui::SetCursorPosY(ImGui::GetCursorPosY() - 3);
+				Rename(index);
+			}
 
 			ImGui::EndGroup();
 
@@ -1389,12 +1397,11 @@ void PanelAssets::DeletePopup()
 	}
 }
 
-void PanelAssets::Rename(size_t index, ImVec2 pos)
+void PanelAssets::Rename(size_t index)
 {
 	char buffer[128];
 	sprintf_s(buffer, 128, "%s", nodes.name[index].c_str());
 
-	ImGui::SetCursorPosX(pos.x);
 	ImGui::SetNextItemWidth(node_size);
 	if (ImGui::InputText("##RenameAsset", buffer, IM_ARRAYSIZE(buffer), ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll))
 	{

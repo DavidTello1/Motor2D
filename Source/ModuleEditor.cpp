@@ -366,6 +366,8 @@ void ModuleEditor::DrawMenuBar()
 
 			ImGui::EndMenu();
 		}
+
+		ImGui::Text("FPS:%i", App->GetFPS());
 		ImGui::EndMainMenuBar();
 	}
 }

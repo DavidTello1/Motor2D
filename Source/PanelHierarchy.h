@@ -16,12 +16,16 @@ public:
 
 private:
 	void DrawSceneNode();
+
+	void DrawNode(size_t index);
+	void RenameNode(size_t index);
+	void HandleSelection(size_t index, bool is_hovered); //selection states
 	void DrawConnectorLines(size_t index, ImDrawList* draw_list); //draw connector lines when node is open
 
 	void DrawRightClick(); //only draws if right click is pressed, returns true if drawn
+	void CreateMenu(); //imgui menu for creating nodes (folder, gameobject, scene, etc)
 	void ShowSceneOptions(size_t index); //popup when options button is clicked
 
-	void CreateMenu(); //imgui menu for creating nodes (folder, gameobject, scene, etc)
 	void Scroll(ImVec2 pos);
 
 public:
@@ -37,6 +41,9 @@ private:
 	bool is_scene_hidden = false;
 
 	HierarchyNode nodes;
+	std::vector<std::string> selected_nodes;
 
 	//std::vector<std::string> hidden_childs;
+
+	bool is_rename_flag = false;
 };

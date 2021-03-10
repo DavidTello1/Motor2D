@@ -63,7 +63,7 @@ private:
 	void DockSpace();
 	void Scroll(ImVec2 pos);
 	void DeletePopup();
-	void Rename(size_t index, ImVec2 pos);
+	void Rename(size_t index);
 
 public:
 	static const uint default_width = 1280;

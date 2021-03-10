@@ -38,7 +38,7 @@ enum class HN_State {
 	CUT
 };
 
-struct HierarchyNodeData // Data
+struct HN_Data // Data
 {
 	std::vector<std::string> name;
 	std::vector<NodeType> type;
@@ -46,7 +46,7 @@ struct HierarchyNodeData // Data
 	std::vector<int> flags;
 
 	std::vector<ImVec4> color;
-	std::vector<int> pos;
+	std::vector<int> order;
 	std::vector<int> indent;
 
 	std::vector<std::string> parent;
@@ -55,27 +55,24 @@ struct HierarchyNodeData // Data
 
 struct HierarchyNode // Node
 {
-	HierarchyNodeData data;
-	std::vector<std::string> selected_nodes;
+	HN_Data data;
 
 	//----------------------------
-	void DrawNode(size_t index);
-	int FindNode(std::string name, std::vector<std::string> list) const; //get node pos in list (returns -1 if not found)
 
+	// --- MAIN ---
 	size_t CreateNode(NodeType type, std::vector<std::string> childs, std::string name = "", std::string parent = "", int flags = 0, HN_State state = HN_State::IDLE);
 	void DeleteNodes(std::vector<std::string> nodes, bool reorder = true);
 	void DuplicateNodes(std::vector<std::string> nodes, int parent_index = -1);
-	void RenameNode(size_t index);
 	//void MoveNode(size_t index, size_t parent_index, int pos = -1, int indent = -1); //move node (if pos or indent is -1 they will be set according to parent)
 
-	void HandleSelection(size_t index, bool is_hovered); //selection states
+	// --- UTILS ---
+	int FindNode(std::string name, std::vector<std::string> list) const; //get node pos in list (returns -1 if not found)
 	void SetState(HN_State state, std::vector<std::string> list);
-
 	std::string GetNameCount(const std::string name) const; //get name count
 
-	//// --- NODE POS ---
-	//void ReorderNodes(size_t index, bool is_delete = false); //update nodes pos
+	// --- ORDER ---
 	uint RecursivePos(size_t index); //set node pos in CreateNode()
+	//void ReorderNodes(size_t index, bool is_delete = false); //update nodes pos
 	//void UpdateNode(size_t index); //update nodes pos and indent
 
 	//// --- CHILDS (CONNECTOR LINES) ---
@@ -87,5 +84,5 @@ struct HierarchyNode // Node
 
 	//// --- SORTERS ---
 	//void SortByPosition() const; //order by position (smaller to bigger)
-	std::vector<std::string> SortByIndent(std::vector<std::string> list) const; //order by indent (lower to higher)
+	std::vector<std::string> SortByIndent(std::vector<std::string> list) const; //order list by indent (lower to higher)
 };
