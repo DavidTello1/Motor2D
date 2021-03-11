@@ -69,6 +69,13 @@ void PanelHierarchy::Draw()
 		// Draw Connector Lines
 		if (!nodes.data.childs[index].empty())
 			DrawConnectorLines(index, window->DrawList);
+
+		// Draw Reparenting Line
+		if (draw_reparenting_line)
+		{
+			window->DrawList->AddLine(reparenting_p1, reparenting_p2, ImColor(255, 255, 255, 255));
+			draw_reparenting_line = false;
+		}
 	}
 	ImGui::PopStyleVar();
 
@@ -88,36 +95,36 @@ void PanelHierarchy::Draw()
 
 void PanelHierarchy::Shortcuts()
 {
-	//if (ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows))
-	//{
-	//	// Delete
-	//	if (App->input->Shortcut(SDL_SCANCODE_DELETE, KEY_DOWN))
-	//	{
-	//		DeleteNodes(selected_nodes);
-	//		selected_nodes.clear();
-	//	}
+	if (ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows))
+	{
+		// Delete
+		if (App->input->Shortcut(SDL_SCANCODE_DELETE, KEY_DOWN))
+		{
+			nodes.DeleteNodes(selected_nodes);
+			selected_nodes.clear();
+		}
 
-	//	// Duplicate
-	//	if (App->input->Shortcut(SDL_SCANCODE_LCTRL, KEY_REPEAT, SDL_SCANCODE_D, KEY_DOWN) ||
-	//		App->input->Shortcut(SDL_SCANCODE_RCTRL, KEY_REPEAT, SDL_SCANCODE_D, KEY_DOWN))
-	//	{
-	//		DuplicateNodes(selected_nodes);
-	//	}
+		// Duplicate
+		if (App->input->Shortcut(SDL_SCANCODE_LCTRL, KEY_REPEAT, SDL_SCANCODE_D, KEY_DOWN) ||
+			App->input->Shortcut(SDL_SCANCODE_RCTRL, KEY_REPEAT, SDL_SCANCODE_D, KEY_DOWN))
+		{
+			nodes.DuplicateNodes(selected_nodes);
+		}
 
-	//	// SelectAll
-	//	if (App->input->Shortcut(SDL_SCANCODE_LCTRL, KEY_REPEAT, SDL_SCANCODE_A, KEY_DOWN) ||
-	//		App->input->Shortcut(SDL_SCANCODE_RCTRL, KEY_REPEAT, SDL_SCANCODE_A, KEY_DOWN))
-	//	{
-	//		SelectAll();
-	//	}
+		// SelectAll
+		if (App->input->Shortcut(SDL_SCANCODE_LCTRL, KEY_REPEAT, SDL_SCANCODE_A, KEY_DOWN) ||
+			App->input->Shortcut(SDL_SCANCODE_RCTRL, KEY_REPEAT, SDL_SCANCODE_A, KEY_DOWN))
+		{
+			nodes.SetState(HN_State::SELECTED, nodes.data.name);
+		}
 
-	//	// Find
-	//	if (App->input->Shortcut(SDL_SCANCODE_LCTRL, KEY_REPEAT, SDL_SCANCODE_F, KEY_DOWN) ||
-	//		App->input->Shortcut(SDL_SCANCODE_RCTRL, KEY_REPEAT, SDL_SCANCODE_F, KEY_DOWN))
-	//	{
-	//		//FindPopup();
-	//	}
-	//}
+		// Find
+		if (App->input->Shortcut(SDL_SCANCODE_LCTRL, KEY_REPEAT, SDL_SCANCODE_F, KEY_DOWN) ||
+			App->input->Shortcut(SDL_SCANCODE_RCTRL, KEY_REPEAT, SDL_SCANCODE_F, KEY_DOWN))
+		{
+			//FindPopup();
+		}
+	}
 }
 
 void PanelHierarchy::Save(Config* config) const
@@ -202,10 +209,7 @@ void PanelHierarchy::DrawNode(size_t index)
 	float pos_x = ImGui::GetCursorPosX();
 	if (ImGui::InvisibleButton(std::string(nodes.data.name[index] + ICON_SHOW).c_str(), ImVec2(16, height)))
 	{
-		if (nodes.data.flags[index] & NodeFlags::HIDDEN)
-			nodes.data.flags[index] &= ~NodeFlags::HIDDEN;
-		else
-			nodes.data.flags[index] |= NodeFlags::HIDDEN;
+		nodes.SwitchHidden(index);
 	}
 	ImGui::SameLine();
 	ImGui::SetCursorPosX(pos_x);
@@ -236,23 +240,21 @@ void PanelHierarchy::DrawNode(size_t index)
 		ImGui::SetItemAllowOverlap();
 		ImGui::SameLine();
 
-		//if (ImGui::BeginDragDropTarget()) // Reordering
-		//{
-		//	for (uint i = 0; i < selected_nodes.size(); ++i)
-		//	{
-		//		if (((node->type == HierarchyNode::NodeType::SCENE && selected_nodes[i]->type == HierarchyNode::NodeType::SCENE) ||
-		//			(node->type != HierarchyNode::NodeType::SCENE && selected_nodes[i]->type != HierarchyNode::NodeType::SCENE)) &&
-		//			(node != selected_nodes[i]))// error handling
-		//		{
-		//			is_hovered = false;
-		//			window->DrawList->AddLine(ImVec2(pos_x + 15, bg.Min.y + 1.5f), ImVec2(pos_x + 15 + width, bg.Min.y + 1.5f), ImColor(255, 255, 255, 255));
+		if (ImGui::BeginDragDropTarget()) // Target (Reordering)
+		{
+			for (uint i = 0; i < selected_nodes.size(); ++i)
+			{
+				if (nodes.data.name[index] != selected_nodes[i])// error handling
+				{
+					is_hovered = false;
+					window->DrawList->AddLine(ImVec2(pos_x + 15, bg.Min.y + 1.5f), ImVec2(pos_x + 15 + width, bg.Min.y + 1.5f), ImColor(255, 255, 255, 255));
 
-		//			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HierarchyNode"))
-		//				MoveNode(selected_nodes[i], node->parent, node, node->indent);
-		//		}
-		//	}
-		//	ImGui::EndDragDropTarget();
-		//}
+					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HierarchyNode"))
+						nodes.MoveNode(selected_nodes[i], nodes.data.parent[index], nodes.data.order[index], nodes.data.indent[index]);
+				}
+			}
+			ImGui::EndDragDropTarget();
+		}
 	}
 
 	// Selectable
@@ -274,45 +276,8 @@ void PanelHierarchy::DrawNode(size_t index)
 	ImGui::SetItemAllowOverlap();
 	ImGui::SameLine();
 
-	////Drag and Drop
-	//if (!selected_nodes.empty() && ImGui::BeginDragDropSource(ImGuiDragDropFlags_AcceptNoDrawDefaultRect)) // Source
-	//{
-	//	ImGui::SetDragDropPayload("HierarchyNode", &name, sizeof(std::string));
-
-	//	if (selected_nodes.size() == 1)
-	//	{
-	//		std::string node_name = selected_nodes[0]->name;
-	//		if (selected_nodes[0]->count != 0)
-	//			node_name = node_name + std::string(" (") + std::to_string(selected_nodes[0]->count) + std::string(")");
-	//		ImGui::Text(node_name.c_str());
-	//	}
-	//	else
-	//		ImGui::Text(std::to_string(selected_nodes.size()).c_str());
-
-	//	ImGui::EndDragDropSource();
-	//}
-	//ImGui::SetItemAllowOverlap();
-
-	//if (ImGui::BeginDragDropTarget()) // Reparenting
-	//{
-	//	for (uint i = 0; i < selected_nodes.size(); ++i)
-	//	{
-	//		if (selected_nodes[i]->type != HierarchyNode::NodeType::SCENE && IsChildOf(selected_nodes[i], node) == false && node != selected_nodes[i]) // error handling
-	//		{
-	//			HierarchyNode* last_child = GetLastChild(node);
-	//			float w = pos_x + 15;
-	//			float h = bg.Min.y - 1.5f + (height + 3) * float(last_child->pos - node->pos + 1);
-	//			window->DrawList->AddLine(ImVec2(w, h), ImVec2(w + width, h), ImColor(255, 255, 255, 255));
-
-	//			if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HierarchyNode"))
-	//				MoveNode(selected_nodes[i], node, nullptr, -1);
-	//		}
-	//	}
-	//	ImGui::EndDragDropTarget();
-	//}
-
 	// Selection
-	HandleSelection(index, is_hovered);
+	HandleSelection(index, is_hovered, bg.Min.y, width, height);
 
 	// Indent
 	ImGui::SetCursorPosX(pos_x + 17);
@@ -330,7 +295,7 @@ void PanelHierarchy::DrawNode(size_t index)
 				nodes.data.flags[index] &= ~NodeFlags::OPEN;
 			else
 				nodes.data.flags[index] |= NodeFlags::OPEN;
-			//hidden_childs = GetHiddenNodes(); //refresh hidden_childs list
+			hidden_childs = nodes.GetHiddenNodes(); //refresh hidden_childs list
 		}
 
 		ImGui::SameLine();
@@ -397,7 +362,7 @@ void PanelHierarchy::DrawNode(size_t index)
 	// Highlight
 	if (is_hovered || is_clicked)
 		nodes.data.color[index] = colors[ImGuiCol_ButtonHovered];
-	else if (nodes.data.state[index] == HN_State::SELECTED || nodes.data.state[index] == HN_State::RENAME)
+	else if (nodes.data.state[index] == HN_State::SELECTED || nodes.data.state[index] == HN_State::DRAGGING)
 		nodes.data.color[index] = colors[ImGuiCol_ButtonActive];
 	else
 		nodes.data.color[index] = colors[ImGuiCol_WindowBg];
@@ -415,8 +380,49 @@ void PanelHierarchy::DrawNode(size_t index)
 	}
 }
 
-void PanelHierarchy::HandleSelection(size_t index, bool is_hovered)
+void PanelHierarchy::HandleSelection(size_t index, bool is_hovered, float bg_Min_y, float width, float height)
 {
+	//Drag and Drop
+	if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_AcceptNoDrawDefaultRect)) // Source
+	{
+		ImGui::SetDragDropPayload("HierarchyNode", &index, sizeof(size_t));
+	
+		if (!selected_nodes.empty()) // Popup text
+		{
+			if (selected_nodes.size() == 1)
+				ImGui::Text(selected_nodes[0].c_str());
+			else
+				ImGui::Text("%d", selected_nodes.size());
+
+			// Selection
+			if (nodes.data.state[index] != HN_State::DRAGGING && nodes.data.state[index] != HN_State::SELECTED && !ImGui::GetIO().KeyCtrl && !ImGui::GetIO().KeyShift)
+				nodes.SetState(HN_State::IDLE, nodes.data.name);
+		}
+		nodes.data.state[index] = HN_State::DRAGGING;
+		ImGui::EndDragDropSource();
+	}
+	ImGui::SetItemAllowOverlap();
+	
+	if (ImGui::BeginDragDropTarget()) // Target (Reparenting)
+	{
+		for (std::string selected_node : selected_nodes)
+		{
+			int selected_index = nodes.FindNode(selected_node, nodes.data.name);
+			if (selected_index != -1 && index != selected_index && !nodes.IsChildOf(index, selected_index)) // error handling
+			{
+				float w = pos_x + 15;
+				float h = bg_Min_y - 1.5f + (height + 3) * float(nodes.data.order[nodes.GetLastChild(index)] - nodes.data.order[index] + 1);
+				reparenting_p1 = ImVec2(w, h);
+				reparenting_p2 = ImVec2(w + width, h);
+				draw_reparenting_line = true;
+
+				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HierarchyNode"))
+					nodes.MoveNode(selected_node, nodes.data.name[index], -1, -1);
+			}
+		}
+		ImGui::EndDragDropTarget();
+	}
+
 	// Left Click (selection)
 	if (is_hovered) //if treenode is clicked, check whether it is a single or multi selection
 	{
@@ -447,31 +453,15 @@ void PanelHierarchy::HandleSelection(size_t index, bool is_hovered)
 			{
 				int pos = nodes.FindNode(selected_nodes.back().c_str(), nodes.data.name);
 				if (pos != -1)
-				{
-					if (index < (size_t)pos)
-					{
-						for (size_t i = index; i < (size_t)pos; ++i)
-							nodes.data.state[i] = HN_State::SELECTED;
-					}
-					else
-					{
-						for (size_t i = index; i > (size_t)pos; --i)
-							nodes.data.state[i] = HN_State::SELECTED;
-					}
-				}
+					nodes.SelectNodesInRangeByPos(index, pos);
 			}
 		}
 		else if (ImGui::IsMouseReleased(0)) // Single selection
 		{
 			if (!ImGui::GetIO().KeyCtrl && !ImGui::GetIO().KeyShift && nodes.data.state[index] != HN_State::DRAGGING && nodes.data.state[index] != HN_State::RENAME)
 			{
-				bool selected = (nodes.data.state[index] == HN_State::SELECTED);
-				nodes.SetState(HN_State::IDLE, nodes.data.name);
-
-				if (selected && selected_nodes.size() <= 1)
-					nodes.data.state[index] = HN_State::IDLE;
-				else
-					nodes.data.state[index] = HN_State::SELECTED;
+				nodes.SetState(HN_State::IDLE, nodes.data.name); //unselect all
+				nodes.data.state[index] = HN_State::SELECTED;
 			}
 		}
 		else if (ImGui::IsMouseClicked(1)) // Right Click (select item to show options)
@@ -484,9 +474,9 @@ void PanelHierarchy::HandleSelection(size_t index, bool is_hovered)
 
 	// Update Selected Nodes List
 	int position = nodes.FindNode(nodes.data.name[index], selected_nodes);
-	if (nodes.data.state[index] == HN_State::SELECTED && position == -1)
+	if ((nodes.data.state[index] == HN_State::SELECTED || nodes.data.state[index] == HN_State::DRAGGING) && position == -1)
 		selected_nodes.push_back(nodes.data.name[index]);
-	else if (nodes.data.state[index] != HN_State::SELECTED && position != -1)
+	else if (nodes.data.state[index] != HN_State::SELECTED && nodes.data.state[index] != HN_State::DRAGGING && position != -1)
 		selected_nodes.erase(selected_nodes.begin() + position);
 }
 
@@ -501,17 +491,24 @@ void PanelHierarchy::RenameNode(size_t index)
 		nodes.data.state[index] = HN_State::SELECTED;
 		if (buffer != nodes.data.name[index])
 		{
+			std::string old_name = nodes.data.name[index];
 			nodes.data.name[index] = nodes.GetNameCount(buffer);
 
-			// update childs
-			if (!nodes.data.childs[index].empty())
+			// Update Childs
+			for (std::string child : nodes.data.childs[index])
 			{
-				for (std::string child : nodes.data.childs[index])
-				{
-					int child_index = nodes.FindNode(child, nodes.data.name);
-					if (child_index != -1)
-						nodes.data.parent[child_index] = nodes.data.name[index];
-				}
+				int child_index = nodes.FindNode(child, nodes.data.name);
+				if (child_index != -1)
+					nodes.data.parent[child_index] = nodes.data.name[index];
+			}
+
+			// Update Parent's Child List
+			int parent_index = nodes.FindNode(nodes.data.parent[index].c_str(), nodes.data.name);
+			if (parent_index != -1)
+			{
+				int child_index = nodes.FindNode(old_name.c_str(), nodes.data.childs[parent_index]);
+				if (child_index != -1)
+					nodes.data.childs[parent_index][child_index] = nodes.data.name[index];
 			}
 		}
 	}
@@ -568,9 +565,8 @@ void PanelHierarchy::DrawRightClick()
 
 		if (ImGui::MenuItem("Search", "Ctrl+F")) //search
 		{
-
+			//Open Search & Replace Popup
 		}
-
 		ImGui::EndPopup();
 	}
 }
@@ -601,48 +597,47 @@ void PanelHierarchy::ShowSceneOptions(size_t index)
 
 void PanelHierarchy::DrawConnectorLines(size_t index, ImDrawList* draw_list)
 {
-	//// Error handling
-	//if (node == nullptr)
-	//{
-	//	LOG("node was NULL", 'e');
-	//	return;
-	//}
-
 	//// If any parent is closed do not draw
 	//bool draw = true;
-	//HierarchyNode* tmp_node = node;
-	//while (tmp_node != nullptr)
+	//int parent_index = index;
+	//while (nodes.data.parent[parent_index] != "")
 	//{
-	//	if (!tmp_node->is_open)
+	//	if (nodes.data.flags[parent_index] & NodeFlags::OPEN)
+	//		parent_index = nodes.FindNode(nodes.data.parent[parent_index], nodes.data.name);
+	//	else 
 	//		return;
-
-	//	tmp_node = tmp_node->parent;
 	//}
 
 	//// Get number of hidden childs that actually affect the node
 	//uint num_hidden = hidden_childs.size();
 	//uint num_hidden2 = 0;
-	//for (uint i = 0; i < hidden_childs.size(); ++i)
+	//for (size_t i = 0, size = hidden_childs.size(); i < size; ++i)
 	//{
-	//	// If any of the hidden_childs' pos > node pos and is not child (or child of childs) of node, substract them from count
-	//	if (hidden_childs[i]->pos > node->pos && !IsChildOf(node, hidden_childs[i]))
+	//	int child_index = nodes.FindNode(hidden_childs[i], nodes.data.name);
+	//	if (child_index == -1)
+	//		continue;
+
+	//	// If any of the hidden_childs' order > node order and is not child (or child of childs) of node, substract them from count
+	//	if (nodes.data.order[child_index] > nodes.data.order[index] && !nodes.IsChildOf(index, child_index))
 	//		num_hidden--;
 
 	//	// If any of the hidden_childs are childs of last child, substract them from count
-	//	if (IsChildOf(node->childs[node->childs.size() - 1], hidden_childs[i]))
+	//	int last_child_index = nodes.FindNode(nodes.data.childs[index].back(), nodes.data.name);
+	//	if (last_child_index != -1 && nodes.IsChildOf(last_child_index, child_index))
 	//		num_hidden--;
 
 	//	// Get num_hidden2 for initial_pos of parent
-	//	if (hidden_childs[i]->pos < node->pos)
+	//	if (nodes.data.order[child_index] < nodes.data.order[index])
 	//		num_hidden2++;
 	//}
 
 	//// Positions
-	//uint last_child_pos = (uint)node->childs[node->childs.size() - 1]->pos - num_hidden;  //get last_child_pos updated to hidden childs
-	//uint parent_pos = (uint)node->pos - num_hidden2;
+	//int last_child_index = nodes.FindNode(nodes.data.childs[index].back(), nodes.data.name);
+	//uint last_child_pos = (uint)nodes.data.order[last_child_index] - num_hidden;  //get last_child_pos updated to hidden childs
+	//uint parent_pos = (uint)nodes.data.order[index] - num_hidden2;
 
 	//// Real Positions
-	//ImVec2 initial_pos = ImVec2(ImGui::GetWindowPos().x + 1 + 15 * float(node->indent + 1), ImGui::GetWindowPos().y + 38 + 19 * (float)parent_pos); //initial pos
+	//ImVec2 initial_pos = ImVec2(ImGui::GetWindowPos().x + 16 + 15 * float(nodes.data.indent[index] + 1), ImGui::GetWindowPos().y + 38 + 19 * (float)parent_pos); //initial pos
 	//ImVec2 final_pos = ImVec2(initial_pos.x, ImGui::GetWindowPos().y + 34 + 19 * (float)last_child_pos); //final pos
 
 	//// Connector Lines
@@ -662,7 +657,8 @@ void PanelHierarchy::CreateMenu()
 			if (!selected_nodes.empty())
 				parent = selected_nodes[0];
 
-			nodes.CreateNode(NodeType::FOLDER, empty_childs, "", parent, 0, HN_State::SELECTED);
+			nodes.CreateNode(NodeType::FOLDER, empty_childs, "", parent, 0, HN_State::RENAME);
+			is_rename_flag = true;
 
 			if (!selected_nodes.empty())
 			{
@@ -694,26 +690,32 @@ void PanelHierarchy::CreateMenu()
 
 void PanelHierarchy::Scroll(ImVec2 pos)
 {
-	//ImVec2 scroll = ImVec2(ImGui::GetScrollX(), ImGui::GetScrollY());
-	//ImVec2 size = ImVec2(ImGui::GetWindowWidth() - 26, 50);
+	ImVec2 scroll = ImVec2(ImGui::GetScrollX(), ImGui::GetScrollY());
+	ImVec2 size = ImVec2(ImGui::GetWindowWidth() - 26, 50);
 
-	//// Top Area
-	//ImGui::SetCursorPos(ImVec2(pos.x + scroll.x - 4, pos.y + scroll.y - 8));
-	//ImGui::Dummy(size);
-	//if (ImGui::BeginDragDropTarget())
-	//{
-	//	if (scroll.y >= 1.0f)
-	//		window->Scroll.y -= 1.0f;
-	//	ImGui::EndDragDropTarget();
-	//}
+	if (ImGui::GetCursorPosY() < scroll.y)
+		ImGui::SetScrollHereY();
 
-	////Bottom Area
-	//ImGui::SetCursorPos(ImVec2(pos.x + scroll.x - 4, ImGui::GetWindowHeight() + scroll.y - 58));
-	//ImGui::Dummy(size);
-	//if (ImGui::BeginDragDropTarget())
-	//{
-	//	if (scroll.y < window->ScrollMax.y - 1.0f)
-	//		window->Scroll.y += 1.0f;
-	//	ImGui::EndDragDropTarget();
-	//}
+	// Top Area
+	ImGui::SetCursorPos(ImVec2(pos.x + scroll.x - 4, pos.y + scroll.y - 8));
+	ImGui::Dummy(size);
+	if (ImGui::BeginDragDropTarget())
+	{
+		if (scroll.y >= 1.0f)
+			ImGui::GetCurrentWindow()->Scroll.y -= 1.0f;
+		ImGui::EndDragDropTarget();
+	}
+
+	//Bottom Area
+	ImGui::SetCursorPos(ImVec2(pos.x + scroll.x - 4, ImGui::GetWindowHeight() + scroll.y - 58));
+	ImGui::Dummy(size);
+	if (ImGui::BeginDragDropTarget())
+	{
+		if (scroll.y < ImGui::GetCurrentWindow()->ScrollMax.y - 1.0f)
+			ImGui::GetCurrentWindow()->Scroll.y += 1.0f;
+		ImGui::EndDragDropTarget();
+	}
+
+	if (ImGui::GetScrollY() > ImGui::GetScrollMaxY())
+		ImGui::SetScrollX(ImGui::GetScrollMaxY());
 }

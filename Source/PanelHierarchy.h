@@ -19,7 +19,7 @@ private:
 
 	void DrawNode(size_t index);
 	void RenameNode(size_t index);
-	void HandleSelection(size_t index, bool is_hovered); //selection states
+	void HandleSelection(size_t index, bool is_hovered, float bg_Min_y, float width, float height); //selection states
 	void DrawConnectorLines(size_t index, ImDrawList* draw_list); //draw connector lines when node is open
 
 	void DrawRightClick(); //only draws if right click is pressed, returns true if drawn
@@ -42,8 +42,11 @@ private:
 
 	HierarchyNode nodes;
 	std::vector<std::string> selected_nodes;
+	std::vector<std::string> hidden_childs;
 
-	//std::vector<std::string> hidden_childs;
+	ImVec2 reparenting_p1 = { 0,0 };
+	ImVec2 reparenting_p2 = { 0,0 };
+	bool draw_reparenting_line = false;
 
 	bool is_rename_flag = false;
 };

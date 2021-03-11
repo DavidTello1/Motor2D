@@ -588,24 +588,23 @@ void PanelAssets::HandleSelection(size_t index)
 	//Drag and Drop
 	if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_AcceptNoDrawDefaultRect | ImGuiDragDropFlags_SourceAllowNullID)) // Source
 	{
-		ImGui::SetDragDropPayload("AssetNode", &index, sizeof(std::size_t));
+		ImGui::SetDragDropPayload("AssetNode", &index, sizeof(size_t));
 
 		if (!selected_nodes.empty()) // Popup text
 		{
 			if (selected_nodes.size() == 1)
 				ImGui::Text(selected_nodes[0].c_str());
 			else
-				ImGui::Text(std::to_string(selected_nodes.size()).c_str());
+				ImGui::Text("%d", selected_nodes.size());
+			
+			// Selection
+			if (nodes.state[index] != AN_State::DRAGGING && nodes.state[index] != AN_State::SELECTED && !ImGui::GetIO().KeyCtrl && !ImGui::GetIO().KeyShift) 
+				UnSelectAll();
 		}
-
-		// Selection
-		if (nodes.state[index] != AN_State::DRAGGING && nodes.state[index] != AN_State::SELECTED && !selected_nodes.empty() && 
-			!ImGui::GetIO().KeyCtrl && !ImGui::GetIO().KeyShift) 
-			UnSelectAll();
 		nodes.state[index] = AN_State::DRAGGING;
-
 		ImGui::EndDragDropSource();
 	}
+
 	if (ImGui::BeginDragDropTarget() && nodes.type[index] == ResourceType::FOLDER) // Target
 	{
 		if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("AssetNode"))
@@ -1334,7 +1333,8 @@ void PanelAssets::Scroll(ImVec2 pos)
 	if (ImGui::GetCursorPosY() < scroll.y)
 		ImGui::SetScrollHereY();
 
-	ImGui::SetCursorPos(ImVec2(pos.x + scroll.x - 4, pos.y + scroll.y)); // Top Area
+	// Top Area
+	ImGui::SetCursorPos(ImVec2(pos.x + scroll.x - 4, pos.y + scroll.y));
 	ImGui::Dummy(size);
 	if (!is_arrow_hover && ImGui::BeginDragDropTarget())
 	{
@@ -1343,7 +1343,8 @@ void PanelAssets::Scroll(ImVec2 pos)
 		ImGui::EndDragDropTarget();
 	}
 
-	ImGui::SetCursorPos(ImVec2(pos.x + scroll.x - 4, ImGui::GetWindowHeight() + scroll.y - 25.0f)); //Bottom Area
+	// Bottom Area
+	ImGui::SetCursorPos(ImVec2(pos.x + scroll.x - 4, ImGui::GetWindowHeight() + scroll.y - 25.0f));
 	ImGui::Dummy(size);
 	if (!is_arrow_hover && ImGui::BeginDragDropTarget())
 	{
@@ -1415,6 +1416,7 @@ void PanelAssets::Rename(size_t index)
 			MoveFile(nodes.path[index].c_str(), new_path.c_str());
 			nodes.path[index] = new_path.c_str();
 
+			// Update Childs
 			for (std::string child : nodes.childs[index])
 			{
 				int pos = FindNode(child.c_str(), nodes.name);

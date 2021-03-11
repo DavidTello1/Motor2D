@@ -2,8 +2,6 @@
 
 #include "Icons.h"
 #include "Imgui/imgui.h"
-#include "Imgui/imgui_internal.h"
-
 #include <queue>
 
 #include "mmgr/mmgr.h"
@@ -57,21 +55,20 @@ size_t HierarchyNode::CreateNode(NodeType type_, std::vector<std::string> childs
 		}
 	}
 
-	//ReorderNodes(index);
+	ReorderNodes(index);
 
 	return index;
 }
 
-void HierarchyNode::DeleteNodes(std::vector<std::string> nodes_list, bool reorder)
+void HierarchyNode::DeleteNodes(std::vector<std::string> nodes_list)
 {
+	// Reorder list by indent (parents first)
+	if (nodes_list.size() > 1)
+		nodes_list = SortByIndent(nodes_list);
+
 	int index = 0;
 	for (size_t i = 0, size = nodes_list.size(); i < size; ++i)
 	{
-		//if (reorder) //reorder list by indent (only once)
-		//{
-		//	nodes_list = SortByIndent(nodes_list);
-		//	reorder = false;
-		//}
 
 		index = FindNode(nodes_list[i].c_str(), data.name);
 		if (index != -1)
@@ -93,8 +90,8 @@ void HierarchyNode::DeleteNodes(std::vector<std::string> nodes_list, bool reorde
 			if (!data.childs[index].empty())
 				DeleteNodes(data.childs[index]);
 
-			//// Update nodes pos
-			//ReorderNodes(index, true);
+			// Update nodes pos
+			ReorderNodes(index, true);
 
 			// Delete node data
 			data.name.erase(data.name.begin() + index);
@@ -156,84 +153,136 @@ void HierarchyNode::SetState(HN_State state, std::vector<std::string> index_list
 	}
 }
 
- ////--- MAIN HELPERS ---
-//void HierarchyNode::MoveNode(HierarchyNode* node, HierarchyNode* parent, HierarchyNode* pos, int indent)
-//{
-//	// If new parent is child of node (error handling)
-//	if (IsChildOf(node, parent) || node == parent)
-//		return;
-//
-//	// Erase node and childs from nodes list
-//	std::vector<HierarchyNode*> childs_list = GetAllChilds(node);
-//	int position = FindNode(node, nodes);
-//	if (position != -1)
-//	{
-//		nodes.erase(nodes.begin() + position); //erase from nodes list (data is mantained in *node)
-//		ReorderNodes(node, true);
-//	}
-//	if (!childs_list.empty())
-//	{
-//		for (uint i = 0; i < childs_list.size(); ++i) //erase childs from nodes list
-//		{
-//			position = FindNode(childs_list[i], nodes);
-//			if (position != -1)
-//			{
-//				childs_list[i]->parent->childs.erase(childs_list[i]->parent->childs.begin() + FindNode(childs_list[i], childs_list[i]->parent->childs));
-//				nodes.erase(nodes.begin() + position);
-//				ReorderNodes(childs_list[i], true);
-//			}
-//		}
-//	}
-//
-//	// If node has parent, delete node from parent's child list
-//	if (node->parent != nullptr)
-//		node->parent->childs.erase(node->parent->childs.begin() + FindNode(node, node->parent->childs));
-//
-//	// Set indent
-//	if (indent == -1)
-//	{
-//		node->indent = parent->indent + 1;
-//		if (parent->type == HierarchyNode::NodeType::SCENE)
-//			node->indent = 1;
-//	}
-//	else
-//		node->indent = indent;
-//
-//	// Set pos
-//	if (pos == nullptr)
-//	{
-//		if (parent->childs.empty())
-//			node->pos = parent->pos + 1;
-//		else
-//			node->pos = GetLastChild(parent)->pos + 1;
-//	}
-//	else
-//		node->pos = pos->pos;
-//
-//	// Add to nodes list and Reorder all nodes
-//	nodes.push_back(node);
-//	ReorderNodes(node);
-//
-//	// Set parent and add to child list
-//	if (parent != nullptr)
-//	{
-//		node->parent = parent;
-//		parent->childs.push_back(node);
-//		parent->childs = SortByPosition(parent->childs); //order childs (needed for reordering correctly)
-//	}
-//
-//	// Move Childs
-//	if (!childs_list.empty())
-//	{
-//		for (uint i = 0; i < childs_list.size(); ++i)
-//		{
-//			UpdateNode(childs_list[i]); //update node's pos and indent to new parent's pos
-//			childs_list[i]->parent->childs.push_back(childs_list[i]); //add node back to parent's child list
-//			nodes.push_back(childs_list[i]); //add node to nodes_list
-//			ReorderNodes(childs_list[i]); //reorder nodes
-//		}
-//	}
-//}
+void HierarchyNode::SelectNodesInRangeByPos(size_t index1, size_t index2)
+{
+	int first = (data.order[index1] < data.order[index2]) ? data.order[index1] : data.order[index2];
+	int second = (data.order[index1] < data.order[index2]) ? data.order[index2] : data.order[index1];
+
+	for (size_t i = 0, size = data.order.size(); i < size; ++i)
+	{
+		if (data.order[i] >= first && data.order[i] <= second)
+			data.state[i] = HN_State::SELECTED;
+	}
+
+}
+
+void HierarchyNode::SwitchHidden(size_t index)
+{
+	std::vector<std::string> childs = GetAllChilds(index);
+	if (data.flags[index] & NodeFlags::HIDDEN)
+	{
+		data.flags[index] &= ~NodeFlags::HIDDEN;
+
+		for (std::string child : childs)
+		{
+			int child_index = FindNode(child, data.name);
+			if (child_index != -1)
+				data.flags[child_index] &= ~NodeFlags::HIDDEN;
+		}
+	}
+	else
+	{
+		data.flags[index] |= NodeFlags::HIDDEN;
+
+		for (std::string child : childs)
+		{
+			int child_index = FindNode(child, data.name);
+			if (child_index != -1)
+				data.flags[child_index] |= NodeFlags::HIDDEN;
+		}
+	}
+}
+
+//--- MAIN HELPERS ---
+void HierarchyNode::MoveNode(std::string name, std::string parent_name, int pos, int indent)
+{
+	// Error handling
+	int index = FindNode(name, data.name);
+	if (index == -1)
+		return;
+
+	int parent_index = FindNode(parent_name, data.name);
+	if (parent_name != "" && (parent_index == -1 || index == parent_index || IsChildOf(index, parent_index)))
+		return;
+
+	//// Erase node and childs from nodes list & save data in tmp_list
+	//HierarchyNode tmp;
+	//tmp.CreateNode(data.type[index], data.childs[index], name, parent_name, data.flags[index], data.state[index]);
+	//
+	//std::vector<std::string> childs_list = GetAllChilds(index);
+	//int position = FindNode(node, nodes);
+	//if (position != -1)
+	//{
+	//	nodes.erase(nodes.begin() + position); //erase from nodes list (data is mantained in *node)
+	//	ReorderNodes(node, true);
+	//}
+	//if (!childs_list.empty())
+	//{
+	//	for (uint i = 0; i < childs_list.size(); ++i) //erase childs from nodes list
+	//	{
+	//		position = FindNode(childs_list[i], nodes);
+	//		if (position != -1)
+	//		{
+	//			childs_list[i]->parent->childs.erase(childs_list[i]->parent->childs.begin() + FindNode(childs_list[i], childs_list[i]->parent->childs));
+	//			nodes.erase(nodes.begin() + position);
+	//			ReorderNodes(childs_list[i], true);
+	//		}
+	//	}
+	//}
+
+	//// If node has parent, delete node from parent's child list
+	//if (data.parent[index] != "")
+	//	data.childs[parent_index].erase(data.childs[parent_index].begin() + FindNode(name, data.childs[parent_index]));
+
+	// Set indent
+	if (indent == -1)
+	{
+		data.indent[index] = data.indent[parent_index] + 1;
+		if (data.parent[parent_index] == "")
+			data.indent[index] = 1;
+	}
+	else
+		data.indent[index] = indent;
+
+	// Set pos
+	if (pos == -1)
+	{
+		if (data.childs[parent_index].empty())
+			data.order[index] = data.order[parent_index] + 1;
+		else
+			data.order[index] = data.order[GetLastChild(parent_index)] +1;
+	}
+	else
+		data.order[index] = pos;
+
+	//// Add to nodes list and Reorder all nodes
+	//nodes.push_back(node);
+	//ReorderNodes(node);
+
+	// Set parent and add to child list
+	data.parent[index] = parent_name;
+	if (parent_index != -1)
+		data.childs[parent_index].push_back(data.name[index]);
+	//parent->childs = SortByPosition(parent->childs); //order childs (needed for reordering correctly)
+
+	//// Move Childs
+	//if (!childs_list.empty())
+	//{
+	//	for (uint i = 0; i < childs_list.size(); ++i)
+	//	{
+	//		UpdateNode(childs_list[i]); //update node's pos and indent to new parent's pos
+	//		if (data.childs[parent_index].empty())
+	//			data.order[index] = data.order[parent_index] + 1;
+	//		else
+	//			data.order[index] = data.order[GetLastChild(parent_index)] + 1;
+	//		data.indent[index] = data.indent[parent_index] + 1;
+
+	//		childs_list[i]->parent->childs.push_back(childs_list[i]); //add node back to parent's child list
+	//		nodes.push_back(childs_list[i]); //add node to nodes_list
+	//		ReorderNodes(childs_list[i]); //reorder nodes
+	//	}
+	//}
+}
 
 std::string HierarchyNode::GetNameCount(const std::string name) const
 {
@@ -264,23 +313,23 @@ std::string HierarchyNode::GetNameCount(const std::string name) const
 	return new_name;
 }
 
-//// --- NODE POS ---
-//void HierarchyNode::ReorderNodes(size_t index, bool is_delete)
-//{
-//	for (uint i = data.pos[index]; i < nodes.size(); ++i)
-//	{
-//		if ( == node)
-//			continue;
-//		else
-//		{
-//			if (is_delete)
-//				data.pos[i]--;
-//			else
-//				data.pos[i]++;
-//		}
-//	}
-//	SortByPosition(data.name);
-//}
+// --- NODE POS ---
+void HierarchyNode::ReorderNodes(size_t index, bool is_delete)
+{
+	for (size_t i = 0, size = data.order.size(); i < size; ++i)
+	{
+		if (i == index)
+			continue;
+		else if (data.order[i] >= data.order[index])
+		{
+			if (is_delete)
+				data.order[i]--;
+			else
+				data.order[i]++;
+		}
+	}
+	data.name = SortByPosition(data.name);
+}
 
 uint HierarchyNode::RecursivePos(size_t index)
 {
@@ -290,115 +339,112 @@ uint HierarchyNode::RecursivePos(size_t index)
 		return RecursivePos(FindNode(data.childs[index].back(), data.name));
 }
 
-//void HierarchyNode::UpdateNode(size_t index)
-//{
-//	if (node->parent->childs.empty())
-//		node->pos = node->parent->pos + 1;
-//	else
-//		node->pos = GetLastChild(node->parent)->pos + 1;
-//	node->indent = node->parent->indent + 1;
-//}
+// --- CONNECTOR LINES ---
+std::vector<std::string> HierarchyNode::GetHiddenNodes() const
+{
+	std::vector<std::string> hidden;
+	for (size_t index = 0, size = data.name.size(); index < size; ++index)
+	{
+		if (data.flags[index] & NodeFlags::OPEN) // add closed childs' childs to list
+		{
+			std::vector<std::string> tmp_list = GetClosedChilds(index);
+			hidden.insert(hidden.end(), tmp_list.begin(), tmp_list.end()); //add tmp_list to hidden_childs
+		}
+		else //if closed add all childs to list
+		{
+			std::vector<std::string> tmp_list = GetAllChilds(index);
+			hidden.insert(hidden.end(), tmp_list.begin(), tmp_list.end());
+		}
+	}
+	return hidden;
+}
 
-//// --- CONNECTOR LINES ---
-//std::vector<HierarchyNode*> HierarchyNode::GetHiddenNodes()
-//{
-//	std::vector<HierarchyNode*> hidden;
-//	for (uint i = 0; i < nodes.size(); ++i)
-//	{
-//		if (nodes[i]->type == HierarchyNode::NodeType::SCENE)
-//		{
-//			if (!nodes[i]->is_open) //if closed add all childs to list
-//			{
-//				std::vector<HierarchyNode*> tmp_list = GetAllChilds(nodes[i]);
-//				hidden.insert(hidden.end(), tmp_list.begin(), tmp_list.end());
-//			}
-//			else // add closed childs' childs to list
-//			{
-//				std::vector<HierarchyNode*> tmp_list = GetClosedChilds(nodes[i]);
-//				hidden.insert(hidden.end(), tmp_list.begin(), tmp_list.end()); //add tmp_list to hidden_childs
-//			}
-//		}
-//	}
-//	return hidden;
-//}
-//
-//std::vector<HierarchyNode*> HierarchyNode::GetAllChilds(HierarchyNode* node)
-//{
-//	std::vector<HierarchyNode*> num_childs;
-//	for (uint i = 0; i < node->childs.size(); ++i)
-//	{
-//		num_childs.push_back(node->childs[i]);
-//
-//		if (!node->childs[i]->childs.empty()) //if child has childs add them to list
-//		{
-//			std::vector<HierarchyNode*> tmp_list = GetAllChilds(node->childs[i]); //get all childs
-//			num_childs.insert(num_childs.end(), tmp_list.begin(), tmp_list.end()); //add childs list to hidden_childs
-//		}
-//	}
-//	return num_childs;
-//}
-//
-//std::vector<HierarchyNode*> HierarchyNode::GetClosedChilds(HierarchyNode* node)
-//{
-//	std::vector<HierarchyNode*> hidden_childs;
-//	for (uint i = 0; i < node->childs.size(); ++i)
-//	{
-//		if (!node->childs[i]->is_open) //if node is closed add childs to list
-//		{
-//			std::vector<HierarchyNode*> tmp_list = GetAllChilds(node->childs[i]); //get all childs
-//			hidden_childs.insert(hidden_childs.end(), tmp_list.begin(), tmp_list.end()); //add childs list to hidden_childs
-//		}
-//		else
-//		{
-//			std::vector<HierarchyNode*> tmp_list = GetClosedChilds(node->childs[i]); //if node is open check if any child is closed
-//			hidden_childs.insert(hidden_childs.end(), tmp_list.begin(), tmp_list.end()); //add tmp_list to hidden_childs
-//		}
-//	}
-//	return hidden_childs;
-//}
-//
-//bool HierarchyNode::IsChildOf(HierarchyNode* parent, HierarchyNode* node) const
-//{
-//	if (parent != nullptr && node != nullptr && node->parent != nullptr)
-//	{
-//		if (node->parent == parent)
-//			return true;
-//		else
-//			return IsChildOf(parent, node->parent);
-//	}
-//	return false;
-//}
-//
-//std::string HierarchyNode::GetLastChild(size_t index) const
-//{
-//	if (data.childs[index].empty())
-//		return data.name[index];
-//	else
-//	{
-//		int pos = FindNode(data.childs[index].back(), data.name);
-//		if (pos == -1)
-//			return "";
-//		else
-//			return GetLastChild(pos);
-//	}
-//}
+std::vector<std::string> HierarchyNode::GetAllChilds(size_t index) const
+{
+	std::vector<std::string> num_childs;
 
-//// --- SORTERS ---
-//void HierarchyNode::SortByPosition() const
-//{
-//	std::priority_queue<HierarchyNode*, std::vector<HierarchyNode*>, PositionSort> ListOrder;
-//
-//	for (HierarchyNode* node : list) //push nodes into Ordered List
-//		ListOrder.push(node);
-//
-//	list.clear(); //clear list
-//
-//	while (ListOrder.empty() == false) //push Ordered List into New List
-//	{
-//		list.push_back(ListOrder.top());
-//		ListOrder.pop();
-//	}
-//}
+	for (size_t i = 0, size = data.childs[index].size(); i < size; ++i)
+	{
+		num_childs.push_back(data.childs[index][i]);
+
+		int child_index = FindNode(data.childs[index][i], data.name);
+		if (child_index != -1 && !data.childs[child_index].empty()) //if child has childs add them to list
+		{
+			std::vector<std::string> tmp_list = GetAllChilds(child_index); //get all childs
+			num_childs.insert(num_childs.end(), tmp_list.begin(), tmp_list.end()); //add childs list to hidden_childs
+		}
+	}
+	return num_childs;
+}
+
+std::vector<std::string> HierarchyNode::GetClosedChilds(size_t index) const
+{
+	std::vector<std::string> hidden_childs;
+	for (uint i = 0; i < data.childs[index].size(); ++i)
+	{
+		int child_index = FindNode(data.childs[index][i], data.name);
+		if (child_index == -1)
+			continue;
+
+		if (data.flags[child_index] & NodeFlags::OPEN) 
+		{
+			std::vector<std::string> tmp_list = GetClosedChilds(child_index); //if node is open check if any child is closed
+			hidden_childs.insert(hidden_childs.end(), tmp_list.begin(), tmp_list.end()); //add tmp_list to hidden_childs
+		}
+		else //if node is closed add childs to list
+		{
+			std::vector<std::string> tmp_list = GetAllChilds(child_index); //get all childs
+			hidden_childs.insert(hidden_childs.end(), tmp_list.begin(), tmp_list.end()); //add childs list to hidden_childs
+		}
+	}
+	return hidden_childs;
+}
+
+bool HierarchyNode::IsChildOf(size_t index, size_t parent_index) const
+{
+	std::vector<std::string> all_childs = GetAllChilds(parent_index);
+	std::string name = data.name[index];
+
+	for (std::string child : all_childs)
+	{
+		if (child == name)
+			return true;
+	}
+	return false;
+}
+
+size_t HierarchyNode::GetLastChild(size_t index) const
+{
+	if (data.childs[index].empty())
+		return index;
+	else
+		return GetLastChild(FindNode(data.childs[index].back(), data.name));
+}
+
+// --- SORTERS ---
+std::vector<std::string> HierarchyNode::SortByPosition(std::vector<std::string> list) const
+{
+	std::priority_queue<std::pair<std::string, int>, std::vector<std::pair<std::string, int>>, PositionSort> ListOrder;
+
+	for (std::string name : list) //push nodes into Ordered List
+	{
+		int index = FindNode(name, data.name);
+		if (index == -1)
+			continue;
+
+		ListOrder.push({ name, data.order[index] });
+	}
+
+	list.clear(); //clear list
+
+	while (ListOrder.empty() == false) //push Ordered List into New List
+	{
+		list.push_back(ListOrder.top().first);
+		ListOrder.pop();
+	}
+
+	return list;
+}
 
 std::vector<std::string> HierarchyNode::SortByIndent(std::vector<std::string> list) const
 {
@@ -406,11 +452,11 @@ std::vector<std::string> HierarchyNode::SortByIndent(std::vector<std::string> li
 
 	for (std::string name : list) //push nodes into Ordered List
 	{
-		int pos = FindNode(name, data.name);
-		if (pos == -1)
+		int index = FindNode(name, data.name);
+		if (index == -1)
 			continue;
 
-		ListOrder.push({ name, data.indent[pos] });
+		ListOrder.push({ name, data.indent[index] });
 	}
 
 	list.clear(); //clear list
