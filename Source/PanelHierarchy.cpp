@@ -91,6 +91,9 @@ void PanelHierarchy::Draw()
 
 	//--- Shortcuts ---
 	Shortcuts();
+
+	if (is_search)
+		SearchReplace(search_buffer, replace_buffer);
 }
 
 void PanelHierarchy::Shortcuts()
@@ -118,11 +121,13 @@ void PanelHierarchy::Shortcuts()
 			nodes.SetState(HN_State::SELECTED, nodes.data.name);
 		}
 
-		// Find
+		// Search
 		if (App->input->Shortcut(SDL_SCANCODE_LCTRL, KEY_REPEAT, SDL_SCANCODE_F, KEY_DOWN) ||
 			App->input->Shortcut(SDL_SCANCODE_RCTRL, KEY_REPEAT, SDL_SCANCODE_F, KEY_DOWN))
 		{
-			//FindPopup();
+			is_search = true;
+			sprintf_s(search_buffer, 128, "Search");
+			sprintf_s(replace_buffer, 128, "Replace");
 		}
 	}
 }
@@ -565,7 +570,9 @@ void PanelHierarchy::DrawRightClick()
 
 		if (ImGui::MenuItem("Search", "Ctrl+F")) //search
 		{
-			//Open Search & Replace Popup
+			is_search = true;
+			sprintf_s(search_buffer, 128, "Search");
+			sprintf_s(replace_buffer, 128, "Replace");
 		}
 		ImGui::EndPopup();
 	}
@@ -593,6 +600,94 @@ void PanelHierarchy::ShowSceneOptions(size_t index)
 		{}
 		ImGui::EndPopup();
 	}
+}
+
+void PanelHierarchy::SearchReplace(char* search_buffer, char* replace_buffer)
+{
+	ImGui::SetNextWindowSize(ImVec2(250, 238));
+	ImGui::Begin("Search and Replace", &is_search, ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
+
+	static bool show_search = true;
+	ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX() - ImGui::GetStyle().WindowPadding.x, ImGui::GetCursorPosY() - 5));
+	if (show_search) // --- SEARCH ---
+	{
+		// Menu Buttons
+		ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyle().Colors[ImGuiCol_ButtonActive]);
+		if (ImGui::Button("Search", ImVec2(ImGui::GetWindowWidth() / 2, 0)))  
+			show_search = true;
+		ImGui::PopStyleColor();
+		ImGui::SameLine(0.0f, 1.0f);
+		if (ImGui::Button("Replace", ImVec2(ImGui::GetWindowWidth() / 2, 0))) 
+			show_search = false;
+		ImGui::Separator();
+
+		// Actual Draw
+		ImGui::InputText("Search##1", search_buffer, 128, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll);
+		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10);
+
+		// Combo
+		const char* items[] = { "Scenes", "Prefabs", "Textures", "Materials", "Animations", "Tilemaps", "Audios", "Scripts", "Shaders" };
+		static int current_item = 0;
+		ImGui::SetNextItemWidth(162);
+		ImGui::Combo("##ResourceCombo", &current_item, items, IM_ARRAYSIZE(items));
+
+		// Checkbox
+		static bool full_words = false;
+		static bool match_case = false;
+		ImGui::Checkbox("Only full words", &full_words);
+		ImGui::Checkbox("Match Lower and Upper case", &match_case);
+		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 33);
+		ImGui::Separator();
+
+		// Buttons
+		ImGui::Button("Previous", ImVec2(ImGui::GetContentRegionAvailWidth() / 2, 0));
+		ImGui::SameLine(0.0f, 1.0f);
+		ImGui::Button("Next", ImVec2(ImGui::GetContentRegionAvailWidth(), 0));
+		ImGui::SetCursorPosX(ImGui::GetWindowWidth() / 2 + 1);
+		ImGui::Button("Search All", ImVec2(ImGui::GetContentRegionAvailWidth(), 0));
+	}
+	else // --- REPLACE ---
+	{
+		// Menu Buttons
+		if (ImGui::Button("Search", ImVec2(ImGui::GetWindowWidth() / 2, 0))) 
+			show_search = true;
+		ImGui::SameLine(0.0f, 1.0f);
+		ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyle().Colors[ImGuiCol_ButtonActive]);
+		if (ImGui::Button("Replace", ImVec2(ImGui::GetWindowWidth() / 2, 0)))
+			show_search = false;
+		ImGui::PopStyleColor();
+		ImGui::Separator();
+
+		// Actual Draw
+		ImGui::InputText("Search##2", search_buffer, 128, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll);
+		ImGui::InputText("Replace##2", replace_buffer, 128, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll);
+		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10);
+
+		// Combo
+		const char* items[] = { "Scenes", "Prefabs", "Textures", "Materials", "Animations", "Tilemaps", "Audios", "Scripts", "Shaders" };
+		static int current_item = 0;
+		ImGui::SetNextItemWidth(162);
+		ImGui::Combo("##ResourceCombo", &current_item, items, IM_ARRAYSIZE(items));
+
+		// Checkbox
+		static bool full_words = false;
+		static bool match_case = false;
+		ImGui::Checkbox("Only full words", &full_words);
+		ImGui::Checkbox("Match Lower and Upper case", &match_case);
+		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10);
+		ImGui::Separator();
+
+		// Buttons
+		ImGui::Button("Previous##2", ImVec2(ImGui::GetContentRegionAvailWidth() / 2, 0));
+		ImGui::SameLine(0.0f, 1.0f);
+		ImGui::Button("Next##2", ImVec2(ImGui::GetContentRegionAvailWidth(), 0));
+
+		ImGui::Button("Replace##3", ImVec2(ImGui::GetContentRegionAvailWidth() / 2, 0));
+		ImGui::SameLine(0.0f, 1.0f);
+		ImGui::Button("Replace All", ImVec2(ImGui::GetContentRegionAvailWidth(), 0));
+
+	}
+	ImGui::End();
 }
 
 void PanelHierarchy::DrawConnectorLines(size_t index, ImDrawList* draw_list)

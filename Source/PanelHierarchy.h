@@ -25,6 +25,7 @@ private:
 	void DrawRightClick(); //only draws if right click is pressed, returns true if drawn
 	void CreateMenu(); //imgui menu for creating nodes (folder, gameobject, scene, etc)
 	void ShowSceneOptions(size_t index); //popup when options button is clicked
+	void SearchReplace(char* search_buffer, char* replace_buffer); //popup for search and replace
 
 	void Scroll(ImVec2 pos);
 
@@ -49,4 +50,8 @@ private:
 	bool draw_reparenting_line = false;
 
 	bool is_rename_flag = false;
+	bool is_search = false;
+
+	char search_buffer[128];
+	char replace_buffer[128];
 };

@@ -78,8 +78,8 @@ struct HierarchyNode // Node
 	void ReorderNodes(size_t index, bool is_delete = false); //update nodes pos
 
 	// --- CHILDS ---
-	std::vector<std::string> GetHiddenNodes() const; //get all hidden nodes in hierarchy
-	std::vector<std::string> GetClosedChilds(size_t index) const; //returns all closed childs (including childs of childs) for gethiddennodes
+	std::vector<std::string> GetHiddenNodes() const; //get all hidden nodes
+	std::vector<std::string> GetClosedChilds(size_t index) const; //returns all closed childs (including childs of childs) used for GetHiddenNodes()
 	std::vector<std::string> GetAllChilds(size_t index) const; //get childs (including childs of childs) used for MoveNode()
 	size_t GetLastChild(size_t index) const; //get last child (including childs of childs)
 	bool IsChildOf(size_t index, size_t parent_index) const; //check if node is child of parent (including if it is child of childs)
