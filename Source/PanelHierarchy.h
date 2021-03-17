@@ -36,19 +36,23 @@ public:
 	static const uint default_pos_y = 20;
 
 private:
+	// Scene
 	std::string scene_name = "Default Scene";
 	int scene_index = -1;
 	bool is_scene_saved = true;
 	bool is_scene_hidden = false;
 
+	// Nodes
 	HierarchyNode nodes;
 	std::vector<std::string> selected_nodes;
 	std::vector<std::string> hidden_childs;
 
+	// Reparenting Line (Drag&Drop)
 	ImVec2 reparenting_p1 = { 0,0 };
 	ImVec2 reparenting_p2 = { 0,0 };
 	bool draw_reparenting_line = false;
 
+	// General
 	bool is_rename_flag = false;
 	bool is_search = false;
 

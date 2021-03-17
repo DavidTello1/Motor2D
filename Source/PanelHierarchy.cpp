@@ -21,6 +21,8 @@ PanelHierarchy::PanelHierarchy() : Panel("Hierarchy", ICON_HIERARCHY, 3)
 	flags = ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_NoCollapse;
 
 	scene_name = "Default Scene";
+	sprintf_s(search_buffer, 128, "");
+	sprintf_s(replace_buffer, 128, "");
 }
 
 PanelHierarchy::~PanelHierarchy()
@@ -126,8 +128,6 @@ void PanelHierarchy::Shortcuts()
 			App->input->Shortcut(SDL_SCANCODE_RCTRL, KEY_REPEAT, SDL_SCANCODE_F, KEY_DOWN))
 		{
 			is_search = true;
-			sprintf_s(search_buffer, 128, "Search");
-			sprintf_s(replace_buffer, 128, "Replace");
 		}
 	}
 }
@@ -296,10 +296,10 @@ void PanelHierarchy::DrawNode(size_t index)
 		pos_x = ImGui::GetCursorPosX() - 1;
 		if (ImGui::InvisibleButton(std::string(nodes.data.name[index] + ICON_ARROW_OPEN).c_str(), ImVec2(16, height)))
 		{
-			if (nodes.data.flags[index] & NodeFlags::OPEN)
-				nodes.data.flags[index] &= ~NodeFlags::OPEN;
+			if (nodes.data.flags[index] & NodeFlags::CLOSED)
+				nodes.data.flags[index] &= ~NodeFlags::CLOSED;
 			else
-				nodes.data.flags[index] |= NodeFlags::OPEN;
+				nodes.data.flags[index] |= NodeFlags::CLOSED;
 			hidden_childs = nodes.GetHiddenNodes(); //refresh hidden_childs list
 		}
 
@@ -308,17 +308,17 @@ void PanelHierarchy::DrawNode(size_t index)
 		if (ImGui::IsItemHovered())
 		{
 			is_hovered = true;
-			if (nodes.data.flags[index] & NodeFlags::OPEN)
-				ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), ICON_ARROW_OPEN);
-			else
+			if (nodes.data.flags[index] & NodeFlags::CLOSED)
 				ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), ICON_ARROW_CLOSED);
+			else
+				ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 1.0f), ICON_ARROW_OPEN);
 		}
 		else
 		{
-			if (nodes.data.flags[index] & NodeFlags::OPEN)
-				ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.8f), ICON_ARROW_OPEN);
-			else
+			if (nodes.data.flags[index] & NodeFlags::CLOSED)
 				ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.8f), ICON_ARROW_CLOSED);
+			else
+				ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.8f), ICON_ARROW_OPEN);
 		}
 		ImGui::SameLine(0.0f, 2.0f);
 	}
@@ -373,7 +373,7 @@ void PanelHierarchy::DrawNode(size_t index)
 		nodes.data.color[index] = colors[ImGuiCol_WindowBg];
 
 	// Draw Childs
-	if ((nodes.data.flags[index] & NodeFlags::OPEN) && !nodes.data.childs[index].empty())
+	if (!(nodes.data.flags[index] & NodeFlags::CLOSED) && !nodes.data.childs[index].empty())
 	{
 		for (uint i = 0; i < nodes.data.childs[index].size(); ++i)
 		{
@@ -410,19 +410,29 @@ void PanelHierarchy::HandleSelection(size_t index, bool is_hovered, float bg_Min
 	
 	if (ImGui::BeginDragDropTarget()) // Target (Reparenting)
 	{
+		static bool reorder = false;
 		for (std::string selected_node : selected_nodes)
 		{
 			int selected_index = nodes.FindNode(selected_node, nodes.data.name);
 			if (selected_index != -1 && index != selected_index && !nodes.IsChildOf(index, selected_index)) // error handling
 			{
+				// Reparenting Line
 				float w = pos_x + 15;
 				float h = bg_Min_y - 1.5f + (height + 3) * float(nodes.data.order[nodes.GetLastChild(index)] - nodes.data.order[index] + 1);
 				reparenting_p1 = ImVec2(w, h);
 				reparenting_p2 = ImVec2(w + width, h);
 				draw_reparenting_line = true;
 
+				// Reparent Node
 				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HierarchyNode"))
+				{
+					if (!reorder)
+					{
+						nodes.ReorderNodes(selected_nodes);
+						reorder = true;
+					}
 					nodes.MoveNode(selected_node, nodes.data.name[index], -1, -1);
+				}
 			}
 		}
 		ImGui::EndDragDropTarget();
@@ -435,10 +445,10 @@ void PanelHierarchy::HandleSelection(size_t index, bool is_hovered, float bg_Min
 		{
 			if (nodes.data.type[index] == NodeType::FOLDER && !nodes.data.childs[index].empty())
 			{
-				if (nodes.data.flags[index] & NodeFlags::OPEN)
-					nodes.data.flags[index] &= ~NodeFlags::OPEN;
+				if (nodes.data.flags[index] & NodeFlags::CLOSED)
+					nodes.data.flags[index] &= ~NodeFlags::CLOSED;
 				else
-					nodes.data.flags[index] |= NodeFlags::OPEN;
+					nodes.data.flags[index] |= NodeFlags::CLOSED;
 			}
 			else if (nodes.data.type[index] == NodeType::GAMEOBJECT || nodes.data.type[index] == NodeType::PREFAB)
 			{
@@ -533,7 +543,7 @@ void PanelHierarchy::DrawRightClick()
 		if (ImGui::MenuItem("Create Prefab", NULL, false, !selected_nodes.empty())) //create prefab
 		{
 			//CreatePrefab(name, object, folder);
-		} 
+		}
 		if (ImGui::MenuItem("Duplicate", "Ctrl+D", false, !selected_nodes.empty())) //duplicate
 			nodes.DuplicateNodes(selected_nodes);
 
@@ -569,11 +579,8 @@ void PanelHierarchy::DrawRightClick()
 		ImGui::Separator();
 
 		if (ImGui::MenuItem("Search", "Ctrl+F")) //search
-		{
 			is_search = true;
-			sprintf_s(search_buffer, 128, "Search");
-			sprintf_s(replace_buffer, 128, "Replace");
-		}
+
 		ImGui::EndPopup();
 	}
 }
@@ -608,17 +615,20 @@ void PanelHierarchy::SearchReplace(char* search_buffer, char* replace_buffer)
 	ImGui::Begin("Search and Replace", &is_search, ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
 
 	static bool show_search = true;
+	const char* items[] = { "Current Scene", "Current Layer", "Selected Objects", "Type: Layer", "Type: Folder", "Type: GameObject", "Type: Prefab" };
+	static int current_item = 0;
+	static bool full_words = false;
+	static bool match_case = false;
+
 	ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX() - ImGui::GetStyle().WindowPadding.x, ImGui::GetCursorPosY() - 5));
 	if (show_search) // --- SEARCH ---
 	{
 		// Menu Buttons
 		ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyle().Colors[ImGuiCol_ButtonActive]);
-		if (ImGui::Button("Search", ImVec2(ImGui::GetWindowWidth() / 2, 0)))  
-			show_search = true;
+		if (ImGui::Button("Search", ImVec2(ImGui::GetWindowWidth() / 2, 0))) show_search = true;
 		ImGui::PopStyleColor();
 		ImGui::SameLine(0.0f, 1.0f);
-		if (ImGui::Button("Replace", ImVec2(ImGui::GetWindowWidth() / 2, 0))) 
-			show_search = false;
+		if (ImGui::Button("Replace", ImVec2(ImGui::GetWindowWidth() / 2, 0))) show_search = false;
 		ImGui::Separator();
 
 		// Actual Draw
@@ -626,14 +636,10 @@ void PanelHierarchy::SearchReplace(char* search_buffer, char* replace_buffer)
 		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10);
 
 		// Combo
-		const char* items[] = { "Scenes", "Prefabs", "Textures", "Materials", "Animations", "Tilemaps", "Audios", "Scripts", "Shaders" };
-		static int current_item = 0;
 		ImGui::SetNextItemWidth(162);
 		ImGui::Combo("##ResourceCombo", &current_item, items, IM_ARRAYSIZE(items));
 
 		// Checkbox
-		static bool full_words = false;
-		static bool match_case = false;
 		ImGui::Checkbox("Only full words", &full_words);
 		ImGui::Checkbox("Match Lower and Upper case", &match_case);
 		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 33);
@@ -649,12 +655,10 @@ void PanelHierarchy::SearchReplace(char* search_buffer, char* replace_buffer)
 	else // --- REPLACE ---
 	{
 		// Menu Buttons
-		if (ImGui::Button("Search", ImVec2(ImGui::GetWindowWidth() / 2, 0))) 
-			show_search = true;
+		if (ImGui::Button("Search", ImVec2(ImGui::GetWindowWidth() / 2, 0))) show_search = true;
 		ImGui::SameLine(0.0f, 1.0f);
 		ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyle().Colors[ImGuiCol_ButtonActive]);
-		if (ImGui::Button("Replace", ImVec2(ImGui::GetWindowWidth() / 2, 0)))
-			show_search = false;
+		if (ImGui::Button("Replace", ImVec2(ImGui::GetWindowWidth() / 2, 0))) show_search = false;
 		ImGui::PopStyleColor();
 		ImGui::Separator();
 
@@ -664,14 +668,10 @@ void PanelHierarchy::SearchReplace(char* search_buffer, char* replace_buffer)
 		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10);
 
 		// Combo
-		const char* items[] = { "Scenes", "Prefabs", "Textures", "Materials", "Animations", "Tilemaps", "Audios", "Scripts", "Shaders" };
-		static int current_item = 0;
 		ImGui::SetNextItemWidth(162);
 		ImGui::Combo("##ResourceCombo", &current_item, items, IM_ARRAYSIZE(items));
 
 		// Checkbox
-		static bool full_words = false;
-		static bool match_case = false;
 		ImGui::Checkbox("Only full words", &full_words);
 		ImGui::Checkbox("Match Lower and Upper case", &match_case);
 		ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 10);

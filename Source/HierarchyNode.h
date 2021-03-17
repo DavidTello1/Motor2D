@@ -27,7 +27,7 @@ enum class NodeType {
 };
 
 enum NodeFlags {
-	OPEN = 1 << 0,
+	CLOSED = 1 << 0,
 	HIDDEN = 1 << 1,
 };
 
@@ -64,7 +64,7 @@ struct HierarchyNode // Node
 	size_t CreateNode(NodeType type, std::vector<std::string> childs, std::string name = "", std::string parent = "", int flags = 0, HN_State state = HN_State::IDLE);
 	void DeleteNodes(std::vector<std::string> nodes);
 	void DuplicateNodes(std::vector<std::string> nodes, int parent_index = -1);
-	void MoveNode(std::string name, std::string parent_name, int pos = -1, int indent = -1); //move node (if pos or indent is -1 they will be set according to parent)
+	void MoveNode(std::string name, std::string parent_name, int order = -1, int indent = -1); //move node (if order or indent is -1 they will be set according to parent)
 
 	// --- UTILS ---
 	int FindNode(std::string name, std::vector<std::string> list) const; //get node pos in list (returns -1 if not found)
@@ -74,8 +74,9 @@ struct HierarchyNode // Node
 	void SwitchHidden(size_t index); //switch hidden flag, including childs;
 
 	// --- ORDER ---
-	uint RecursivePos(size_t index); //set node pos in CreateNode()
-	void ReorderNodes(size_t index, bool is_delete = false); //update nodes pos
+	uint RecursivePos(size_t index); //set node order in CreateNode()
+	void ReorderNodes(size_t index, bool is_delete = false); //update nodes order
+	void ReorderNodes(std::vector<std::string> exceptions); //update nodes order with exceptions (used for Drag&Drop)
 
 	// --- CHILDS ---
 	std::vector<std::string> GetHiddenNodes() const; //get all hidden nodes
