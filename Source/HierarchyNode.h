@@ -62,6 +62,7 @@ struct HierarchyNode // Node
 
 	// --- MAIN ---
 	size_t CreateNode(NodeType type, std::vector<std::string> childs, std::string name = "", std::string parent = "", int flags = 0, HN_State state = HN_State::IDLE);
+	void RemoveNode(size_t index);
 	void DeleteNodes(std::vector<std::string> nodes);
 	void DuplicateNodes(std::vector<std::string> nodes, int parent_index = -1);
 	void MoveNode(std::string name, std::string parent_name, int order = -1, int indent = -1); //move node (if order or indent is -1 they will be set according to parent)

@@ -58,6 +58,19 @@ size_t HierarchyNode::CreateNode(NodeType type_, std::vector<std::string> childs
 	return index;
 }
 
+void HierarchyNode::RemoveNode(size_t index)
+{
+	data.name.erase(data.name.begin() + index);
+	data.type.erase(data.type.begin() + index);
+	data.state.erase(data.state.begin() + index);
+	data.flags.erase(data.flags.begin() + index);
+	data.color.erase(data.color.begin() + index);
+	data.order.erase(data.order.begin() + index);
+	data.indent.erase(data.indent.begin() + index);
+	data.parent.erase(data.parent.begin() + index);
+	data.childs.erase(data.childs.begin() + index);
+}
+
 void HierarchyNode::DeleteNodes(std::vector<std::string> nodes_list)
 {
 	// Reorder list by indent (parents first)
@@ -67,7 +80,6 @@ void HierarchyNode::DeleteNodes(std::vector<std::string> nodes_list)
 	int index = 0;
 	for (size_t i = 0, size = nodes_list.size(); i < size; ++i)
 	{
-
 		index = FindNode(nodes_list[i].c_str(), data.name);
 		if (index != -1)
 		{
@@ -86,21 +98,29 @@ void HierarchyNode::DeleteNodes(std::vector<std::string> nodes_list)
 
 			// Delete childs
 			if (!data.childs[index].empty())
-				DeleteNodes(data.childs[index]);
+			{
+				std::vector<std::string> childs = GetAllChilds(index);
+				for (std::string child : childs)
+				{
+					int child_index = FindNode(child, data.name);
+					if (child_index != -1)
+					{
+						ReorderNodes(child_index, true);
+						RemoveNode(child_index);
+					}
+				}
+			}
 
-			// Update nodes pos
-			ReorderNodes(index, true);
+			// Recalculate index
+			index = FindNode(nodes_list[i].c_str(), data.name);
+			if (index != -1)
+			{
+				// Update nodes pos
+				ReorderNodes(index, true);
 
-			// Delete node data
-			data.name.erase(data.name.begin() + index);
-			data.type.erase(data.type.begin() + index);
-			data.state.erase(data.state.begin() + index);
-			data.flags.erase(data.flags.begin() + index);
-			data.color.erase(data.color.begin() + index);
-			data.order.erase(data.order.begin() + index);
-			data.indent.erase(data.indent.begin() + index);
-			data.parent.erase(data.parent.begin() + index);
-			data.childs.erase(data.childs.begin() + index);
+				// Delete node data
+				RemoveNode(index);
+			}
 		}
 	}
 	nodes_list.clear();
@@ -197,7 +217,7 @@ void HierarchyNode::MoveNode(std::string name, std::string parent_name, int orde
 	// Error handling
 	int index = FindNode(name, data.name);
 	int parent_index = FindNode(parent_name, data.name);
-	if (index == -1 || parent_index == -1 || index == parent_index)
+	if (index == -1 || index == parent_index)
 		return;
 
 	// If node has parent, delete node from parent's child list
@@ -211,43 +231,53 @@ void HierarchyNode::MoveNode(std::string name, std::string parent_name, int orde
 	// Set indent
 	if (indent == -1)
 	{
+		if (parent_name == "")
+			data.indent[index] = 1;
 		data.indent[index] = data.indent[parent_index] + 1;
-		//if (data.parent[parent_index] == "")
-		//	data.indent[index] = 1;
 	}
 	else
 		data.indent[index] = indent;
 
-	// Set order
-	if (order == -1)
+	// Set order and ReorderNodes
+	if (order == -1 && parent_index != -1)
 	{
-		if (data.childs[parent_index].empty())
+		if (data.childs[parent_index].empty()) // parent's child list is empty
 			data.order[index] = data.order[parent_index] + 1;
-		else
+		else if (IsChildOf(index, parent_index)) // node is already child
+			data.order[index] = data.order[parent_index] + FindNode(name, data.childs[parent_index]);
+		else // node is not child of parent and it has childs
 			data.order[index] = data.order[GetLastChild(parent_index)] +1;
 	}
 	else
 		data.order[index] = order;
-
-	ReorderNodes(index); //***SHOULD HAVE EXCEPTIONS
+	ReorderNodes(index);
 
 	// Set parent and add to child list
 	data.parent[index] = parent_name;
 	if (parent_index != -1)
+	{
 		data.childs[parent_index].push_back(data.name[index]);
-	data.childs[parent_index] = SortByPosition(data.childs[parent_index]); //order childs (needed for reordering correctly)
+		data.childs[parent_index] = SortByPosition(data.childs[parent_index]); //order childs (needed for reordering correctly)
+	}
 
 	// Move Childs
 	if (!data.childs[index].empty())
 	{
-		for (uint i = 0; i < data.childs[index].size(); ++i)
+		std::vector<std::string> childs = GetAllChilds(index);
+		for (std::string child : childs)
 		{
-			int child_index = FindNode(data.childs[index][i], data.name);
-			if (child_index == -1)
-				continue;
+			int child_index = FindNode(child, data.name);
+			if (child_index != -1)
+			{
+				int child_parent_index = FindNode(data.parent[child_index], data.name);
+				if (child_parent_index != -1)
+				{
+					data.indent[child_index] = data.indent[child_parent_index] + 1; //update indent
+					data.order[child_index] = data.order[child_parent_index] + FindNode(child, data.childs[child_parent_index]) + 1; //update order
 
-			MoveNode(data.name[child_index], name);
-			ReorderNodes(child_index); //reorder nodes
+					ReorderNodes(child_index);
+				}
+			}
 		}
 	}
 }
@@ -286,9 +316,7 @@ void HierarchyNode::ReorderNodes(size_t index, bool is_delete)
 {
 	for (size_t i = 0, size = data.order.size(); i < size; ++i)
 	{
-		if (i == index)
-			continue;
-		else if (data.order[i] >= data.order[index])
+		if (i != index && data.order[i] >= data.order[index])
 		{
 			if (is_delete)
 				data.order[i]--;
@@ -308,8 +336,24 @@ void HierarchyNode::ReorderNodes(std::vector<std::string> exceptions)
 	for (std::string name : exceptions)
 	{
 		int pos = FindNode(name, data.name);
-		if (pos != -1)
-			indexes.push_back(pos);
+		if (pos == -1)
+			continue;
+
+		indexes.push_back(pos); //add node to list
+
+		if (!data.childs[pos].empty()) //if has childs add them to list too
+		{
+			std::vector<std::string> childs = GetAllChilds(pos);
+
+			for (std::string child : childs)
+			{
+				int child_pos = FindNode(child, data.name);
+				if (child_pos != -1)
+				{
+					indexes.push_back(child_pos);
+				}
+			}
+		}
 	}
 
 	// Order Nodes without exceptions
@@ -317,11 +361,10 @@ void HierarchyNode::ReorderNodes(std::vector<std::string> exceptions)
 	{
 		for (size_t i = 0, size = data.order.size(); i < size; ++i)
 		{
-			if (index == i)
-				continue;
-			else if (data.order[index] < data.order[i])
+			if (index != i && data.order[index] <= data.order[i])
 				data.order[i]--;
 		}
+		data.order[index] = 0;
 	}
 }
 

@@ -247,15 +247,23 @@ void PanelHierarchy::DrawNode(size_t index)
 
 		if (ImGui::BeginDragDropTarget()) // Target (Reordering)
 		{
-			for (uint i = 0; i < selected_nodes.size(); ++i)
+			bool reorder = false;
+			for (std::string selected_node : selected_nodes)
 			{
-				if (nodes.data.name[index] != selected_nodes[i])// error handling
+				if (nodes.data.name[index] != selected_node)// error handling
 				{
 					is_hovered = false;
 					window->DrawList->AddLine(ImVec2(pos_x + 15, bg.Min.y + 1.5f), ImVec2(pos_x + 15 + width, bg.Min.y + 1.5f), ImColor(255, 255, 255, 255));
 
 					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HierarchyNode"))
-						nodes.MoveNode(selected_nodes[i], nodes.data.parent[index], nodes.data.order[index], nodes.data.indent[index]);
+					{
+						if (!reorder)
+						{
+							nodes.ReorderNodes(selected_nodes);
+							reorder = true;
+						}
+						nodes.MoveNode(selected_node, nodes.data.parent[index], nodes.data.order[index], nodes.data.indent[index]);
+					}
 				}
 			}
 			ImGui::EndDragDropTarget();
@@ -410,7 +418,7 @@ void PanelHierarchy::HandleSelection(size_t index, bool is_hovered, float bg_Min
 	
 	if (ImGui::BeginDragDropTarget()) // Target (Reparenting)
 	{
-		static bool reorder = false;
+		bool reorder = false;
 		for (std::string selected_node : selected_nodes)
 		{
 			int selected_index = nodes.FindNode(selected_node, nodes.data.name);
@@ -431,7 +439,7 @@ void PanelHierarchy::HandleSelection(size_t index, bool is_hovered, float bg_Min
 						nodes.ReorderNodes(selected_nodes);
 						reorder = true;
 					}
-					nodes.MoveNode(selected_node, nodes.data.name[index], -1, -1);
+					nodes.MoveNode(selected_node, nodes.data.name[index]);
 				}
 			}
 		}
