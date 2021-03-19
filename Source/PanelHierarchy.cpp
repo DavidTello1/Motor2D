@@ -62,11 +62,24 @@ void PanelHierarchy::Draw()
 
 	DrawSceneNode(); // Draw Scene Node
 
+	// Get Parents
+	std::vector<std::string> parents;
 	for (size_t index = 0, size = nodes.data.name.size(); index < size; ++index)
 	{
 		// Draw Parents First
 		if (nodes.data.parent[index] == "")
-			DrawNode(index);
+			parents.push_back(nodes.data.name[index]);
+	}
+	parents = nodes.SortByPosition(parents);
+
+	// Draw Nodes (parents)
+	for (std::string name : parents)
+	{
+		int index = nodes.FindNode(name, nodes.data.name);
+		if (index == -1)
+			continue;
+
+		DrawNode(index);
 
 		// Draw Connector Lines
 		if (!nodes.data.childs[index].empty())
