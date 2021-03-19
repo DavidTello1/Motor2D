@@ -94,12 +94,10 @@ void PanelHierarchy::Draw()
 	}
 	ImGui::PopStyleVar();
 
-	////--- Empty Space ---
-	//ImGui::BeginChild("Empty");
-	//if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup) && (ImGui::IsMouseClicked(0) || ImGui::IsMouseClicked(1))) // Unselect nodes when clicking on empty space
-	//	UnSelectAll();
-	//DrawRightClick(); // Right Click Options
-	//ImGui::EndChild();
+	// Unselect nodes when clicking on empty space
+	if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup | ImGuiHoveredFlags_AllowWhenBlockedByActiveItem) &&
+		ImGui::IsMouseClicked(0) && !ImGui::IsAnyItemHovered() && !ImGui::GetIO().KeyCtrl && !ImGui::GetIO().KeyShift && !is_any_hover)
+		nodes.SetState(HN_State::IDLE, nodes.data.name);
 
 	//--- Scroll Areas ---
 	Scroll(pos);
@@ -109,6 +107,9 @@ void PanelHierarchy::Draw()
 
 	if (is_search)
 		SearchReplace(search_buffer, replace_buffer);
+
+	is_any_hover = false;
+	is_dragging = false;
 }
 
 void PanelHierarchy::Shortcuts()
@@ -428,31 +429,28 @@ void PanelHierarchy::HandleSelection(size_t index, bool is_hovered, float bg_Min
 		ImGui::EndDragDropSource();
 	}
 	ImGui::SetItemAllowOverlap();
-	
+
 	if (ImGui::BeginDragDropTarget()) // Target (Reparenting)
 	{
+		is_dragging = true;
 		bool reorder = false;
 		for (std::string selected_node : selected_nodes)
 		{
 			int selected_index = nodes.FindNode(selected_node, nodes.data.name);
 			if (selected_index != -1 && index != selected_index && !nodes.IsChildOf(index, selected_index)) // error handling
 			{
-				// Reparenting Line
-				float w = pos_x + 15;
-				float h = bg_Min_y - 1.5f + (height + 3) * float(nodes.data.order[nodes.GetLastChild(index)] - nodes.data.order[index] + 1);
-				reparenting_p1 = ImVec2(w, h);
-				reparenting_p2 = ImVec2(w + width, h);
-				draw_reparenting_line = true;
+				ReparentingLine(index, bg_Min_y - 1.5f, width, height + 3); // draw reparenting line
 
 				// Reparent Node
 				if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HierarchyNode"))
 				{
 					if (!reorder)
 					{
-						nodes.ReorderNodes(selected_nodes);
+						nodes.ReorderNodes(selected_nodes); // reorder nodes with exceptions
 						reorder = true;
+						nodes.data.flags[index] &= ~NodeFlags::CLOSED;
 					}
-					nodes.MoveNode(selected_node, nodes.data.name[index]);
+					nodes.MoveNode(selected_node, nodes.data.name[index]); // reparent node
 				}
 			}
 		}
@@ -462,6 +460,7 @@ void PanelHierarchy::HandleSelection(size_t index, bool is_hovered, float bg_Min
 	// Left Click (selection)
 	if (is_hovered) //if treenode is clicked, check whether it is a single or multi selection
 	{
+		is_any_hover = true;
 		if (ImGui::IsMouseDoubleClicked(0)) // Double-click (open folder / focus gameobject)
 		{
 			if (nodes.data.type[index] == NodeType::FOLDER && !nodes.data.childs[index].empty())
@@ -478,6 +477,12 @@ void PanelHierarchy::HandleSelection(size_t index, bool is_hovered, float bg_Min
 		}
 		else if (ImGui::IsMouseClicked(0)) // Multiple Selection
 		{
+			//if (rename_node != -1)
+			//{
+			//	nodes.data.state[rename_node] = HN_State::IDLE;
+			//	rename_node = -1;
+			//}
+
 			if (ImGui::GetIO().KeyCtrl) // Multiple Selection (Ctrl)
 			{
 				if (nodes.data.state[index] == HN_State::SELECTED)
@@ -494,7 +499,8 @@ void PanelHierarchy::HandleSelection(size_t index, bool is_hovered, float bg_Min
 		}
 		else if (ImGui::IsMouseReleased(0)) // Single selection
 		{
-			if (!ImGui::GetIO().KeyCtrl && !ImGui::GetIO().KeyShift && nodes.data.state[index] != HN_State::DRAGGING && nodes.data.state[index] != HN_State::RENAME)
+			if (!ImGui::GetIO().KeyCtrl && !ImGui::GetIO().KeyShift && !is_dragging &&
+				nodes.data.state[index] != HN_State::DRAGGING && nodes.data.state[index] != HN_State::RENAME)
 			{
 				nodes.SetState(HN_State::IDLE, nodes.data.name); //unselect all
 				nodes.data.state[index] = HN_State::SELECTED;
@@ -553,6 +559,8 @@ void PanelHierarchy::RenameNode(size_t index)
 		is_rename_flag = false;
 		ImGui::SetKeyboardFocusHere(-1);
 	}
+	if (ImGui::IsItemClicked(1))
+		nodes.data.state[index] = HN_State::SELECTED;
 }
 
 void PanelHierarchy::DrawRightClick()
@@ -589,7 +597,10 @@ void PanelHierarchy::DrawRightClick()
 			is_rename_flag = true;
 			int pos = nodes.FindNode(selected_nodes[0], nodes.data.name);
 			if (pos != -1)
+			{
 				nodes.data.state[pos] = HN_State::RENAME;
+				rename_node = pos;
+			}
 		}
 
 		if (ImGui::MenuItem("Delete", "Supr", false, !selected_nodes.empty())) //delete
@@ -711,6 +722,21 @@ void PanelHierarchy::SearchReplace(char* search_buffer, char* replace_buffer)
 	ImGui::End();
 }
 
+void PanelHierarchy::ReparentingLine(size_t index, float offset, float width, float height)
+{
+	uint num_hidden = 0;
+	if (nodes.data.flags[index] & NodeFlags::CLOSED)
+		num_hidden = nodes.GetAllChilds(index).size();
+	else
+		num_hidden = nodes.GetClosedChilds(index).size();
+
+	float h = offset + height * float(nodes.data.order[nodes.GetLastChild(index)] - nodes.data.order[index] + 1 - num_hidden);
+	float w = pos_x + 15;
+	reparenting_p1 = ImVec2(w, h);
+	reparenting_p2 = ImVec2(w + width, h);
+	draw_reparenting_line = true;
+}
+
 void PanelHierarchy::DrawConnectorLines(size_t index, ImDrawList* draw_list)
 {
 	//// If any parent is closed do not draw
@@ -773,15 +799,10 @@ void PanelHierarchy::CreateMenu()
 			if (!selected_nodes.empty())
 				parent = selected_nodes[0];
 
-			nodes.CreateNode(NodeType::FOLDER, empty_childs, "", parent, 0, HN_State::RENAME);
-			is_rename_flag = true;
+			nodes.SetState(HN_State::IDLE, nodes.data.name); //unselect all
 
-			if (!selected_nodes.empty())
-			{
-				int index = nodes.FindNode(selected_nodes[0], nodes.data.name);
-				if (index != -1)
-					nodes.data.state[index] = HN_State::IDLE;
-			}
+			rename_node = nodes.CreateNode(NodeType::FOLDER, empty_childs, "", parent, 0, HN_State::RENAME);
+			is_rename_flag = true;
 		}
 
 		if (ImGui::MenuItem("GameObject"))
@@ -791,14 +812,10 @@ void PanelHierarchy::CreateMenu()
 			if (!selected_nodes.empty())
 				parent = selected_nodes[0];
 
-			nodes.CreateNode(NodeType::GAMEOBJECT, empty_childs, "", parent, 0, HN_State::SELECTED);
+			nodes.SetState(HN_State::IDLE, nodes.data.name); //unselect all
 
-			if (!selected_nodes.empty())
-			{
-				int index = nodes.FindNode(selected_nodes[0], nodes.data.name);
-				if (index != -1)
-					nodes.data.state[index] = HN_State::IDLE;
-			}
+			rename_node = nodes.CreateNode(NodeType::GAMEOBJECT, empty_childs, "", parent, 0, HN_State::RENAME);
+			is_rename_flag = true;
 		}
 		ImGui::EndMenu();
 	}

@@ -382,15 +382,17 @@ std::vector<std::string> HierarchyNode::GetHiddenNodes() const
 	std::vector<std::string> hidden;
 	for (size_t index = 0, size = data.name.size(); index < size; ++index)
 	{
-		if (data.flags[index] & NodeFlags::CLOSED) //if closed add all childs to list
+		std::vector<std::string> tmp_list;
+
+		if (data.flags[index] & NodeFlags::CLOSED)
+			tmp_list = GetAllChilds(index); //if closed add all childs to list
+		else
+			tmp_list = GetClosedChilds(index);  // add closed childs' childs to list
+
+		for (std::string name : tmp_list)
 		{
-			std::vector<std::string> tmp_list = GetAllChilds(index);
-			hidden.insert(hidden.end(), tmp_list.begin(), tmp_list.end());
-		}
-		else // add closed childs' childs to list
-		{
-			std::vector<std::string> tmp_list = GetClosedChilds(index);
-			hidden.insert(hidden.end(), tmp_list.begin(), tmp_list.end()); //add tmp_list to hidden_childs
+			if (FindNode(name, hidden) == -1) // node is not already in list
+				hidden.push_back(name); //add tmp_list to hidden_childs
 		}
 	}
 	return hidden;
@@ -417,9 +419,9 @@ std::vector<std::string> HierarchyNode::GetAllChilds(size_t index) const
 std::vector<std::string> HierarchyNode::GetClosedChilds(size_t index) const
 {
 	std::vector<std::string> hidden_childs;
-	for (uint i = 0; i < data.childs[index].size(); ++i)
+	for (std::string child_name : data.childs[index])
 	{
-		int child_index = FindNode(data.childs[index][i], data.name);
+		int child_index = FindNode(child_name, data.name);
 		if (child_index == -1)
 			continue;
 

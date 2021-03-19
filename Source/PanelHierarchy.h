@@ -26,7 +26,7 @@ private:
 	void CreateMenu(); //imgui menu for creating nodes (folder, gameobject, scene, etc)
 	void ShowSceneOptions(size_t index); //popup when options button is clicked
 	void SearchReplace(char* search_buffer, char* replace_buffer); //popup for search and replace
-
+	void ReparentingLine(size_t index, float offset, float width, float height);
 	void Scroll(ImVec2 pos);
 
 public:
@@ -46,6 +46,7 @@ private:
 	HierarchyNode nodes;
 	std::vector<std::string> selected_nodes;
 	std::vector<std::string> hidden_childs;
+	int rename_node = -1;
 
 	// Reparenting Line (Drag&Drop)
 	ImVec2 reparenting_p1 = { 0,0 };
@@ -55,6 +56,8 @@ private:
 	// General
 	bool is_rename_flag = false;
 	bool is_search = false;
+	bool is_dragging = false;
+	bool is_any_hover = false;
 
 	char search_buffer[128];
 	char replace_buffer[128];
