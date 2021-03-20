@@ -81,16 +81,19 @@ void PanelHierarchy::Draw()
 
 		DrawNode(index);
 
-		// Draw Connector Lines
-		if (!nodes.data.childs[index].empty())
-			DrawConnectorLines(index, window->DrawList);
-
 		// Draw Reparenting Line
 		if (draw_reparenting_line)
 		{
 			window->DrawList->AddLine(reparenting_p1, reparenting_p2, ImColor(255, 255, 255, 255));
 			draw_reparenting_line = false;
 		}
+	}
+
+	// Draw Connector Lines
+	for (size_t index = 0, size = nodes.data.childs.size(); index < size; ++index)
+	{
+		if (!(nodes.data.flags[index] & NodeFlags::CLOSED) && !nodes.data.childs[index].empty())
+			DrawConnectorLines(index, window->DrawList);
 	}
 	ImGui::PopStyleVar();
 
@@ -739,52 +742,54 @@ void PanelHierarchy::ReparentingLine(size_t index, float offset, float width, fl
 
 void PanelHierarchy::DrawConnectorLines(size_t index, ImDrawList* draw_list)
 {
-	//// If any parent is closed do not draw
-	//bool draw = true;
-	//int parent_index = index;
-	//while (nodes.data.parent[parent_index] != "")
-	//{
-	//	if (nodes.data.flags[parent_index] & NodeFlags::OPEN)
-	//		parent_index = nodes.FindNode(nodes.data.parent[parent_index], nodes.data.name);
-	//	else 
-	//		return;
-	//}
+	// If any parent is closed do not draw
+	int parent_index = index;
+	while (parent_index != -1)
+	{
+		if (nodes.data.flags[parent_index] & NodeFlags::CLOSED)
+			return;
+		
+		parent_index = nodes.FindNode(nodes.data.parent[parent_index], nodes.data.name);
+	}
 
-	//// Get number of hidden childs that actually affect the node
-	//uint num_hidden = hidden_childs.size();
-	//uint num_hidden2 = 0;
-	//for (size_t i = 0, size = hidden_childs.size(); i < size; ++i)
-	//{
-	//	int child_index = nodes.FindNode(hidden_childs[i], nodes.data.name);
-	//	if (child_index == -1)
-	//		continue;
+	// Get number of hidden childs that actually affect the node
+	uint num_hidden = hidden_childs.size();
+	uint num_hidden2 = 0;
+	for (size_t i = 0, size = hidden_childs.size(); i < size; ++i)
+	{
+		int child_index = nodes.FindNode(hidden_childs[i], nodes.data.name);
+		if (child_index == -1)
+		{
+			num_hidden--;
+			continue;
+		}
 
-	//	// If any of the hidden_childs' order > node order and is not child (or child of childs) of node, substract them from count
-	//	if (nodes.data.order[child_index] > nodes.data.order[index] && !nodes.IsChildOf(index, child_index))
-	//		num_hidden--;
+		// If any of the hidden_childs' order > node order and is not child (or child of childs) of node, substract them from count
+		if (nodes.data.order[child_index] > nodes.data.order[index] && !nodes.IsChildOf(child_index, index))
+			num_hidden--;
 
-	//	// If any of the hidden_childs are childs of last child, substract them from count
-	//	int last_child_index = nodes.FindNode(nodes.data.childs[index].back(), nodes.data.name);
-	//	if (last_child_index != -1 && nodes.IsChildOf(last_child_index, child_index))
-	//		num_hidden--;
+		// If any of the hidden_childs are childs of last child, substract them from count
+		int last_child_index = nodes.FindNode(nodes.data.childs[index].back(), nodes.data.name);
+		if (last_child_index != -1 && nodes.IsChildOf(child_index, last_child_index))
+			num_hidden--;
 
-	//	// Get num_hidden2 for initial_pos of parent
-	//	if (nodes.data.order[child_index] < nodes.data.order[index])
-	//		num_hidden2++;
-	//}
+		// Get num_hidden2 for initial_pos of parent
+		if (nodes.data.order[child_index] < nodes.data.order[index])
+			num_hidden2++;
+	}
 
-	//// Positions
-	//int last_child_index = nodes.FindNode(nodes.data.childs[index].back(), nodes.data.name);
-	//uint last_child_pos = (uint)nodes.data.order[last_child_index] - num_hidden;  //get last_child_pos updated to hidden childs
-	//uint parent_pos = (uint)nodes.data.order[index] - num_hidden2;
+	// Positions
+	int last_child_index = nodes.FindNode(nodes.data.childs[index].back(), nodes.data.name);
+	uint last_child_pos = (uint)nodes.data.order[last_child_index] - num_hidden;  //get last_child_pos updated to hidden childs
+	uint parent_pos = (uint)nodes.data.order[index] - num_hidden2;
 
-	//// Real Positions
-	//ImVec2 initial_pos = ImVec2(ImGui::GetWindowPos().x + 16 + 15 * float(nodes.data.indent[index] + 1), ImGui::GetWindowPos().y + 38 + 19 * (float)parent_pos); //initial pos
-	//ImVec2 final_pos = ImVec2(initial_pos.x, ImGui::GetWindowPos().y + 34 + 19 * (float)last_child_pos); //final pos
+	// Real Positions
+	ImVec2 initial_pos = ImVec2(ImGui::GetWindowPos().x + 16 + 15 * float(nodes.data.indent[index] + 1), ImGui::GetWindowPos().y + 41 + 19 * (float)parent_pos); //initial pos
+	ImVec2 final_pos = ImVec2(initial_pos.x, ImGui::GetWindowPos().y + 38 + 19 * (float)last_child_pos); //final pos
 
-	//// Connector Lines
-	//draw_list->AddLine(ImVec2(initial_pos.x - ImGui::GetScrollX(), initial_pos.y - ImGui::GetScrollY()), ImVec2(final_pos.x - ImGui::GetScrollX(), final_pos.y - ImGui::GetScrollY()), ImColor(ImVec4(0.8f, 0.8f, 0.8f, 1.0f))); // vertical line
-	//draw_list->AddLine(ImVec2(final_pos.x - ImGui::GetScrollX(), final_pos.y - ImGui::GetScrollY()), ImVec2(final_pos.x + 7 - ImGui::GetScrollX(), final_pos.y - ImGui::GetScrollY()), ImColor(ImVec4(0.8f, 0.8f, 0.8f, 1.0f))); // horizontal line
+	// Connector Lines
+	draw_list->AddLine(ImVec2(initial_pos.x - ImGui::GetScrollX(), initial_pos.y - ImGui::GetScrollY()), ImVec2(final_pos.x - ImGui::GetScrollX(), final_pos.y - ImGui::GetScrollY()), ImColor(ImVec4(0.8f, 0.8f, 0.8f, 1.0f))); // vertical line
+	draw_list->AddLine(ImVec2(final_pos.x - ImGui::GetScrollX(), final_pos.y - ImGui::GetScrollY()), ImVec2(final_pos.x + 7 - ImGui::GetScrollX(), final_pos.y - ImGui::GetScrollY()), ImColor(ImVec4(0.8f, 0.8f, 0.8f, 1.0f))); // horizontal line
 }
 
 // --- NODE CREATION ---
