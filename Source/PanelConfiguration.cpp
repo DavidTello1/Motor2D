@@ -17,7 +17,7 @@
 
 #include "mmgr/mmgr.h"
 
-PanelConfiguration::PanelConfiguration() : Panel("PanelConfiguration", ICON_CONFIGURATION, 1), fps_log(FPS_LOG_SIZE), ms_log(FPS_LOG_SIZE)
+PanelConfiguration::PanelConfiguration() : Panel("Configuration", ICON_CONFIGURATION, 1), fps_log(FPS_LOG_SIZE), ms_log(FPS_LOG_SIZE)
 {
 	width = default_width;
 	height = default_height;

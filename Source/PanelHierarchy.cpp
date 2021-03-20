@@ -56,6 +56,9 @@ void PanelHierarchy::Draw()
 	// Right Click Options
 	DrawRightClick();
 
+	// Scene Options
+	ShowSceneOptions(scene_index);
+
 	// Draw Nodes
 	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(-2, 3));
 	ImVec2 pos = ImGui::GetCursorPos();
@@ -166,11 +169,13 @@ void PanelHierarchy::DrawSceneNode()
 
 	// Background
 	ImVec2 pos = window->DC.CursorPos;
-	ImRect bg(ImVec2(pos.x - 10, pos.y - g.Style.FramePadding.y), ImVec2(pos.x + ImGui::GetWindowWidth() + ImGui::GetScrollX(), pos.y + height));
+	pos.x += ImGui::GetScrollX();
+	ImRect bg(ImVec2(pos.x - 10, pos.y - g.Style.FramePadding.y), ImVec2(pos.x + ImGui::GetWindowWidth(), pos.y + height));
 	window->DrawList->AddRectFilled(bg.Min, bg.Max, ImColor(ImVec4(0.25f, 0.25, 0.25f, 1.0f)));
 
 	// Shown Icon
 	float pos_x = ImGui::GetCursorPosX();
+	ImGui::SetCursorPosX(pos_x);
 	if (ImGui::InvisibleButton(std::string(scene_name + ICON_SHOW).c_str(), ImVec2(15, height)))
 		is_scene_hidden = !is_scene_hidden;
 	ImGui::SameLine();
@@ -195,14 +200,15 @@ void PanelHierarchy::DrawSceneNode()
 	ImGui::SameLine();
 
 	// Options
+	float position = bg.Max.x - 45 + ImGui::GetScrollX();
 	ImVec2 limit = ImGui::GetCursorPos();
-	float position = ImGui::GetWindowWidth() - 22;
 	if (position < limit.x + 5)
 		position = limit.x + 5;
 
 	ImGui::SetCursorPos(ImVec2(position, limit.y + 1));
-	ImGui::InvisibleButton(ICON_OPTIONS, ImVec2(14, 19));
-	ShowSceneOptions(scene_index); //*** NOT APPLY STYLE
+	if (ImGui::InvisibleButton(ICON_OPTIONS, ImVec2(14, 19)))
+		ImGui::OpenPopup("Scene Options");
+	ImGui::OpenPopupOnItemClick("Scene Options");
 	ImGui::SameLine();
 
 	ImGui::SetCursorPosX(position);
@@ -224,15 +230,13 @@ void PanelHierarchy::DrawNode(size_t index)
 
 	// Background
 	ImVec2 pos = window->DC.CursorPos;
-	ImRect bg(ImVec2(pos.x - 10, pos.y - g.Style.FramePadding.y), ImVec2(pos.x + ImGui::GetWindowWidth() + ImGui::GetScrollX(), pos.y + height));
+	ImRect bg(ImVec2(pos.x - 10, pos.y - g.Style.FramePadding.y), ImVec2(pos.x + ImGui::GetWindowWidth() - 9 + ImGui::GetScrollX(), pos.y + height));
 	window->DrawList->AddRectFilled(bg.Min, bg.Max, ImColor(nodes.data.color[index]));
 
 	// Shown Icon
 	float pos_x = ImGui::GetCursorPosX();
 	if (ImGui::InvisibleButton(std::string(nodes.data.name[index] + ICON_SHOW).c_str(), ImVec2(16, height)))
-	{
 		nodes.SwitchHidden(index);
-	}
 	ImGui::SameLine();
 	ImGui::SetCursorPosX(pos_x);
 	if (ImGui::IsItemHovered())
@@ -245,8 +249,12 @@ void PanelHierarchy::DrawNode(size_t index)
 	ImGui::SameLine();
 
 	// Drag&Drop selectable (top of node)
-	ImGui::SetCursorPos(ImVec2(pos_x + 15, ImGui::GetCursorPosY() - 3));
-	float width = bg.Max.x - 53;
+	if (ImGui::GetScrollX() < 19)
+		pos_x = pos_x + 15 - ImGui::GetScrollX();
+	else
+		pos_x -= 5;
+	ImGui::SetCursorPos(ImVec2(pos_x + ImGui::GetScrollX(), ImGui::GetCursorPosY() - 3));
+	float width = bg.Max.x - 30;
 	if (width <= 0.0f)
 		width = 0.01f;
 	if (nodes.data.state[index] != HN_State::RENAME)
@@ -270,7 +278,7 @@ void PanelHierarchy::DrawNode(size_t index)
 				if (nodes.data.name[index] != selected_node)// error handling
 				{
 					is_hovered = false;
-					window->DrawList->AddLine(ImVec2(pos_x + 15, bg.Min.y + 1.5f), ImVec2(pos_x + 15 + width, bg.Min.y + 1.5f), ImColor(255, 255, 255, 255));
+					window->DrawList->AddLine(ImVec2(pos_x, bg.Min.y + 1.5f), ImVec2(pos_x + width, bg.Min.y + 1.5f), ImColor(255, 255, 255, 255));
 
 					if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("HierarchyNode"))
 					{
@@ -288,9 +296,16 @@ void PanelHierarchy::DrawNode(size_t index)
 	}
 
 	// Selectable
-	ImGui::SetCursorPos(ImVec2(pos_x + 15, ImGui::GetCursorPosY() + 3));
+	ImGui::SetCursorPos(ImVec2(pos_x + ImGui::GetScrollX(), ImGui::GetCursorPosY() + 3));
 	if (nodes.data.state[index] == HN_State::RENAME)
 		width = 50;
+	else
+	{
+		if (ImGui::GetScrollX() < 19)
+			width = bg.Max.x - 30 + ImGui::GetScrollX();
+		else
+			width = bg.Max.x - 24;
+	}
 	if (ImGui::InvisibleButton(nodes.data.name[index].c_str(), ImVec2(width, height)))
 	{
 		is_clicked = true;
@@ -310,7 +325,11 @@ void PanelHierarchy::DrawNode(size_t index)
 	HandleSelection(index, is_hovered, bg.Min.y, width, height);
 
 	// Indent
-	ImGui::SetCursorPosX(pos_x + 17);
+	if (ImGui::GetScrollX() < 19)
+		pos_x += ImGui::GetScrollX() + 2;
+	else
+		pos_x += 22;
+	ImGui::SetCursorPosX(pos_x);
 	if (nodes.data.indent[index] > 0)
 		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 15 * nodes.data.indent[index]);
 	if (nodes.data.childs[index].empty())
@@ -452,6 +471,7 @@ void PanelHierarchy::HandleSelection(size_t index, bool is_hovered, float bg_Min
 						nodes.ReorderNodes(selected_nodes); // reorder nodes with exceptions
 						reorder = true;
 						nodes.data.flags[index] &= ~NodeFlags::CLOSED;
+						hidden_childs = nodes.GetHiddenNodes();
 					}
 					nodes.MoveNode(selected_node, nodes.data.name[index]); // reparent node
 				}
@@ -472,6 +492,8 @@ void PanelHierarchy::HandleSelection(size_t index, bool is_hovered, float bg_Min
 					nodes.data.flags[index] &= ~NodeFlags::CLOSED;
 				else
 					nodes.data.flags[index] |= NodeFlags::CLOSED;
+
+				hidden_childs = nodes.GetHiddenNodes();
 			}
 			else if (nodes.data.type[index] == NodeType::GAMEOBJECT || nodes.data.type[index] == NodeType::PREFAB)
 			{
@@ -493,11 +515,16 @@ void PanelHierarchy::HandleSelection(size_t index, bool is_hovered, float bg_Min
 				else
 					nodes.data.state[index] = HN_State::SELECTED;
 			}
-			else if (ImGui::GetIO().KeyShift && !selected_nodes.empty()) // Multiple Selection (Shift)
+			else if (ImGui::GetIO().KeyShift) // Multiple Selection (Shift)
 			{
-				int pos = nodes.FindNode(selected_nodes.back().c_str(), nodes.data.name);
-				if (pos != -1)
-					nodes.SelectNodesInRangeByPos(index, pos);
+				int pos = 0;
+				if (!selected_nodes.empty())
+				{
+					pos = nodes.FindNode(selected_nodes.back().c_str(), nodes.data.name);
+					if (pos == -1)
+						pos = 0;
+				}
+				nodes.SelectNodesInRangeByPos(index, pos);
 			}
 		}
 		else if (ImGui::IsMouseReleased(0)) // Single selection
@@ -622,7 +649,7 @@ void PanelHierarchy::DrawRightClick()
 
 void PanelHierarchy::ShowSceneOptions(size_t index)
 {
-	if (ImGui::BeginPopupContextItem(0,0))
+	if (ImGui::BeginPopup("Scene Options"))
 	{
 		if (ImGui::MenuItem("Save Scene", NULL, false, !is_scene_saved))
 		{}
@@ -804,6 +831,12 @@ void PanelHierarchy::CreateMenu()
 			if (!selected_nodes.empty())
 				parent = selected_nodes[0];
 
+			int parent_index = nodes.FindNode(parent, nodes.data.name);
+			if (parent_index != -1)
+			{
+				nodes.data.flags[parent_index] &= ~NodeFlags::CLOSED;
+				hidden_childs = nodes.GetHiddenNodes();
+			}
 			nodes.SetState(HN_State::IDLE, nodes.data.name); //unselect all
 
 			rename_node = nodes.CreateNode(NodeType::FOLDER, empty_childs, "", parent, 0, HN_State::RENAME);
@@ -845,7 +878,7 @@ void PanelHierarchy::Scroll(ImVec2 pos)
 	}
 
 	//Bottom Area
-	ImGui::SetCursorPos(ImVec2(pos.x + scroll.x - 4, ImGui::GetWindowHeight() + scroll.y - 58));
+	ImGui::SetCursorPos(ImVec2(pos.x + scroll.x - 4, ImGui::GetContentRegionAvail().y + scroll.y - 60));
 	ImGui::Dummy(size);
 	if (ImGui::BeginDragDropTarget())
 	{
