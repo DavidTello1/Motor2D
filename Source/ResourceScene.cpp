@@ -10,7 +10,7 @@ void ResourceScene::Add(const char* assets_path, const char* name, const char* l
 bool ResourceScene::Create(const char* path, const char* name, UID uid)
 {
 	Add(path, name, LIBRARY_TEXTURE_FOLDER, EXTENSION_SCENE, uid); // Initialize Data
-	Save(); // Save Library File
+	Save(data.names.size() - 1); // Save Library File
 
 	return true;
 }
@@ -23,7 +23,7 @@ void ResourceScene::Remove(size_t index)
 	// remove gameobjects
 }
 
-bool ResourceScene::Save() const
+bool ResourceScene::Save(size_t index) const
 {
 	return true;
 }

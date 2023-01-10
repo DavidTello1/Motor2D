@@ -218,7 +218,7 @@ void log(const char file[], int line, const char* format, ...)
 	// Time
 	std::time_t tmp_date2 = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 	std::string time = std::ctime(&tmp_date2);
-	time = time.substr(11, 8);
+	//time = time.substr(11, 8);
 
 	// Icon
 	const char* icon;

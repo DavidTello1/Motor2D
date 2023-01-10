@@ -15,6 +15,9 @@ ModuleScene::~ModuleScene()
 
 bool ModuleScene::Init(Config* config)
 {
+	if (current_scene == 0)
+		LoadDefaultScene();
+
 	return true;
 }
 
@@ -48,6 +51,11 @@ void ModuleScene::Save(Config* config) const
 }
 
 void ModuleScene::Draw()
+{
+
+}
+
+void ModuleScene::LoadDefaultScene()
 {
 
 }

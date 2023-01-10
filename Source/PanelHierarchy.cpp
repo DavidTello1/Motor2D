@@ -652,7 +652,9 @@ void PanelHierarchy::ShowSceneOptions(size_t index)
 	if (ImGui::BeginPopup("Scene Options"))
 	{
 		if (ImGui::MenuItem("Save Scene", NULL, false, !is_scene_saved))
-		{}
+		{
+			App->resources->scenes.Save(scene_index);
+		}
 
 		if (ImGui::MenuItem("Save Scene As"))
 		{}

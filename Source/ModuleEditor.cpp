@@ -204,6 +204,8 @@ void ModuleEditor::Draw()
 
 	// Draw functions
 	DrawMenuBar();
+	static bool is_show_demo = true;
+	ImGui::ShowDemoWindow(&is_show_demo);
 	DrawAbout();
 	DrawPanels();
 
@@ -530,7 +532,7 @@ void ModuleEditor::ConfirmExit()
 			// TODO: Save
 			ImGui::CloseCurrentPopup();
 
-			LOG("Saving Application and Exiting",);
+			LOG("Saving Application and Exiting");
 			is_close = true;
 		}
 		ImGui::SameLine();

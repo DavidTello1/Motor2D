@@ -13,7 +13,7 @@ struct ResourceScene
 	bool Create(const char* path, const char* name, UID uid = 0);
 	void Remove(size_t index);
 
-	bool Save() const;
+	bool Save(size_t index) const;
 	bool Load(size_t index);
 	void UnLoad(size_t index);
 };

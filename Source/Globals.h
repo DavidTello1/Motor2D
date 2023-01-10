@@ -12,11 +12,12 @@
 
 /* CHARS AT END INDICATES THE TYPE OF LOG TO ENABLE FILTERS
 * Characters must be written as string type %s
+* i - internal (engine)
 * v - verbose
-* g - geometry
+* g - geometry (rendering(
 * d - debug
 * e - error
-* w - warning //TODO
+* w - warning
 * Ex: LOG("My log string: %s, my number: %d","My string", 23,'v')
 */
 #define LOG(format, ...) log(__FILE__, __LINE__, format, __VA_ARGS__);

@@ -20,10 +20,7 @@ public:
 	}
 
 	Uint32 Read() {
-		if (running == true)
-			return SDL_GetTicks() - started_at;
-		else
-			return stopped_at - started_at;
+		return (running == true) ? SDL_GetTicks() - started_at : stopped_at - started_at;
 	}
 
 private:

@@ -26,8 +26,8 @@ Application::Application()
 	fps_counter = 0;
 
 	//pcg32_random_t rng1, rng2;
-	pcg32_srandom_r(&rng1, time(NULL), (intptr_t)&rng1);
-	pcg32_srandom_r(&rng2, time(NULL), (intptr_t)&rng2);
+	//pcg32_srandom_r(&rng1, time(NULL), (intptr_t)&rng1);
+	//pcg32_srandom_r(&rng2, time(NULL), (intptr_t)&rng2);
 
 	logs.reserve(MAX_LOG_SIZE + 1);
 
@@ -69,15 +69,18 @@ bool Application::Init()
 	ReadConfig(config.GetSection("App"));
 
 	// We init everything, even if not enabled
-	for (Module* mod : modules)
-		ret = mod->Init(&(config.GetSection(mod->GetName())));
+	for (uint i = 0; i < modules.size() && ret; ++i)
+	{
+		if (modules[i]->IsActive() == true)
+			ret = modules[i]->Init(&(config.GetSection(modules[i]->GetName())));
+	}
 
 	// Another round, just before starting the Updates. Only called for "active" modules
 	// we send the configuration again in case a module needs it
-	for (Module* mod : modules)
+	for (uint i = 0; i < modules.size() && ret; ++i)
 	{
-		if (mod->IsActive() == true)
-			ret = mod->Start(&(config.GetSection(mod->GetName())));
+		if (modules[i]->IsActive() == true)
+			ret = modules[i]->Start(&(config.GetSection(modules[i]->GetName())));
 	}
 
 	if (!config_exists)
@@ -100,17 +103,17 @@ bool Application::Update()
 	bool ret = true;
 	PrepareUpdate();
 
-	for (Module* mod : modules)
-		if (mod->IsActive() == true)
-			ret = mod->PreUpdate(dt);
+	for (uint i = 0; i < modules.size() && ret; ++i)
+		if (modules[i]->IsActive() == true)
+			ret = modules[i]->PreUpdate(dt);
 
-	for (Module* mod : modules)
-		if (mod->IsActive() == true)
-			ret = mod->Update(dt);
+	for (uint i = 0; i < modules.size() && ret; ++i)
+		if (modules[i]->IsActive() == true)
+			ret = modules[i]->Update(dt);
 
-	for (Module* mod : modules)
-		if (mod->IsActive() == true)
-			ret = mod->PostUpdate(dt);
+	for (uint i = 0; i < modules.size() && ret; ++i)
+		if (modules[i]->IsActive() == true)
+			ret = modules[i]->PostUpdate(dt);
 
 	FinishUpdate();
 	return ret;
@@ -280,9 +283,9 @@ void Application::ClearLog()
 UID Application::GenerateUID()
 {
 	UID id = 0;
-	uint32_t part1 = pcg32_random_r(&rng1);
-	uint32_t part2 = pcg32_random_r(&rng1);
+	//uint32_t part1 = pcg32_random_r(&rng1);
+	//uint32_t part2 = pcg32_random_r(&rng1);
 
-	id = (UID) part1 << 32 | part2;;
+	//id = (UID) part1 << 32 | part2;;
 	return id;
 }

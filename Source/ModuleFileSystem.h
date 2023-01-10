@@ -41,5 +41,5 @@ public:
 	const char* GetBasePath() const { return PHYSFS_getBaseDir(); }
 	const char* GetWritePath() const { return PHYSFS_getWriteDir(); }
 	const char* GetReadPaths() const;
-	const char* GetActualPath() const { return PHYSFS_getUserDir(); }
+	const char* GetUserPath() const { return PHYSFS_getUserDir(); }
 };

@@ -22,6 +22,10 @@ public:
 	void Save(Config* config) const override;
 
 	void Draw();
+	void LoadDefaultScene();
+
+	std::string GetSceneName() const;
+
 
 private:
 	int GetGameObjectByID(UID id)
@@ -80,6 +84,7 @@ private:
 
 public:
 	UID current_scene;
+	bool is_saved = false;
 	
 private:
 	GameObjects objects;

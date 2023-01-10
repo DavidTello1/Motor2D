@@ -2,7 +2,7 @@
 #include "Globals.h"
 #include "Timer.h"
 
-#include "PCG/pcg_basic.h"
+//#include "PCG/pcg_basic.h"
 #include <string>
 #include <vector>
 
@@ -70,7 +70,7 @@ public:
 	ModuleFileSystem* file_system;
 	ModuleResources* resources;
 
-	pcg32_random_t rng1, rng2; 
+	//pcg32_random_t rng1, rng2; 
 	uint new_logs;
 
 private:
