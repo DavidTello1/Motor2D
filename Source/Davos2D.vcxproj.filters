@@ -1,0 +1,190 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Source\External Libraries">
+      <UniqueIdentifier>{189fd9c2-66bd-47d5-a33d-42cf0351dca7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Modules">
+      <UniqueIdentifier>{44270737-e5f5-47ff-bf8a-1b765293df37}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\ECS">
+      <UniqueIdentifier>{07dfad7a-c76f-4583-b315-0906e211a92a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Resources">
+      <UniqueIdentifier>{30f468eb-6859-47f7-9671-f9c085274fc7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Panels">
+      <UniqueIdentifier>{141d9ca5-15fe-41c0-a42c-1d84796629bf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Tools">
+      <UniqueIdentifier>{a9e67ed9-78a4-4d14-bb9a-c1c7aa77b4dc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\External Libraries\ImGui">
+      <UniqueIdentifier>{041c5744-26ae-48b0-9dc1-76d3b3022253}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\External Libraries\mmgr">
+      <UniqueIdentifier>{cb547df5-8a95-4958-a32e-f9f8d86e1701}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\External Libraries\Glew">
+      <UniqueIdentifier>{53ed01ac-ed47-4043-8d4a-a230196700f1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source\Messages">
+      <UniqueIdentifier>{131cfaf4-3922-4cc3-852e-e334b367c176}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Module.h">
+      <Filter>Source\Modules</Filter>
+    </ClInclude>
+    <ClInclude Include="ModuleInput.h">
+      <Filter>Source\Modules</Filter>
+    </ClInclude>
+    <ClInclude Include="ModuleWindow.h">
+      <Filter>Source\Modules</Filter>
+    </ClInclude>
+    <ClInclude Include="Application.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="Globals.h">
+      <Filter>Source</Filter>
+    </ClInclude>
+    <ClInclude Include="ModuleEditor.h">
+      <Filter>Source\Modules</Filter>
+    </ClInclude>
+    <ClInclude Include="ModuleFileSystem.h">
+      <Filter>Source\Modules</Filter>
+    </ClInclude>
+    <ClInclude Include="Imgui\imconfig.h">
+      <Filter>Source\External Libraries\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Imgui\imgui.h">
+      <Filter>Source\External Libraries\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Imgui\imgui_impl_opengl3.h">
+      <Filter>Source\External Libraries\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Imgui\imgui_impl_sdl.h">
+      <Filter>Source\External Libraries\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Imgui\imgui_internal.h">
+      <Filter>Source\External Libraries\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Imgui\imstb_rectpack.h">
+      <Filter>Source\External Libraries\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Imgui\imstb_textedit.h">
+      <Filter>Source\External Libraries\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="Imgui\imstb_truetype.h">
+      <Filter>Source\External Libraries\ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="ModuleRenderer.h">
+      <Filter>Source\Modules</Filter>
+    </ClInclude>
+    <ClInclude Include="mmgr\mmgr.h">
+      <Filter>Source\External Libraries\mmgr</Filter>
+    </ClInclude>
+    <ClInclude Include="mmgr\nommgr.h">
+      <Filter>Source\External Libraries\mmgr</Filter>
+    </ClInclude>
+    <ClInclude Include="Utils.h">
+      <Filter>Source\Tools</Filter>
+    </ClInclude>
+    <ClInclude Include="Timer.h">
+      <Filter>Source\Tools</Filter>
+    </ClInclude>
+    <ClInclude Include="Glew\include\eglew.h">
+      <Filter>Source\External Libraries\Glew</Filter>
+    </ClInclude>
+    <ClInclude Include="Glew\include\glew.h">
+      <Filter>Source\External Libraries\Glew</Filter>
+    </ClInclude>
+    <ClInclude Include="Glew\include\glxew.h">
+      <Filter>Source\External Libraries\Glew</Filter>
+    </ClInclude>
+    <ClInclude Include="Glew\include\wglew.h">
+      <Filter>Source\External Libraries\Glew</Filter>
+    </ClInclude>
+    <ClInclude Include="Panel.h">
+      <Filter>Source\Panels</Filter>
+    </ClInclude>
+    <ClInclude Include="MainMenuBar.h">
+      <Filter>Source\Panels</Filter>
+    </ClInclude>
+    <ClInclude Include="PanelConfiguration.h">
+      <Filter>Source\Panels</Filter>
+    </ClInclude>
+    <ClInclude Include="MessageBus.h">
+      <Filter>Source\Messages</Filter>
+    </ClInclude>
+    <ClInclude Include="Message.h">
+      <Filter>Source\Messages</Filter>
+    </ClInclude>
+    <ClInclude Include="PanelConsole.h">
+      <Filter>Source\Panels</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="ModuleInput.cpp">
+      <Filter>Source\Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="ModuleWindow.cpp">
+      <Filter>Source\Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="Application.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="Main.cpp">
+      <Filter>Source</Filter>
+    </ClCompile>
+    <ClCompile Include="ModuleEditor.cpp">
+      <Filter>Source\Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="ModuleFileSystem.cpp">
+      <Filter>Source\Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="Imgui\imgui.cpp">
+      <Filter>Source\External Libraries\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="Imgui\imgui_demo.cpp">
+      <Filter>Source\External Libraries\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="Imgui\imgui_draw.cpp">
+      <Filter>Source\External Libraries\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="Imgui\imgui_impl_opengl3.cpp">
+      <Filter>Source\External Libraries\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="Imgui\imgui_impl_sdl.cpp">
+      <Filter>Source\External Libraries\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="Imgui\imgui_widgets.cpp">
+      <Filter>Source\External Libraries\ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="Utils.cpp">
+      <Filter>Source\Tools</Filter>
+    </ClCompile>
+    <ClCompile Include="ModuleRenderer.cpp">
+      <Filter>Source\Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="mmgr\mmgr.cpp">
+      <Filter>Source\External Libraries\mmgr</Filter>
+    </ClCompile>
+    <ClCompile Include="Log.cpp">
+      <Filter>Source\Tools</Filter>
+    </ClCompile>
+    <ClCompile Include="MainMenuBar.cpp">
+      <Filter>Source\Panels</Filter>
+    </ClCompile>
+    <ClCompile Include="PanelConfiguration.cpp">
+      <Filter>Source\Panels</Filter>
+    </ClCompile>
+    <ClCompile Include="PanelConsole.cpp">
+      <Filter>Source\Panels</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>
