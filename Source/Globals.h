@@ -62,6 +62,7 @@ typedef unsigned int uint;
 typedef unsigned __int16 uint16;
 typedef unsigned __int32 uint32;
 typedef unsigned __int64 uint64;
+typedef unsigned long long UID;
 
 // --- PRECALCULATED VALUES ---
 static constexpr float DEGTORAD = 0.0174532925199432957f;

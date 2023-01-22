@@ -6,8 +6,8 @@
 class Module
 {
 public:
-	Module(bool start_enabled = true) : enabled(start_enabled) {}
-	virtual ~Module() {}
+	Module(bool start_enabled = true) : enabled(start_enabled) {};
+	virtual ~Module() {};
 
 	bool IsActive() const { return enabled; }
 	void SetActive(bool active)

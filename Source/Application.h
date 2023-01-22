@@ -9,6 +9,7 @@ class Module;
 class ModuleWindow;
 class ModuleInput;
 class ModuleFileSystem;
+class ModuleResources;
 class ModuleEditor;
 class ModuleRenderer;
 
@@ -47,6 +48,7 @@ public:
 	ModuleWindow* window;
 	ModuleInput* input;
 	ModuleFileSystem* filesystem;
+	ModuleResources* resources;
 	ModuleEditor* editor;
 	ModuleRenderer* renderer;
 

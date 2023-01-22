@@ -6,6 +6,7 @@
 #include "ModuleWindow.h"
 #include "ModuleInput.h"
 #include "ModuleFileSystem.h"
+#include "ModuleResources.h"
 #include "ModuleEditor.h"
 #include "ModuleRenderer.h"
 
@@ -27,6 +28,7 @@ Application::Application()
 	window = new ModuleWindow();
 	input = new ModuleInput();
 	filesystem = new ModuleFileSystem();
+	resources = new ModuleResources();
 	editor = new ModuleEditor();
 	renderer = new ModuleRenderer();
 }
@@ -40,6 +42,7 @@ Application::~Application()
 	RELEASE(window);
 	RELEASE(input);
 	RELEASE(filesystem);
+	RELEASE(resources);
 	RELEASE(editor);
 	RELEASE(renderer);
 }
@@ -84,6 +87,7 @@ bool Application::ModulesInit()
 	if (window->Init() == false)	 return false; // Window
 	if (input->Init() == false)		 return false; // Input
 	if (filesystem->Init() == false) return false; // FileSystem
+	if (resources->Init() == false)	 return false; // Resources
 	if (editor->Init() == false)	 return false; // Editor
 	if (renderer->Init() == false)	 return false; // Renderer
 
@@ -95,6 +99,7 @@ bool Application::ModulesPreUpdate()
 	if (window->PreUpdate(dt) == false)		return false; // Window
 	if (input->PreUpdate(dt) == false)		return false; // Input
 	if (filesystem->PreUpdate(dt) == false) return false; // FileSystem
+	if (resources->PreUpdate(dt) == false)	return false; // Resources
 	if (editor->PreUpdate(dt) == false)		return false; // Editor
 	if (renderer->PreUpdate(dt) == false)	return false; // Renderer
 
@@ -106,6 +111,7 @@ bool Application::ModulesUpdate()
 	if (window->Update(dt) == false)	 return false; // Window
 	if (input->Update(dt) == false)		 return false; // Input
 	if (filesystem->Update(dt) == false) return false; // FileSystem
+	if (resources->Update(dt) == false)	 return false; // Resources
 	if (editor->Update(dt) == false)	 return false; // Editor
 	if (renderer->Update(dt) == false)	 return false; // Renderer
 
@@ -117,6 +123,7 @@ bool Application::ModulesPostUpdate()
 	if (window->PostUpdate(dt) == false)	 return false; // Window
 	if (input->PostUpdate(dt) == false)		 return false; // Input
 	if (filesystem->PostUpdate(dt) == false) return false; // FileSystem
+	if (resources->PostUpdate(dt) == false)	 return false; // Resources
 	if (editor->PostUpdate(dt) == false)	 return false; // Editor
 	if (renderer->PostUpdate(dt) == false)	 return false; // Renderer
 
@@ -128,6 +135,7 @@ bool Application::ModulesCleanUp()
 	if (window->CleanUp() == false)		return false; // Window
 	if (input->CleanUp() == false)		return false; // Input
 	if (filesystem->CleanUp() == false) return false; // FileSystem
+	if (resources->CleanUp() == false)	return false; // Resources
 	if (editor->CleanUp() == false)		return false; // Editor
 	if (renderer->CleanUp() == false)	return false; // Renderer
 

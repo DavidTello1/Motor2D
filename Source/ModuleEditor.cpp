@@ -38,7 +38,7 @@ bool ModuleEditor::Init()
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
-	//io.IniFilename = NULL;
+	//io.IniFilename = NULL; // Disable saving to .ini
 	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable keyboard controls
 	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable; // Enable docking
 
