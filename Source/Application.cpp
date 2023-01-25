@@ -50,7 +50,12 @@ Application::~Application()
 bool Application::Init()
 {
 	// --- Init Modules ---
-	return ModulesInit();
+	if (ModulesInit() == false) return false;
+
+	// --- Start Modules ---
+	if (ModulesStart() == false) return false;
+
+	return true;
 }
 
 bool Application::Update()
@@ -93,6 +98,19 @@ bool Application::ModulesInit()
 
 	return true;
 }
+
+bool Application::ModulesStart()
+{
+	if (window->Start() == false)	  return false; // Window
+	if (input->Start() == false)	  return false; // Input
+	if (filesystem->Start() == false) return false; // FileSystem
+	if (resources->Start() == false)  return false; // Resources
+	if (editor->Start() == false)	  return false; // Editor
+	if (renderer->Start() == false)	  return false; // Renderer
+
+	return true;
+}
+
 
 bool Application::ModulesPreUpdate()
 {

@@ -94,6 +94,7 @@ static constexpr char LIBRARY_TILEMAP_FOLDER[18] = "Library/Tilemaps/";
 static constexpr char LIBRARY_SCRIPT_FOLDER[17] = "Library/Scripts/";
 static constexpr char LIBRARY_SHADER_FOLDER[17] = "Library/Shaders/";
 
+static constexpr char EXTENSION_META[6] = ".meta";
 static constexpr char EXTENSION_FOLDER[1] = "";
 static constexpr char EXTENSION_SCENE[7] = ".scene";
 static constexpr char EXTENSION_PREFAB[8] = ".prefab";

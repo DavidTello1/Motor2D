@@ -33,55 +33,21 @@ void PanelConfiguration::Draw()
 
 	// --- Begin Panel ---
 	static const std::string name = icon + std::string(" ") + this->name;
-	ImGui::Begin(name.c_str(), NULL, flags);
-
-	// --- Index
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 8.0f));
-	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(20.0f, 15.0f));
-	ImVec2 windowSize = ImGui::GetContentRegionAvail();
-	windowSize.y -= 30;
-	ImGui::BeginChild("Index", ImVec2(windowSize.x * 0.25f, windowSize.y), true);
-
-	ImGui::Indent(8.0f);
-	if (ImGui::Selectable("Application", curr_index == Index::APPLICATION))	curr_index = Index::APPLICATION;
-	else if (ImGui::Selectable("Input", curr_index == Index::INPUT_DRAW))	curr_index = Index::INPUT_DRAW;
-	ImGui::Unindent();
-
-	ImGui::EndChild();
-	ImGui::SameLine();
-	ImGui::PopStyleVar(2);
-
-	// --- Content
-	ImGui::BeginChild("Content", ImVec2(0, windowSize.y), true);
-	switch (curr_index)
+	if (ImGui::Begin(name.c_str(), NULL, flags))
 	{
-	case Index::APPLICATION: DrawApplication(); break;
-	case Index::INPUT_DRAW:  DrawInput();		break;
-	default: break;
-	}
-	ImGui::EndChild();
+		static ImVec2 windowSize = ImGui::GetContentRegionAvail();
 
-	// --- Buttons
-	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(2.0f, 15.0f));
-	static ImVec2 button_size = ImVec2(windowSize.x * 0.25f, 22);
-	ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX() + 2.0f * button_size.x - 2, ImGui::GetCursorPosY() + 2));
-	if (ImGui::Button("Accept", button_size))
-	{
-		LOG("Saved Configuration", 'i');
-		Save(config);
-		active = false;
-		ImGui::CloseCurrentPopup();
-	}
-	ImGui::SameLine();
+		// --- Index
+		DrawChildIndex(windowSize);
 
-	if (ImGui::Button("Cancel", button_size))
-	{
-		Load(config);
-		active = false;
-		ImGui::CloseCurrentPopup();
-	}
+		ImGui::SameLine();
 
-	ImGui::PopStyleVar();
+		// --- Content
+		DrawChildContent(windowSize);
+
+		// --- Buttons
+		DrawButtons(windowSize);
+	}
 	ImGui::End();
 }
 
@@ -114,11 +80,78 @@ void PanelConfiguration::AddFPS(float fps, float ms)
 
 //---------------------------------
 // --- DRAWS ---
+void PanelConfiguration::DrawChildIndex(ImVec2 windowSize)
+{
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 8.0f));
+	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(20.0f, 15.0f));
+	
+	if (ImGui::BeginChild("Index", ImVec2(windowSize.x * 0.25f, windowSize.y - 30.0f), true))
+	{
+		ImGui::Indent(8.0f);
+
+		if		(ImGui::Selectable("Application", current_index == Index::APPLICATION))		current_index = Index::APPLICATION;
+		else if (ImGui::Selectable("Input", current_index == Index::INPUT))					current_index = Index::INPUT;
+		else if (ImGui::Selectable("File System", current_index == Index::FILESYSTEM))		current_index = Index::FILESYSTEM;
+
+		ImGui::Unindent();
+	}
+	ImGui::EndChild();
+
+	ImGui::PopStyleVar(2);
+}
+
+void PanelConfiguration::DrawChildContent(ImVec2 windowSize)
+{
+	if (ImGui::BeginChild("Content", ImVec2(0, windowSize.y - 30.0f), true))
+	{
+		switch (current_index)
+		{
+		case Index::APPLICATION: DrawApplication(); break;
+		case Index::INPUT:		 DrawInput();		break;
+		case Index::FILESYSTEM:	 DrawFilesystem();	break;
+
+		default:
+			break;
+		}
+	}
+	ImGui::EndChild();
+}
+
+void PanelConfiguration::DrawButtons(ImVec2 windowSize)
+{
+	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(2.0f, 15.0f));
+
+	static ImVec2 button_size = ImVec2(windowSize.x * 0.25f, 22);
+	ImGui::SetCursorPos(ImVec2(ImGui::GetCursorPosX() + 2.0f * button_size.x - 2, ImGui::GetCursorPosY() + 2));
+
+	if (ImGui::Button("Accept", button_size))
+	{
+		LOG("Saved Configuration", 'i');
+		Save(config);
+		active = false;
+		ImGui::CloseCurrentPopup();
+	}
+	ImGui::SameLine();
+
+	if (ImGui::Button("Cancel", button_size))
+	{
+		Load(config);
+		active = false;
+		ImGui::CloseCurrentPopup();
+	}
+
+	ImGui::PopStyleVar();
+}
+
 void PanelConfiguration::DrawApplication()
 {
 }
 
 void PanelConfiguration::DrawInput()
+{
+}
+
+void PanelConfiguration::DrawFilesystem()
 {
 }
 

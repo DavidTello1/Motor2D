@@ -12,7 +12,8 @@ class PanelConfiguration : public Panel
 private:
 	enum class Index {
 		APPLICATION = 0,
-		INPUT_DRAW,
+		INPUT,
+		FILESYSTEM
 	};
 
 public:
@@ -28,9 +29,15 @@ private:
 
 	void AddFPS(float fps, float ms); //***MESSAGE
 
+	// --- CHILD WINDOWS ---
+	void DrawChildIndex(ImVec2 windowSize);
+	void DrawChildContent(ImVec2 windowSize);
+	void DrawButtons(ImVec2 windowSize);
+
 	// --- SECTIONS ---
 	void DrawApplication();
 	void DrawInput();
+	void DrawFilesystem();
 
 	// --- MESSAGES ---
 	void OpenPanel(OnOpenPanelConfiguration* m) { this->active = true; }
@@ -41,7 +48,7 @@ private:
 	std::vector<float> fps_log;
 	std::vector<float> ms_log;
 
-	Index curr_index = Index::APPLICATION;
+	Index current_index = Index::APPLICATION;
 
 	Config* config = nullptr;
 };

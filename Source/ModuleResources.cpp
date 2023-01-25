@@ -1,9 +1,9 @@
 #include "ModuleResources.h"
 
 #include "Application.h"
+#include "ModuleFileSystem.h"
 
-#include "Resource.h"
-#include "ResourceManager.h"
+#include "ResourceFolder.h"
 #include "ResourceTexture.h"
 
 #include "mmgr/mmgr.h"
@@ -19,8 +19,8 @@ ModuleResources::~ModuleResources()
 bool ModuleResources::Init()
 {
 	// --- Create Resource Managers
-	//folder_mgr		= new ResourceManager<ResourceFolder>(MAX_FOLDERS);
-	texture_mgr		= new ResourceManager<ResourceTexture>(MAX_TEXTURES);
+	folder_mgr		= new ResourceManager<ResourceFolder>();
+	texture_mgr		= new ResourceManager<ResourceTexture>();
 	//audio_mgr		= new ResourceManager<ResourceAudio>(MAX_AUDIOS);
 	//textfile_mgr	= new ResourceManager<ResourceTextfile>(MAX_TEXTFILES);
 	//script_mgr		= new ResourceManager<ResourceScript>(MAX_SCRIPTS);
@@ -32,7 +32,7 @@ bool ModuleResources::Init()
 	//tilemap_mgr		= new ResourceManager<ResourceTilemap>(MAX_TILEMAPS);
 
 	// --- Create Resource Loaders
-	//folder_loader		= new LoaderFolder();
+	folder_loader		= new LoaderFolder();
 	texture_loader		= new LoaderTexture();
 	//audio_loader		= new LoaderAudio();
 	//textfile_loader		= new LoaderTextfile();
@@ -62,8 +62,8 @@ bool ModuleResources::Start()
 	//	textures.Load(index);
 	//}
 
-	//// Load Assets
-	//ImportAllAssets("Assets");
+	// --- Import Assets
+	ImportAllResources(ASSETS_FOLDER);
 
 	return true;
 }
@@ -71,7 +71,7 @@ bool ModuleResources::Start()
 bool ModuleResources::CleanUp()
 {
 	// --- Release Resource Managers
-	//RELEASE(folder_mgr);
+	RELEASE(folder_mgr);
 	RELEASE(texture_mgr);
 	//RELEASE(audio_mgr);
 	//RELEASE(textfile_mgr);
@@ -84,7 +84,7 @@ bool ModuleResources::CleanUp()
 	//RELEASE(tilemap_mgr);
 
 	// --- Release Resource Loaders
-	//RELEASE(folder_loader);
+	RELEASE(folder_loader);
 	RELEASE(texture_loader);
 	//RELEASE(audio_loader);
 	//RELEASE(textfile_loader);
@@ -104,35 +104,93 @@ bool ModuleResources::CleanUp()
 }
 
 // ---------------------------------------------
-UID ModuleResources::ImportResource(const char* path, const char* name, const char* extension)
+// --- IMPORTING RESOURCES ---
+void ModuleResources::ImportAllResources(const char* directory)
 {
-	// Get Resource Type
-	ResourceType type = GetResourceType(extension);
+	if (!App->filesystem->Exists(directory))
+		return;
 
-	// Set Resource Data
-	UID id = 0; // App->GenerateID();
-	const char* path_library = GetLibraryPath(type, name);
+	std::vector<std::string> path_list = GetAllFilesExcept(directory, (int)ResourceType::META);
 
-	Resource resource = { id, name, path, path_library };
+	for (int i = 0; i < path_list.size(); ++i)
+	{
+		ImportResource(path_list[i].c_str());
+	}
+}
 
-	// Add Resource
-	if (AddResource(type, resource) == false)
+UID ModuleResources::ImportResource(const char* path)
+{
+	if (!App->filesystem->Exists(path))
+		return 0;
+
+	const char* path_meta = std::string(path + std::string(".meta")).c_str();
+
+	if (App->filesystem->Exists(path_meta))
+		return CreateResourceFromMeta(path, path_meta);
+	
+	return CreateResource(path);
+}
+
+UID ModuleResources::CreateResourceFromMeta(const char* path, const char* path_meta)
+{
+	//char* buffer = nullptr;
+	//App->filesystem->Load(path_meta, &buffer);
+	//Config meta_data(buffer);
+
+	//const char* name = meta_data.GetString("Name").c_str();
+	//int type = meta_data.GetInt("Type");
+	//UID id = meta_data.GetUID("UID");
+	//const char* path_library = meta_data.GetString("LibraryFile").c_str();
+
+	//if (!App->filesystem->Exists(path_library))
+	//	return CreateResource(path, name, type, id, false);
+
+	//if (App->filesystem->GetLastModTime(path_meta) != meta_data.GetInt("Date"))
+	//	return CreateResource(path, name, type, id, true);
+
+	//*** SOME OPTIONS CAN RETURN NOTHING
+	return 0;
+}
+
+UID ModuleResources::CreateResource(const char* path, const char* resource_name, int resource_type, UID uid, bool save_meta)
+{
+	UID id = uid;
+	if (id == 0)
+		id = 0; // App->GenerateID();
+
+	int type = resource_type;
+	if (type == -1)
+		type = (int)GetResourceType(App->filesystem->GetExtension(path));
+
+	std::string name = resource_name;
+	if (name == "")
+		name = App->filesystem->GetFileName(path);
+
+	const char* library_path = GetLibraryPath((ResourceType)type, name.c_str());
+
+	// --- Add Resource
+	Resource resource = { id, type, name.c_str(), path, library_path };
+	if (AddResource(resource) == false)
 	{
 		LOG("Error importing resource: %s", path, 'e');
 		return 0;
 	}
 
+	//if (save_meta)
+	//	SaveMeta(resource);
+
 	return id;
 }
 
-bool ModuleResources::AddResource(ResourceType type, Resource& resource)
+// ---------------------------------------------
+bool ModuleResources::AddResource(Resource& resource)
 {
 	int index = -1;
 	bool ret = false;
 
-	switch (type)
+	switch ((ResourceType)resource.type)
 	{
-	//case ResourceType::FOLDER:		index = folder_mgr->GetSize();		ret = folder_mgr->Add(index); break;
+	case ResourceType::FOLDER:		index = folder_mgr->GetSize();		ret = folder_mgr->Add(index, (ResourceFolder&)resource);	break;
 	case ResourceType::TEXTURE:		index = texture_mgr->GetSize();		ret = texture_mgr->Add(index, (ResourceTexture&)resource);	break;
 	//case ResourceType::AUDIO:		index = audio_mgr->GetSize();		ret = audio_mgr->Add(index); break;
 	//case ResourceType::TEXTFILE:	index = textfile_mgr->GetSize();	ret = textfile_mgr->Add(index); break;
@@ -150,13 +208,14 @@ bool ModuleResources::AddResource(ResourceType type, Resource& resource)
 		break;
 	}
 
-	if (ret == false)
-	{
-		return false;
-	}
+	//if (ret == false)
+	//{
+	//	LOG("Error Adding Resource: invalid type - %d", resource.type, 'e');
+	//	return false;
+	//}
 
 	// Add ResourceHandle to list
-	resources[num_resources] = { resource.id, (int)type, index };
+	resources[num_resources] = { resource.id, resource.type, index };
 	num_resources++;
 
 	// --- Create Meta
@@ -178,7 +237,7 @@ bool ModuleResources::RemoveResource(UID id)
 
 	switch (type)
 	{
-	//case ResourceType::FOLDER:		ret = folder_mgr->Remove(index);
+	case ResourceType::FOLDER:		ret = folder_mgr->Remove(index);
 	case ResourceType::TEXTURE:		ret = texture_mgr->Remove(index);
 	//case ResourceType::AUDIO:		ret = audio_mgr->Remove(index);
 	//case ResourceType::TEXTFILE:	ret = textfile_mgr->Remove(index);
@@ -198,6 +257,7 @@ bool ModuleResources::RemoveResource(UID id)
 
 	if (ret == false)
 	{
+		LOG("Error Removing Resource: invalid type - '%d'", (int)type, 'e');
 		return false;
 	}
 
@@ -219,7 +279,7 @@ bool ModuleResources::LoadResource(UID id)
 
 	switch (type)
 	{
-	//case ResourceType::FOLDER:		return folder_loader->Load(index);
+	case ResourceType::FOLDER:		return folder_loader->Load(&folder_mgr->GetResource(index));
 	case ResourceType::TEXTURE:		return texture_loader->Load(&texture_mgr->GetResource(index));
 	//case ResourceType::AUDIO:		return audio_loader->Load(index);
 	//case ResourceType::TEXTFILE:	return textfile_loader->Load(index);
@@ -237,6 +297,7 @@ bool ModuleResources::LoadResource(UID id)
 		break;
 	}
 
+	LOG("Error Loading Resource: invalid type - '%d'", (int)type, 'e');
 	return false;
 }
 
@@ -252,7 +313,7 @@ bool ModuleResources::UnloadResource(UID id)
 
 	switch (type)
 	{
-	//case ResourceType::FOLDER:		return folder_loader->Unload(index);
+	case ResourceType::FOLDER:		return folder_loader->Unload(&folder_mgr->GetResource(index));
 	case ResourceType::TEXTURE:		return texture_loader->Unload(&texture_mgr->GetResource(index));
 	//case ResourceType::AUDIO:		return audio_loader->Unload(index);
 	//case ResourceType::TEXTFILE:	return textfile_loader->Unload(index);
@@ -270,6 +331,7 @@ bool ModuleResources::UnloadResource(UID id)
 		break;
 	}
 
+	LOG("Error Unloading Resource: invalid type - '%d'", (int)type, 'e');
 	return false;
 }
 
@@ -285,7 +347,7 @@ Resource* ModuleResources::GetResource(UID id)
 
 	switch (type)
 	{
-	//case ResourceType::FOLDER:		return &folder_mgr->GetResource(index);
+	case ResourceType::FOLDER:		return &folder_mgr->GetResource(index);
 	case ResourceType::TEXTURE:		return &texture_mgr->GetResource(index);
 	//case ResourceType::AUDIO:		return &audio_mgr->GetResource(index);
 	//case ResourceType::TEXTFILE:	return &textfile_mgr->GetResource(index);
@@ -303,6 +365,7 @@ Resource* ModuleResources::GetResource(UID id)
 		break;
 	}
 
+	LOG("Error Getting Resource: invalid type - '%d'", (int)type, 'e');
 	return nullptr;
 }
 
@@ -318,7 +381,7 @@ const Resource* ModuleResources::GetResource(UID id) const
 
 	switch (type)
 	{
-	//case ResourceType::FOLDER:		return &folder_mgr->GetResource(index);
+	case ResourceType::FOLDER:		return &folder_mgr->GetResource(index);
 	case ResourceType::TEXTURE:		return &texture_mgr->GetResource(index);
 	//case ResourceType::AUDIO:		return &audio_mgr->GetResource(index);
 	//case ResourceType::TEXTFILE:	return &textfile_mgr->GetResource(index);
@@ -336,6 +399,7 @@ const Resource* ModuleResources::GetResource(UID id) const
 		break;
 	}
 
+	LOG("Error Getting Resource: invalid type - '%d'", (int)type, 'e');
 	return nullptr;
 }
 
@@ -352,7 +416,7 @@ bool ModuleResources::SaveResource(UID id, Resource& resource)
 
 	switch (type)
 	{
-	//case ResourceType::FOLDER:		ret = folder_mgr->SetResource(index, (ResourceFolder&)resource);
+	case ResourceType::FOLDER:		ret = folder_mgr->SetResource(index, (ResourceFolder&)resource);
 	case ResourceType::TEXTURE:		ret = texture_mgr->SetResource(index, (ResourceTexture&)resource);
 	//case ResourceType::AUDIO:		ret = audio_mgr->SetResource(index, (ResourceAudio&)resource);
 	//case ResourceType::TEXTFILE:	ret = textfile_mgr->SetResource(index, (ResourceTextfile)resource);
@@ -372,6 +436,7 @@ bool ModuleResources::SaveResource(UID id, Resource& resource)
 
 	if (ret == false)
 	{
+		LOG("Error Saving Resource: invalid type - '%d'", (int)type, 'e');
 		return false;
 	}
 
@@ -414,6 +479,97 @@ int ModuleResources::GetReferenceCount(UID id) const
 	return -1;
 }
 
+void ModuleResources::GetResourceHandles(std::vector<ResourceHandle>& list) const
+{
+	for (uint i = 0; i < num_resources; ++i)
+		list.push_back(resources[i]);
+}
+
+std::vector<std::string> ModuleResources::GetAllFiles(const char* directory)
+{
+	if (!App->filesystem->Exists(directory))
+	{
+		LOG("Error retrieving files: invalid path - '%s'", directory, 'e');
+		return std::vector<std::string>();
+	}
+
+	std::vector<std::string> all_files, directories, files;
+	App->filesystem->GetFolderContent(directory, files, directories);
+
+	// --- Child Directories
+	for (size_t i = 0; i < directories.size(); ++i)
+	{
+		std::string child_path = directory + std::string("/") + directories[i];
+		all_files.insert(all_files.end(), child_path);
+
+		std::vector<std::string> children = GetAllFiles(child_path.c_str()); // (Recursive) Get all files inside child directory
+		all_files.insert(all_files.end(), children.begin(), children.end());
+	}
+
+	// --- Child Files
+	for (size_t i = 0; i < files.size(); ++i)
+	{
+		std::string child_path = directory + std::string("/") + files[i];
+		all_files.insert(all_files.end(), child_path);
+	}
+
+	return all_files;
+}
+
+std::vector<std::string> ModuleResources::GetAllFilesOfType(const char* directory, int type)
+{
+	if (!App->filesystem->Exists(directory))
+	{
+		LOG("Error retrieving files: invalid path - '%s'", directory, 'e');
+		return std::vector<std::string>();
+	}
+	if (type < 0 || type >= (int)ResourceType::COUNT)
+	{
+		LOG("Error retrieving files: invalid type - '%d'", type, 'e');
+		return std::vector<std::string>();
+	}
+
+	std::vector<std::string> filter_files;
+	std::vector<std::string> all_files = GetAllFiles(directory);
+
+	for (size_t i = 0; i < all_files.size(); ++i)
+	{
+		std::string extension = App->filesystem->GetExtension(all_files[i].c_str());
+		if (type == (int)GetResourceType(extension))
+			filter_files.push_back(all_files[i]);
+	}
+
+	return filter_files;
+}
+
+std::vector<std::string> ModuleResources::GetAllFilesExcept(const char* directory, int type)
+{
+	if (!App->filesystem->Exists(directory))
+	{
+		LOG("Error retrieving files: invalid path - '%s'", directory, 'e');
+		return std::vector<std::string>();
+	}
+	if (type < 0 || type >= (int)ResourceType::COUNT)
+	{
+		LOG("Error retrieving files: invalid type - '%d'", type, 'e');
+		return std::vector<std::string>();
+	}
+
+	std::vector<std::string> filter_files;
+	std::vector<std::string> all_files = GetAllFiles(directory);
+
+	for (size_t i = 0; i < all_files.size(); ++i)
+	{
+		std::string extension = App->filesystem->GetExtension(all_files[i].c_str());
+		if (type == (int)GetResourceType(extension))
+			continue;
+		
+		filter_files.push_back(all_files[i]);
+	}
+
+	return filter_files;
+}
+
 //------------------------------
 int ModuleResources::Find(UID id) const
 {
@@ -431,7 +587,7 @@ const char* ModuleResources::GetLibraryPath(ResourceType type, const char* name)
 	std::string library_folder = "";
 	switch (type)
 	{
-	//case ResourceType::FOLDER:		library_folder = LIBRARY_FOLDER_FOLDER + name;
+	case ResourceType::FOLDER:		break;
 	case ResourceType::TEXTURE:		library_folder = LIBRARY_TEXTURE_FOLDER + std::string(name);
 	//case ResourceType::AUDIO:		library_folder = LIBRARY_AUDIO_FOLDER + name;
 	//case ResourceType::TEXTFILE:	library_folder = LIBRARY_TEXTFILE_FOLDER + name;
@@ -454,8 +610,9 @@ const char* ModuleResources::GetLibraryPath(ResourceType type, const char* name)
 
 
 ResourceType ModuleResources::GetResourceType(std::string extension) const
-{
-	ResourceType type = ResourceType::COUNT;
+{	
+	if (extension == "")
+		return ResourceType::FOLDER;
 
-	return type;
+	return ResourceType::COUNT;
 }

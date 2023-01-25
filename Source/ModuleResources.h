@@ -4,10 +4,12 @@
 #include "Resource.h"
 #include "ResourceManager.h"
 
-#include <array>
+#include <vector>
 
+struct ResourceFolder;
 struct ResourceTexture;
 
+class LoaderFolder;
 class LoaderTexture;
 
 struct ResourceHandle {
@@ -27,7 +29,7 @@ public:
     bool CleanUp() override;
 
     // ----------------------
-    UID ImportResource(const char* path, const char* name, const char* extension);
+    UID ImportResource(const char* path);
     bool RemoveResource(UID id);
 
     bool LoadResource(UID id);
@@ -39,14 +41,25 @@ public:
     bool SaveResource(UID id, Resource& resource);
 
     int GetReferenceCount(UID id) const;
-
+    
+    void GetResourceHandles(std::vector<ResourceHandle>& list) const; // *** for panel assets (could be done with event with result)
     //------------------------------
 private:
-    int Find(UID id) const;
+    void ImportAllResources(const char* directory);
 
-    ResourceType GetResourceType(std::string name) const;
+    std::vector<std::string> GetAllFiles(const char* directory);
+    std::vector<std::string> GetAllFilesOfType(const char* directory, int type);
+    std::vector<std::string> GetAllFilesExcept(const char* directory, int type);
+    //std::vector<const char*> GetAllFilesOfType(const char* directory, std::vector<int> type);
+    //std::vector<const char*> GetAllFilesExcept(const char* directory, std::vector<int> type);
+
+    int Find(UID id) const;
+    ResourceType GetResourceType(std::string extension) const;
     const char* GetLibraryPath(ResourceType type, const char* name) const;
-    bool AddResource(ResourceType type, Resource& resource);
+
+    UID CreateResource(const char* path, const char* name = "", int type = -1, UID id = 0, bool save_meta = true);
+    UID CreateResourceFromMeta(const char* path, const char* path_meta);
+    bool AddResource(Resource& resource);
 
     //void CleanLibrary();
 
@@ -57,15 +70,15 @@ private:
 
 private:
     static constexpr int RESERVED_RESOURCES = 11; // Icons for Panel Assets (10) + Engine Icon (1)
-    static constexpr int MAX_TEXTURES = 1000;
-    static constexpr int TOTAL_MAX_RESOURCES = MAX_TEXTURES; // Max Resources in total
+    static constexpr int MAX_RESOURCES = 1000;
+    static constexpr int TOTAL_MAX_RESOURCES = MAX_RESOURCES * (int)ResourceType::COUNT; // Max Resources in total
 
     // --- Resource Handlers ---
     std::array<ResourceHandle, TOTAL_MAX_RESOURCES> resources;
     uint num_resources = 0;
 
     // --- Resource Managers ---
-    //ResourceManager<ResourceFolder>*    folder_mgr = nullptr;
+    ResourceManager<ResourceFolder>*    folder_mgr = nullptr;
     ResourceManager<ResourceTexture>*   texture_mgr = nullptr;
     //ResourceManager<ResourceAudio>*     audio_mgr = nullptr;
     //ResourceManager<ResourceTextfile>*  textfile_mgr = nullptr;
@@ -78,7 +91,7 @@ private:
     //ResourceManager<ResourceTilemap>*   tilemap_mgr = nullptr;
 
     // --- Resource Loaders ---
-    //LoaderFolder*       folder_loader = nullptr;
+    LoaderFolder*       folder_loader = nullptr;
     LoaderTexture*      texture_loader = nullptr;
     //LoaderAudio*        audio_loader = nullptr;
     //LoaderTextfile*     textfile_loader = nullptr;

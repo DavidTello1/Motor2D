@@ -139,6 +139,12 @@
     <ClInclude Include="ResourceManager.h">
       <Filter>Source\Resources</Filter>
     </ClInclude>
+    <ClInclude Include="PanelAssets.h">
+      <Filter>Source\Panels</Filter>
+    </ClInclude>
+    <ClInclude Include="ResourceFolder.h">
+      <Filter>Source\Resources</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ModuleInput.cpp">
@@ -203,6 +209,9 @@
     </ClCompile>
     <ClCompile Include="ResourceTexture.cpp">
       <Filter>Source\Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="PanelAssets.cpp">
+      <Filter>Source\Panels</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

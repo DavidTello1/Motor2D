@@ -6,6 +6,7 @@
 #include "MainMenuBar.h"
 #include "PanelConfiguration.h"
 #include "PanelConsole.h"
+#include "PanelAssets.h"
 
 // *** MESSAGES
 #include "Application.h"
@@ -57,7 +58,7 @@ bool ModuleEditor::Init()
 	panel_configuration = new PanelConfiguration(false);
 	panel_console = new PanelConsole();
 	//panel_hierarchy = new PanelHierarchy();
-	//panel_assets = new PanelAssets();
+	panel_assets = new PanelAssets();
 	//panel_resources = new PanelResources();
 	//panel_scene = new PanelScene();
 	//panel_game = new PanelGame();
@@ -116,7 +117,7 @@ bool ModuleEditor::CleanUp()
 	RELEASE(panel_configuration);
 	RELEASE(panel_console);
 	//RELEASE(panel_hierarchy);
-	//RELEASE(panel_assets);
+	RELEASE(panel_assets);
 	//RELEASE(panel_resources);
 	//RELEASE(panel_scene);
 	//RELEASE(panel_game);
@@ -164,7 +165,11 @@ void ModuleEditor::DrawPanels()
 		panel_console->Draw();
 
 	// --- Resources ---
+
 	// --- Assets ---
+	if (panel_assets->IsActive())
+		panel_assets->Draw();
+
 	// --- Hierarchy ---
 	// --- Inspector ---
 	// --- Scene ---

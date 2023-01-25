@@ -47,22 +47,22 @@ void PanelConsole::Draw()
 
 	// --- Begin Panel
 	std::string name = icon + std::string(" ") + console_name;
-	ImGui::Begin(name.c_str(), &active, flags);
-
-	// --- Menu Bar
-	DrawMenuBar();
-
-	// --- Logs
-	DrawLogsChild();
-
-	// --- Shortcuts
-	if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows))
+	if (ImGui::Begin(name.c_str(), &active, flags))
 	{
-		//App->editor->focused_panel = this; //*** MESSAGE
-		//Shortcuts();
-		new_logs = 0;
-	}
+		// --- Menu Bar
+		DrawMenuBar();
 
+		// --- Logs
+		DrawChildLogs();
+
+		// --- Shortcuts
+		if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows))
+		{
+			//App->editor->focused_panel = this; //*** MESSAGE
+			//Shortcuts();
+			new_logs = 0;
+		}
+	}
 	ImGui::End();
 }
 
@@ -112,7 +112,7 @@ void PanelConsole::DrawMenuBar()
 	}
 }
 
-void PanelConsole::DrawLogsChild()
+void PanelConsole::DrawChildLogs()
 {
 	ImGui::BeginChild("ConsoleLogs", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
 

@@ -3,7 +3,10 @@
 
 struct ResourceTexture : public Resource 
 {
-	ResourceTexture(UID id, const char* name, const char* path_assets, const char* path_library) : Resource(id, name, path_assets, path_library) {};
+	ResourceTexture() {};
+	ResourceTexture(UID id, const char* name, const char* path_assets, const char* path_library) 
+		: Resource(id, (int)ResourceType::TEXTURE, name, path_assets, path_library) {};
+
 	~ResourceTexture() {};
 
 	uint tex_index = 0;

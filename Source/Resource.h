@@ -3,6 +3,7 @@
 
 enum class ResourceType {
 	// Base Resources
+	META,
 	FOLDER,
 	TEXTURE,
 	AUDIO,
@@ -21,12 +22,14 @@ enum class ResourceType {
 };
 
 struct Resource {
-	Resource(UID id, const char* name, const char* path_assets, const char* path_library) : id(id), name(name), path_assets(path_assets), path_library(path_library) {};
+	Resource() {};
+	Resource(UID id, int type, const char* name, const char* path_assets, const char* path_library) : id(id), type(type), name(name), path_assets(path_assets), path_library(path_library) {};
 	virtual ~Resource() {};
 
 	UID id = 0;
-	const char* name;
-	const char* path_assets;
-	const char* path_library;
+	int type = -1;
+	const char* name = "";
+	const char* path_assets = "";
+	const char* path_library = "";
 	int times_loaded = 0;
 };

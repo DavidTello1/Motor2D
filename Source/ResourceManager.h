@@ -1,7 +1,7 @@
 #pragma once
 #include "Globals.h"
 
-#include <vector>
+#include <array>
 
 class BaseResourceManager
 {
@@ -13,19 +13,14 @@ template<typename T>
 class ResourceManager : public BaseResourceManager
 {
 public:
-	ResourceManager(int size) {
-		data.reserve(size);
-		max_size = size;
-		count = 0; 
-	};
-	~ResourceManager() {};
+	ResourceManager() {};
 
 	int GetSize() const { 
 		return count;
 	}
 
 	bool Add(size_t index, T& resource) {
-		if (index > max_size)
+		if (index >= MAX_RESOURCES)
 			return false;
 
 		data[count] = resource;
@@ -57,13 +52,13 @@ public:
 		return data[index];
 	}
 
-	std::vector<T>& GetAllResources() { // *** RETURN VECTOR WITH PACKED DATA
-		return data;
-	}
+	//std::vector<T>& GetAllResources() { // *** RETURN VECTOR WITH PACKED DATA
+	//	return data;
+	//}
 
-	const std::vector<T>& GetAllResources() const { // *** RETURN VECTOR WITH PACKED DATA
-		return data;
-	}
+	//const std::vector<T>& GetAllResources() const { // *** RETURN VECTOR WITH PACKED DATA
+	//	return data;
+	//}
 
 	bool SetResource(size_t index, T& resource) {
 		if (index >= count)
@@ -74,7 +69,8 @@ public:
 	}
 
 private:
-	std::vector<T> data;
-	int max_size = 0;
+	static constexpr int MAX_RESOURCES = 1000;
+
+	std::array<T, MAX_RESOURCES> data;
 	int count = 0;
 };

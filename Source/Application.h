@@ -33,6 +33,7 @@ public:
 
 private:
 	bool ModulesInit();
+	bool ModulesStart();
 	bool ModulesPreUpdate();
 	bool ModulesUpdate();
 	bool ModulesPostUpdate();

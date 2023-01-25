@@ -31,7 +31,7 @@ private:
 
 	// ----------------------
 	void DrawMenuBar();
-	void DrawLogsChild();
+	void DrawChildLogs();
 	void DrawLogs();
 
 	void RightClick();

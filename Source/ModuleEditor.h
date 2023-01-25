@@ -7,7 +7,7 @@ class PanelConfiguration;
 //class PanelToolbar;
 class PanelConsole;
 //class PanelResources;
-//class PanelAssets;
+class PanelAssets;
 //class PanelHierarchy;
 //class PanelInspector;
 //class PanelScene;
@@ -47,7 +47,7 @@ private:
 	//PanelToolbar*		panel_toolbar = nullptr;
 	PanelConsole*		panel_console = nullptr;
 	//PanelResources*	panel_resources = nullptr;
-	//PanelAssets*		panel_assets = nullptr;
+	PanelAssets*		panel_assets = nullptr;
 	//PanelHierarchy*	panel_hierarchy = nullptr;
 	//PanelInspector*	panel_inspector = nullptr;
 	//PanelScene*		panel_scene = nullptr;
