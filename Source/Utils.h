@@ -1,7 +1,11 @@
 #pragma once
 
+/* --- UTILS FOR IMGUI --- */
 class Utils {
 public:
+	// --- Style
+	static void SetImGuiStyle();
+
 	// --- Dockspace
 	static void Dockspace(float paddingTop = 0.0f);
 

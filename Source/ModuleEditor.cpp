@@ -48,7 +48,7 @@ bool ModuleEditor::Init()
 	ImGui_ImplOpenGL3_Init();
 
 	// --- Style
-	ImGui::StyleColorsNew();
+	Utils::SetImGuiStyle();
 
 	// --- Main MenuBar
 	menu_bar = new MainMenuBar();

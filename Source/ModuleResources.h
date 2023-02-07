@@ -14,6 +14,7 @@ class LoaderTexture;
 
 struct ResourceHandle {
     UID id = 0;
+    const char* path = "";
     int type = -1;
     int index = -1;
 };
@@ -41,8 +42,7 @@ public:
     bool SaveResource(UID id, Resource& resource);
 
     int GetReferenceCount(UID id) const;
-    
-    void GetResourceHandles(std::vector<ResourceHandle>& list) const; // *** for panel assets (could be done with event with result)
+
     //------------------------------
 private:
     void ImportAllResources(const char* directory);

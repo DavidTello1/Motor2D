@@ -36,7 +36,7 @@ PanelConsole::~PanelConsole()
 
 void PanelConsole::Draw()
 {
-	// --- Set Name
+	// --- Set Name //*** TODO: flags -> _UnsavedDocument for '*' after name
 	static char console_name[128];
 	if (new_logs > 99)
 		sprintf_s(console_name, "Console (99+)###Console");

@@ -1,8 +1,11 @@
 #include "ModuleResources.h"
 
+#include "MessageBus.h"
+
 #include "Application.h"
 #include "ModuleFileSystem.h"
 
+//#include "ResourceManager.h"
 #include "ResourceFolder.h"
 #include "ResourceTexture.h"
 
@@ -64,6 +67,7 @@ bool ModuleResources::Start()
 
 	// --- Import Assets
 	ImportAllResources(ASSETS_FOLDER);
+	App->message->Publish(new OnResourcesImported());
 
 	return true;
 }
@@ -215,7 +219,7 @@ bool ModuleResources::AddResource(Resource& resource)
 	//}
 
 	// Add ResourceHandle to list
-	resources[num_resources] = { resource.id, resource.type, index };
+	resources[num_resources] = { resource.id, resource.path_assets, resource.type, index };
 	num_resources++;
 
 	// --- Create Meta
@@ -477,12 +481,6 @@ int ModuleResources::GetReferenceCount(UID id) const
 	//}
 
 	return -1;
-}
-
-void ModuleResources::GetResourceHandles(std::vector<ResourceHandle>& list) const
-{
-	for (uint i = 0; i < num_resources; ++i)
-		list.push_back(resources[i]);
 }
 
 std::vector<std::string> ModuleResources::GetAllFiles(const char* directory)

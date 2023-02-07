@@ -10,6 +10,7 @@ protected:
 //------------------------
 struct OnCloseEngine : public Message {};
 struct OnOpenPanelConfiguration : public Message {};
+struct OnResourcesImported : public Message {};
 
 struct OnAddLog : public Message 
 {
