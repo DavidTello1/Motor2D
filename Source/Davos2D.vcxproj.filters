@@ -38,6 +38,9 @@
     <Filter Include="Source\Resources\Base">
       <UniqueIdentifier>{76700395-6db5-4906-ab07-4b0d2405506b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Tools\Assets">
+      <UniqueIdentifier>{80d217d9-3919-49d9-991a-f1ae23add4d6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Module.h">
@@ -148,6 +151,15 @@
     <ClInclude Include="PanelConfiguration.h">
       <Filter>Source\Panels</Filter>
     </ClInclude>
+    <ClInclude Include="AssetNode.h">
+      <Filter>Source\Tools\Assets</Filter>
+    </ClInclude>
+    <ClInclude Include="AssetsExplorer.h">
+      <Filter>Source\Tools\Assets</Filter>
+    </ClInclude>
+    <ClInclude Include="AssetsHierarchy.h">
+      <Filter>Source\Tools\Assets</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ModuleInput.cpp">
@@ -215,6 +227,12 @@
     </ClCompile>
     <ClCompile Include="PanelConsole.cpp">
       <Filter>Source\Panels</Filter>
+    </ClCompile>
+    <ClCompile Include="AssetsExplorer.cpp">
+      <Filter>Source\Tools\Assets</Filter>
+    </ClCompile>
+    <ClCompile Include="AssetsHierarchy.cpp">
+      <Filter>Source\Tools\Assets</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
