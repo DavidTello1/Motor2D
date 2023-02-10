@@ -14,10 +14,3 @@ struct ResourceFolder : public Resource
 	UID parent = 0;
 	std::vector<UID> childs;
 };
-
-class LoaderFolder
-{
-public:
-	bool Load(ResourceFolder* data) { return false; }
-	bool Unload(ResourceFolder* data) { return false; }
-};

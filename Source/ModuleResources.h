@@ -1,16 +1,24 @@
 #pragma once
 #include "Module.h"
 
-#include "Resource.h"
-#include "ResourceManager.h"
+#include "Resource.h" // *** For ResourceType enum
 
+#include <string>
 #include <vector>
 
-struct ResourceFolder;
-struct ResourceTexture;
+//struct Resource;
 
-class LoaderFolder;
-class LoaderTexture;
+//class FolderManager;
+class TextureManager;
+//class AudioManager;
+//class TextfileManager;
+//class ScriptManager;
+//class ShaderManager;
+//class SceneManager;
+//class PrefabManager;
+//class MaterialManager;
+//class AmimationManager;
+//class TilemapManager;
 
 struct ResourceHandle {
     UID id = 0;
@@ -70,36 +78,20 @@ private:
 
 private:
     static constexpr int RESERVED_RESOURCES = 11; // Icons for Panel Assets (10) + Engine Icon (1)
-    static constexpr int MAX_RESOURCES = 1000;
-    static constexpr int TOTAL_MAX_RESOURCES = MAX_RESOURCES * (int)ResourceType::COUNT; // Max Resources in total
 
     // --- Resource Handlers ---
-    std::array<ResourceHandle, TOTAL_MAX_RESOURCES> resources;
-    uint num_resources = 0;
+    std::vector<ResourceHandle> resources;
 
     // --- Resource Managers ---
-    ResourceManager<ResourceFolder>*    folder_mgr = nullptr;
-    ResourceManager<ResourceTexture>*   texture_mgr = nullptr;
-    //ResourceManager<ResourceAudio>*     audio_mgr = nullptr;
-    //ResourceManager<ResourceTextfile>*  textfile_mgr = nullptr;
-    //ResourceManager<ResourceScript>*    script_mgr = nullptr;
-    //ResourceManager<ResourceShader>*    shader_mgr = nullptr;
-    //ResourceManager<ResourceScene>*     scene_mgr = nullptr;
-    //ResourceManager<ResourcePrefab>*    prefab_mgr = nullptr;
-    //ResourceManager<ResourceMaterial>*  material_mgr = nullptr;
-    //ResourceManager<ResourceAnimation>* animation_mgr = nullptr;
-    //ResourceManager<ResourceTilemap>*   tilemap_mgr = nullptr;
-
-    // --- Resource Loaders ---
-    LoaderFolder*       folder_loader = nullptr;
-    LoaderTexture*      texture_loader = nullptr;
-    //LoaderAudio*        audio_loader = nullptr;
-    //LoaderTextfile*     textfile_loader = nullptr;
-    //LoaderScript*       script_loader = nullptr;
-    //LoaderShader*       shader_loader = nullptr;
-    //LoaderScene*        scene_loader = nullptr;
-    //LoaderPrefab*       prefab_loader = nullptr;
-    //LoaderMaterial*     material_loader = nullptr;
-    //LoaderAnimation*    animation_loader = nullptr;
-    //LoaderTilemap*      tilemap_loader = nullptr;
+    //FolderManager*      folder_mgr = nullptr;
+    TextureManager*     texture_mgr = nullptr;
+    //AudioManager*       audio_mgr = nullptr;
+    //TextfileManager*    textfile_mgr = nullptr;
+    //ScriptManager*      script_mgr = nullptr;
+    //ShaderManager*      shader_mgr = nullptr;
+    //SceneManager*       scene_mgr = nullptr;
+    //PrefabManager*      prefab_mgr = nullptr;
+    //MaterialManager*    material_mgr = nullptr;
+    //AmimationManager*   animation_mgr = nullptr;
+    //TilemapManager*     tilemap_mgr = nullptr;
 };

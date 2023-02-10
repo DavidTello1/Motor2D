@@ -35,6 +35,9 @@
     <Filter Include="Source\Messages">
       <UniqueIdentifier>{131cfaf4-3922-4cc3-852e-e334b367c176}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\Resources\Base">
+      <UniqueIdentifier>{76700395-6db5-4906-ab07-4b0d2405506b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Module.h">
@@ -115,35 +118,35 @@
     <ClInclude Include="MainMenuBar.h">
       <Filter>Source\Panels</Filter>
     </ClInclude>
-    <ClInclude Include="PanelConfiguration.h">
-      <Filter>Source\Panels</Filter>
-    </ClInclude>
     <ClInclude Include="MessageBus.h">
       <Filter>Source\Messages</Filter>
     </ClInclude>
     <ClInclude Include="Message.h">
       <Filter>Source\Messages</Filter>
     </ClInclude>
-    <ClInclude Include="PanelConsole.h">
-      <Filter>Source\Panels</Filter>
-    </ClInclude>
     <ClInclude Include="ModuleResources.h">
       <Filter>Source\Modules</Filter>
-    </ClInclude>
-    <ClInclude Include="Resource.h">
-      <Filter>Source\Resources</Filter>
-    </ClInclude>
-    <ClInclude Include="ResourceTexture.h">
-      <Filter>Source\Resources</Filter>
-    </ClInclude>
-    <ClInclude Include="ResourceManager.h">
-      <Filter>Source\Resources</Filter>
     </ClInclude>
     <ClInclude Include="PanelAssets.h">
       <Filter>Source\Panels</Filter>
     </ClInclude>
+    <ClInclude Include="TextureManager.h">
+      <Filter>Source\Resources</Filter>
+    </ClInclude>
     <ClInclude Include="ResourceFolder.h">
       <Filter>Source\Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="Resource.h">
+      <Filter>Source\Resources\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="ResourceManager.h">
+      <Filter>Source\Resources\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="PanelConsole.h">
+      <Filter>Source\Panels</Filter>
+    </ClInclude>
+    <ClInclude Include="PanelConfiguration.h">
+      <Filter>Source\Panels</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -198,19 +201,19 @@
     <ClCompile Include="MainMenuBar.cpp">
       <Filter>Source\Panels</Filter>
     </ClCompile>
+    <ClCompile Include="ModuleResources.cpp">
+      <Filter>Source\Modules</Filter>
+    </ClCompile>
+    <ClCompile Include="PanelAssets.cpp">
+      <Filter>Source\Panels</Filter>
+    </ClCompile>
+    <ClCompile Include="TextureManager.cpp">
+      <Filter>Source\Resources</Filter>
+    </ClCompile>
     <ClCompile Include="PanelConfiguration.cpp">
       <Filter>Source\Panels</Filter>
     </ClCompile>
     <ClCompile Include="PanelConsole.cpp">
-      <Filter>Source\Panels</Filter>
-    </ClCompile>
-    <ClCompile Include="ModuleResources.cpp">
-      <Filter>Source\Modules</Filter>
-    </ClCompile>
-    <ClCompile Include="ResourceTexture.cpp">
-      <Filter>Source\Resources</Filter>
-    </ClCompile>
-    <ClCompile Include="PanelAssets.cpp">
       <Filter>Source\Panels</Filter>
     </ClCompile>
   </ItemGroup>

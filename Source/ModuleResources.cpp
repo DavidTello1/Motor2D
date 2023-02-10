@@ -5,9 +5,17 @@
 #include "Application.h"
 #include "ModuleFileSystem.h"
 
-//#include "ResourceManager.h"
-#include "ResourceFolder.h"
-#include "ResourceTexture.h"
+//#include "FolderManager.h"
+#include "TextureManager.h"
+//#include "AudioManager.h"
+//#include "TextfileManager.h"
+//#include "ScriptManager.h"
+//#include "ShaderManager.h"
+//#include "SceneManager.h"
+//#include "PrefabManager.h"
+//#include "MaterialManager.h"
+//#include "AnimationManager.h"
+//#include "TilemapManager.h"
 
 #include "mmgr/mmgr.h"
 
@@ -22,30 +30,17 @@ ModuleResources::~ModuleResources()
 bool ModuleResources::Init()
 {
 	// --- Create Resource Managers
-	folder_mgr		= new ResourceManager<ResourceFolder>();
-	texture_mgr		= new ResourceManager<ResourceTexture>();
-	//audio_mgr		= new ResourceManager<ResourceAudio>(MAX_AUDIOS);
-	//textfile_mgr	= new ResourceManager<ResourceTextfile>(MAX_TEXTFILES);
-	//script_mgr		= new ResourceManager<ResourceScript>(MAX_SCRIPTS);
-	//shader_mgr		= new ResourceManager<ResourceShader>(MAX_SHADERS);
-	//scene_mgr		= new ResourceManager<ResourceScene>(MAX_SCENES);
-	//prefab_mgr		= new ResourceManager<ResourcePrefab>(MAX_PREFABS);
-	//material_mgr	= new ResourceManager<ResourceMaterial>(MAX_MATERIALS);
-	//animation_mgr	= new ResourceManager<ResourceAnimation>(MAX_ANIMATIONS);
-	//tilemap_mgr		= new ResourceManager<ResourceTilemap>(MAX_TILEMAPS);
-
-	// --- Create Resource Loaders
-	folder_loader		= new LoaderFolder();
-	texture_loader		= new LoaderTexture();
-	//audio_loader		= new LoaderAudio();
-	//textfile_loader		= new LoaderTextfile();
-	//script_loader		= new LoaderScript();
-	//shader_loader		= new LoaderShader();
-	//scene_loader		= new LoaderScene();
-	//prefab_loader		= new LoaderPrefab();
-	//material_loader		= new LoaderMaterial();
-	//animation_loader	= new LoaderAnimation();
-	//tilemap_loader		= new LoaderTilemap();
+	//folder_mgr		= new FolderManager();
+	texture_mgr		= new TextureManager();
+	//audio_mgr		= new AudioManager();
+	//textfile_mgr	= new TextfileManager();
+	//script_mgr		= new ScriptManager();
+	//shader_mgr		= new ShaderManager();
+	//scene_mgr		= new SceneManager();
+	//prefab_mgr		= new PrefabManager();
+	//material_mgr	= new MaterialManager();
+	//animation_mgr	= new AnimationManager();
+	//tilemap_mgr		= new TilemapManager();
 
 	// --- Clean Library & Meta Files
 	//CleanMeta();
@@ -75,7 +70,7 @@ bool ModuleResources::Start()
 bool ModuleResources::CleanUp()
 {
 	// --- Release Resource Managers
-	RELEASE(folder_mgr);
+	//RELEASE(folder_mgr);
 	RELEASE(texture_mgr);
 	//RELEASE(audio_mgr);
 	//RELEASE(textfile_mgr);
@@ -86,19 +81,6 @@ bool ModuleResources::CleanUp()
 	//RELEASE(material_mgr);
 	//RELEASE(animation_mgr);
 	//RELEASE(tilemap_mgr);
-
-	// --- Release Resource Loaders
-	RELEASE(folder_loader);
-	RELEASE(texture_loader);
-	//RELEASE(audio_loader);
-	//RELEASE(textfile_loader);
-	//RELEASE(script_loader);
-	//RELEASE(shader_loader);
-	//RELEASE(scene_loader);
-	//RELEASE(prefab_loader);
-	//RELEASE(material_loader);
-	//RELEASE(animation_loader);
-	//RELEASE(tilemap_loader);
 
 	// --- Clean Library & Meta Files
 	//CleanMeta();
@@ -127,10 +109,10 @@ UID ModuleResources::ImportResource(const char* path)
 	if (!App->filesystem->Exists(path))
 		return 0;
 
-	const char* path_meta = std::string(path + std::string(".meta")).c_str();
+	std::string path_meta = path + std::string(EXTENSION_META);
 
-	if (App->filesystem->Exists(path_meta))
-		return CreateResourceFromMeta(path, path_meta);
+	if (App->filesystem->Exists(path_meta.c_str()))
+		return CreateResourceFromMeta(path, path_meta.c_str());
 	
 	return CreateResource(path);
 }
@@ -194,8 +176,8 @@ bool ModuleResources::AddResource(Resource& resource)
 
 	switch ((ResourceType)resource.type)
 	{
-	case ResourceType::FOLDER:		index = folder_mgr->GetSize();		ret = folder_mgr->Add(index, (ResourceFolder&)resource);	break;
-	case ResourceType::TEXTURE:		index = texture_mgr->GetSize();		ret = texture_mgr->Add(index, (ResourceTexture&)resource);	break;
+	//case ResourceType::FOLDER:		index = folder_mgr->GetSize();		ret = folder_mgr->Add(index, (ResourceFolder&)resource);	break;
+	//case ResourceType::TEXTURE:		index = texture_mgr->GetSize();		ret = texture_mgr->Add(index, (ResourceTexture&)resource);	break;
 	//case ResourceType::AUDIO:		index = audio_mgr->GetSize();		ret = audio_mgr->Add(index); break;
 	//case ResourceType::TEXTFILE:	index = textfile_mgr->GetSize();	ret = textfile_mgr->Add(index); break;
 	//case ResourceType::SCRIPT:		index = script_mgr->GetSize();		ret = script_mgr->Add(index); break;
@@ -219,8 +201,8 @@ bool ModuleResources::AddResource(Resource& resource)
 	//}
 
 	// Add ResourceHandle to list
-	resources[num_resources] = { resource.id, resource.path_assets, resource.type, index };
-	num_resources++;
+	ResourceHandle handle = { resource.id, resource.path_assets, resource.type, index };
+	resources.push_back(handle);
 
 	// --- Create Meta
 	//CreateMeta(resource);
@@ -241,8 +223,8 @@ bool ModuleResources::RemoveResource(UID id)
 
 	switch (type)
 	{
-	case ResourceType::FOLDER:		ret = folder_mgr->Remove(index);
-	case ResourceType::TEXTURE:		ret = texture_mgr->Remove(index);
+	//case ResourceType::FOLDER:		ret = folder_mgr->Remove(index);
+	//case ResourceType::TEXTURE:		ret = texture_mgr->Remove(index);
 	//case ResourceType::AUDIO:		ret = audio_mgr->Remove(index);
 	//case ResourceType::TEXTFILE:	ret = textfile_mgr->Remove(index);
 	//case ResourceType::SCRIPT:		ret = script_mgr->Remove(index);
@@ -283,17 +265,17 @@ bool ModuleResources::LoadResource(UID id)
 
 	switch (type)
 	{
-	case ResourceType::FOLDER:		return folder_loader->Load(&folder_mgr->GetResource(index));
-	case ResourceType::TEXTURE:		return texture_loader->Load(&texture_mgr->GetResource(index));
-	//case ResourceType::AUDIO:		return audio_loader->Load(index);
-	//case ResourceType::TEXTFILE:	return textfile_loader->Load(index);
-	//case ResourceType::SCRIPT:		return script_loader->Load(index);
-	//case ResourceType::SHADER:		return shader_loader->Load(index);
-	//case ResourceType::SCENE:		return scene_loader->Load(index);
-	//case ResourceType::PREFAB:		return prefab_loader->Load(index);
-	//case ResourceType::MATERIAL:	return material_loader->Load(index);
-	//case ResourceType::ANIMATION:	return animation_loader->Load(index);
-	//case ResourceType::TILEMAP:		return tilemap_loader->Load(index);
+	//case ResourceType::FOLDER:		return folder_mgr->Load(&folder_mgr->GetResource(index));
+	//case ResourceType::TEXTURE:		return texture_mgr->Load(index);
+	//case ResourceType::AUDIO:		return audio_mgr->Load(index);
+	//case ResourceType::TEXTFILE:	return textfile_mgr->Load(index);
+	//case ResourceType::SCRIPT:		return script_mgr->Load(index);
+	//case ResourceType::SHADER:		return shader_mgr->Load(index);
+	//case ResourceType::SCENE:		return scene_mgr->Load(index);
+	//case ResourceType::PREFAB:		return prefab_mgr->Load(index);
+	//case ResourceType::MATERIAL:	return material_mgr->Load(index);
+	//case ResourceType::ANIMATION:	return animation_mgr->Load(index);
+	//case ResourceType::TILEMAP:		return tilemap_mgr->Load(index);
 
 	case ResourceType::COUNT:
 		break;
@@ -317,17 +299,17 @@ bool ModuleResources::UnloadResource(UID id)
 
 	switch (type)
 	{
-	case ResourceType::FOLDER:		return folder_loader->Unload(&folder_mgr->GetResource(index));
-	case ResourceType::TEXTURE:		return texture_loader->Unload(&texture_mgr->GetResource(index));
-	//case ResourceType::AUDIO:		return audio_loader->Unload(index);
-	//case ResourceType::TEXTFILE:	return textfile_loader->Unload(index);
-	//case ResourceType::SCRIPT:		return script_loader->Unload(index);
-	//case ResourceType::SHADER:		return shader_loader->Unload(index);
-	//case ResourceType::SCENE:		return scene_loader->Unload(index);
-	//case ResourceType::PREFAB:		return prefab_loader->Unload(index);
-	//case ResourceType::MATERIAL:	return material_loader->Unload(index);
-	//case ResourceType::ANIMATION:	return animation_loader->Unload(index);
-	//case ResourceType::TILEMAP:		return tilemap_loader->Unload(index);
+	//case ResourceType::FOLDER:		return folder_mgr->Unload(index);
+	//case ResourceType::TEXTURE:		return texture_mgr->Unload(index);
+	//case ResourceType::AUDIO:		return audio_mgr->Unload(index);
+	//case ResourceType::TEXTFILE:	return textfile_mgr->Unload(index);
+	//case ResourceType::SCRIPT:		return script_mgr->Unload(index);
+	//case ResourceType::SHADER:		return shader_mgr->Unload(index);
+	//case ResourceType::SCENE:		return scene_mgr->Unload(index);
+	//case ResourceType::PREFAB:		return prefab_mgr->Unload(index);
+	//case ResourceType::MATERIAL:	return material_mgr->Unload(index);
+	//case ResourceType::ANIMATION:	return animation_mgr->Unload(index);
+	//case ResourceType::TILEMAP:		return tilemap_mgr->Unload(index);
 
 	case ResourceType::COUNT:
 		break;
@@ -351,8 +333,8 @@ Resource* ModuleResources::GetResource(UID id)
 
 	switch (type)
 	{
-	case ResourceType::FOLDER:		return &folder_mgr->GetResource(index);
-	case ResourceType::TEXTURE:		return &texture_mgr->GetResource(index);
+	//case ResourceType::FOLDER:		return &folder_mgr->GetResource(index);
+	//case ResourceType::TEXTURE:		return &texture_mgr->GetResource(index);
 	//case ResourceType::AUDIO:		return &audio_mgr->GetResource(index);
 	//case ResourceType::TEXTFILE:	return &textfile_mgr->GetResource(index);
 	//case ResourceType::SCRIPT:		return &script_mgr->GetResource(index);
@@ -385,8 +367,8 @@ const Resource* ModuleResources::GetResource(UID id) const
 
 	switch (type)
 	{
-	case ResourceType::FOLDER:		return &folder_mgr->GetResource(index);
-	case ResourceType::TEXTURE:		return &texture_mgr->GetResource(index);
+	//case ResourceType::FOLDER:		return &folder_mgr->GetResource(index);
+	//case ResourceType::TEXTURE:		return &texture_mgr->GetResource(index);
 	//case ResourceType::AUDIO:		return &audio_mgr->GetResource(index);
 	//case ResourceType::TEXTFILE:	return &textfile_mgr->GetResource(index);
 	//case ResourceType::SCRIPT:		return &script_mgr->GetResource(index);
@@ -420,8 +402,8 @@ bool ModuleResources::SaveResource(UID id, Resource& resource)
 
 	switch (type)
 	{
-	case ResourceType::FOLDER:		ret = folder_mgr->SetResource(index, (ResourceFolder&)resource);
-	case ResourceType::TEXTURE:		ret = texture_mgr->SetResource(index, (ResourceTexture&)resource);
+	//case ResourceType::FOLDER:		ret = folder_mgr->SetResource(index, (ResourceFolder&)resource);
+	//case ResourceType::TEXTURE:		ret = texture_mgr->SetResource(index, (ResourceTexture&)resource);
 	//case ResourceType::AUDIO:		ret = audio_mgr->SetResource(index, (ResourceAudio&)resource);
 	//case ResourceType::TEXTFILE:	ret = textfile_mgr->SetResource(index, (ResourceTextfile)resource);
 	//case ResourceType::SCRIPT:		ret = script_mgr->SetResource(index, (ResourceScript)resource);
@@ -571,7 +553,7 @@ std::vector<std::string> ModuleResources::GetAllFilesExcept(const char* director
 //------------------------------
 int ModuleResources::Find(UID id) const
 {
-	for (uint i = 0; i < num_resources; ++i)
+	for (uint i = 0; i < resources.size(); ++i)
 	{
 		if (id == resources[i].id)
 			return i;
