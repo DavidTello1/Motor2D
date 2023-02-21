@@ -12,8 +12,8 @@ public:
 	AssetsExplorer(const char* name) : name(name) {};
 	~AssetsExplorer() {};
 
-	void Draw(AssetNode* current_node);
-	void MenuBar(AssetNode* current_node);
+	void Draw(AssetNode* current_node, bool is_forward, bool is_backward);
+	void MenuBar(AssetNode* current_node, bool is_forward, bool is_backward);
 
 private:
 	void DrawNode(AssetNode* node, int id); //***

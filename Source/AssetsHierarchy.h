@@ -12,8 +12,6 @@ public:
 	AssetsHierarchy(const char* name) : name(name) {};
 	~AssetsHierarchy() {};
 
-	bool IsActive() const { return is_active; }
-
 	void Draw(std::vector<AssetNode*> hierarchy_nodes);
 	void MenuBar();
 

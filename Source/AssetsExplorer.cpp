@@ -12,7 +12,7 @@
 
 #include "mmgr/mmgr.h"
 
-void AssetsExplorer::Draw(AssetNode* current_node)
+void AssetsExplorer::Draw(AssetNode* current_node, bool is_forward, bool is_backward)
 {
 	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
 
@@ -26,7 +26,7 @@ void AssetsExplorer::Draw(AssetNode* current_node)
 		}
 
 		// --- Menu Bar
-		MenuBar(current_node);
+		MenuBar(current_node, is_forward, is_backward);
 
 		// --- Nodes
 		for (size_t i = 0; i < current_node->childs.size(); ++i)
@@ -45,7 +45,7 @@ void AssetsExplorer::Draw(AssetNode* current_node)
 	ImGui::PopStyleVar();
 }
 
-void AssetsExplorer::MenuBar(AssetNode* current_node)
+void AssetsExplorer::MenuBar(AssetNode* current_node, bool is_forward, bool is_backward)
 {
 	if (ImGui::BeginMenuBar())
 	{
@@ -54,24 +54,42 @@ void AssetsExplorer::MenuBar(AssetNode* current_node)
 		if (ImGui::ArrowButtonEx("Hide_Hierarchy", dir, ImVec2(25.0f, 20.0f)))
 		{
 			is_hierarchy_hidden = !is_hierarchy_hidden;
-			if (is_hierarchy_hidden)
-				dir = ImGuiDir_Right;
-			else
-				dir = ImGuiDir_Left;
+			dir = (is_hierarchy_hidden) ? ImGuiDir_Right : ImGuiDir_Left;
 
-			//App->message->Publish(new OnHidePanelAssetsHierarchy(is_hierarchy_hidden));
+			App->message->Publish(new OnHidePanelAssetsHierarchy(is_hierarchy_hidden));
 		}
 		ImGui::SameLine(0.0f, 1.0f);
 		ImGui::Separator();
 		ImGui::SameLine(0.0f, 1.0f);
 
-		// --- Back/Forward
-		if (ImGui::ArrowButtonEx("Back", ImGuiDir_Left, ImVec2(20.0f, 20.0f)))
+		// --- Back Button
+		ImGuiButtonFlags backward_flags = ImGuiButtonFlags_None;
+		if (!is_backward)
 		{
+			backward_flags = ImGuiButtonFlags_Disabled;
+			ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetColorU32(ImGuiCol_TextDisabled));
 		}
-		if (ImGui::ArrowButtonEx("Forward", ImGuiDir_Right, ImVec2(20.0f, 20.0f)))
+		if (ImGui::ArrowButtonEx("Back", ImGuiDir_Left, ImVec2(20.0f, 20.0f), backward_flags))
 		{
+			App->message->Publish(new OnPanelAssetsHistoryBackward());
 		}
+		if (!is_backward)
+			ImGui::PopStyleColor();
+
+		// --- Forward Button
+		ImGuiButtonFlags forward_flags = ImGuiButtonFlags_None;
+		if (!is_forward)
+		{
+			forward_flags = ImGuiButtonFlags_Disabled;
+			ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetColorU32(ImGuiCol_TextDisabled));
+		}
+		if (ImGui::ArrowButtonEx("Forward", ImGuiDir_Right, ImVec2(20.0f, 20.0f), forward_flags))
+		{
+			App->message->Publish(new OnPanelAssetsHistoryForward());
+		}
+		if (!is_forward)
+			ImGui::PopStyleColor();
+
 		ImGui::Separator();
 		ImGui::SameLine(0.0f, 5.0f);
 
@@ -100,9 +118,12 @@ void AssetsExplorer::MenuBar(AssetNode* current_node)
 			{
 				for (AssetNode* child : (*i)->childs)
 				{
-					if (ImGui::MenuItem(child->name.c_str(), NULL, current_node == child))
+					auto j = i + 1;
+					if (ImGui::MenuItem(child->name.c_str(), NULL, child == *j))
 					{
-						App->message->Publish(new OnChangedPanelAssetsCurrentNode(child));
+						if (child != current_node)
+							App->message->Publish(new OnChangedPanelAssetsCurrentNode(child));
+
 						current_node_changed = true;
 						break;
 					}

@@ -41,7 +41,10 @@ PanelAssets::PanelAssets(bool active) : Panel(active)
 	LoadAssetsNodes(ASSETS_FOLDER, root, 1);
 
 	// --- Messages ---
+	App->message->Subscribe(this, &PanelAssets::OnHideHierarchy);
 	App->message->Subscribe(this, &PanelAssets::OnCurrentNodeChanged);
+	App->message->Subscribe(this, &PanelAssets::OnHistoryForward);
+	App->message->Subscribe(this, &PanelAssets::OnHistoryBackward);
 }
 
 PanelAssets::~PanelAssets()
@@ -82,7 +85,7 @@ void PanelAssets::Draw()
 		ImGui::SameLine();
 
 		// Child Explorer
-		explorer->Draw(current_node);
+		explorer->Draw(current_node, current_history != tail, current_history != head);
 
 		// --- Shortcuts
 		if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows))
@@ -172,10 +175,67 @@ void PanelAssets::LoadAssetsNodes(const char* path, AssetNode* parent, int paren
 
 void PanelAssets::SetCurrentNode(AssetNode* node)
 {
+	if (node != current_node)
+		AddHistory(node);
+
 	current_node = node;
 
 	if (explorer != nullptr)
 		explorer->UpdateMenuBarPath(node);
+}
+
+void PanelAssets::AddHistory(AssetNode* node)
+{
+	if (history_size > 0 && current_history != tail) // New Node when current_history is not tail
+	{
+		tail = (current_history < MAX_HISTORY_STEPS - 1) ? current_history : 0;
+		history_size = (current_history >= head) ? current_history - head + 1 : MAX_HISTORY_STEPS - (head - current_history) + 1;
+	}
+
+	if (history_size >= MAX_HISTORY_STEPS)
+	{
+		(head < MAX_HISTORY_STEPS - 1) ? head++ : head = 0;
+		(tail < MAX_HISTORY_STEPS - 1) ? tail++ : tail = 0;
+	}
+	else
+	{
+		tail++;
+		history_size++;
+	}
+	current_history = tail;
+	history[tail] = node;
+}
+
+void PanelAssets::HistoryForward()
+{
+	if (current_history == tail) //***DISABLE BUTTON
+		return;
+
+	(current_history == MAX_HISTORY_STEPS - 1) ? current_history = 0 : current_history++;
+
+	current_node = history[current_history];
+
+	if (explorer != nullptr)
+		explorer->UpdateMenuBarPath(current_node);
+}
+
+void PanelAssets::HistoryBackward()
+{
+	if (current_history == head) //***DISABLE BUTTON
+		return;
+
+	(current_history == 0) ? current_history = MAX_HISTORY_STEPS - 1 : current_history--;
+	current_node = history[current_history];
+
+	if (explorer != nullptr)
+		explorer->UpdateMenuBarPath(current_node);
+}
+
+
+// --- MESSAGES ---
+void PanelAssets::OnHideHierarchy(OnHidePanelAssetsHierarchy* m)
+{
+	hierarchy->is_active = !m->is_hidden;
 }
 
 void PanelAssets::OnCurrentNodeChanged(OnChangedPanelAssetsCurrentNode* m)

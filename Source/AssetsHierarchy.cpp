@@ -14,6 +14,9 @@ ImGuiTextFilter AssetsHierarchy::searcher;
 
 void AssetsHierarchy::Draw(std::vector<AssetNode*> hierarchy_nodes)
 {
+	if (this->is_active == false)
+		return;
+
 	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
 
 	ImGuiWindowFlags child_flags = ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoMove;
@@ -133,7 +136,7 @@ void AssetsHierarchy::HandleSelection(AssetNode* node)
 	}
 
 	// --- Selection
-	if (ImGui::IsItemClicked())
+	else if (ImGui::IsItemClicked())
 	{
 		App->message->Publish(new OnChangedPanelAssetsCurrentNode(node));
 	}

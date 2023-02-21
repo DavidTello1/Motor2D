@@ -2,9 +2,13 @@
 #include "Panel.h"
 
 #include "AssetNode.h"
+#include <array>
 
 struct OnResourcesImported;
+struct OnHidePanelAssetsHierarchy;
 struct OnChangedPanelAssetsCurrentNode;
+struct OnPanelAssetsHistoryBackward;
+struct OnPanelAssetsHistoryForward;
 
 class AssetsHierarchy;
 class AssetsExplorer;
@@ -27,11 +31,20 @@ private:
 
 	void SetCurrentNode(AssetNode* node);
 
+	void AddHistory(AssetNode* node);
+	void HistoryForward();
+	void HistoryBackward();
+
 	// --- MESSAGES ---
 	void OnResourcesImported(OnResourcesImported* m) { /*hierarchy_nodes = LoadHierarchyNodes(ASSETS_FOLDER, 0);*/ } //*** only on reload resources
+	void OnHideHierarchy(OnHidePanelAssetsHierarchy* m);
 	void OnCurrentNodeChanged(OnChangedPanelAssetsCurrentNode* m);
+	void OnHistoryBackward(OnPanelAssetsHistoryBackward* m) { HistoryBackward(); }
+	void OnHistoryForward(OnPanelAssetsHistoryForward* m) { HistoryForward(); }
 
 private:
+	static constexpr int MAX_HISTORY_STEPS = 5;
+
 	bool is_init = false;
 
 	// --- Hierarchy
@@ -46,5 +59,11 @@ private:
 	std::vector<int> selected_nodes;
 	int last_selected = -1;
 	int rename_node = -1;
-};
 
+	// --- History
+	std::array<AssetNode*, MAX_HISTORY_STEPS> history;
+	int history_size = 0;
+	int head = 0;
+	int tail = -1;
+	int current_history = 0;
+};

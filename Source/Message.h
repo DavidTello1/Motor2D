@@ -13,6 +13,8 @@ protected:
 struct OnCloseEngine : public Message {};
 struct OnOpenPanelConfiguration : public Message {};
 struct OnResourcesImported : public Message {};
+struct OnPanelAssetsHistoryBackward : public Message {};
+struct OnPanelAssetsHistoryForward : public Message {};
 
 struct OnChangedPanelAssetsCurrentNode : public Message
 {
@@ -20,6 +22,14 @@ struct OnChangedPanelAssetsCurrentNode : public Message
 
 public:
     AssetNode* node;
+};
+
+struct OnHidePanelAssetsHierarchy : public Message
+{
+    OnHidePanelAssetsHierarchy(bool is_hidden) : is_hidden(is_hidden) {};
+
+public:
+    bool is_hidden;
 };
 
 struct OnAddLog : public Message 
