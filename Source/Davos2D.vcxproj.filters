@@ -41,6 +41,9 @@
     <Filter Include="Source\Tools\Assets">
       <UniqueIdentifier>{80d217d9-3919-49d9-991a-f1ae23add4d6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source\External Libraries\PCG">
+      <UniqueIdentifier>{b13639e6-fe2a-41bf-896f-7411d6393a34}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Module.h">
@@ -159,6 +162,21 @@
     </ClInclude>
     <ClInclude Include="AssetsHierarchy.h">
       <Filter>Source\Tools\Assets</Filter>
+    </ClInclude>
+    <ClInclude Include="RandomNumber.h">
+      <Filter>Source\Tools</Filter>
+    </ClInclude>
+    <ClInclude Include="History.h">
+      <Filter>Source\Tools</Filter>
+    </ClInclude>
+    <ClInclude Include="PCG\include\pcg_extras.hpp">
+      <Filter>Source\External Libraries\PCG</Filter>
+    </ClInclude>
+    <ClInclude Include="PCG\include\pcg_random.hpp">
+      <Filter>Source\External Libraries\PCG</Filter>
+    </ClInclude>
+    <ClInclude Include="PCG\include\pcg_uint128.hpp">
+      <Filter>Source\External Libraries\PCG</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -194,14 +194,38 @@ void AssetsExplorer::HandleSelection(AssetNode* node)
 	// --- Handle Selection
 	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup))
 	{
-		if (ImGui::IsMouseDoubleClicked(0))
-		{
-			OpenNode(node);
-		}
-		else if (ImGui::IsItemClicked(0) || ImGui::IsItemClicked(1))
+		if (ImGui::IsMouseDoubleClicked(0)) // Double L-Click
 		{
 			UnSelectAll(node->parent);
-			node->is_selected = true;
+			node->state = NodeState::SELECTED;
+			OpenNode(node);
+		}
+		else if (ImGui::IsItemClicked(1)) // Right Click
+		{
+			if (selected_nodes.size() <= 1)
+				UnSelectAll(node->parent);
+
+			node->state = NodeState::SELECTED;
+		}
+		else if (ImGui::IsItemClicked(0)) // Left Click
+		{
+			switch (node->state)
+			{
+			case NodeState::DEFAULT:
+				node->state = NodeState::SELECTED;
+				break;
+
+			case NodeState::SELECTED:
+				node->state = NodeState::RENAME;
+				break;
+
+			case NodeState::CUT:
+				break;
+
+			case NodeState::RENAME:
+				node->state = NodeState::SELECTED;
+				break;
+			}
 		}
 	}
 }

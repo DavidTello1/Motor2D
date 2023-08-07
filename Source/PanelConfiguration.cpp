@@ -65,7 +65,7 @@ void PanelConfiguration::AddFPS(float fps, float ms)
 	static uint count = 0;
 	if (count == FPS_LOG_SIZE)
 	{
-		for (uint i = 0; i < FPS_LOG_SIZE - 1; ++i)
+		for (int i = 0; i < FPS_LOG_SIZE - 1; ++i)
 		{
 			fps_log[i] = fps_log[i + 1];
 			ms_log[i] = ms_log[i + 1];

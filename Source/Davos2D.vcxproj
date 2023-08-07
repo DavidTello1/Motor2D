@@ -150,6 +150,7 @@
     <ClInclude Include="AssetNode.h" />
     <ClInclude Include="AssetsExplorer.h" />
     <ClInclude Include="AssetsHierarchy.h" />
+    <ClInclude Include="History.h" />
     <ClInclude Include="Message.h" />
     <ClInclude Include="Glew\include\eglew.h" />
     <ClInclude Include="Glew\include\glew.h" />
@@ -179,6 +180,10 @@
     <ClInclude Include="PanelAssets.h" />
     <ClInclude Include="PanelConfiguration.h" />
     <ClInclude Include="PanelConsole.h" />
+    <ClInclude Include="PCG\include\pcg_extras.hpp" />
+    <ClInclude Include="PCG\include\pcg_random.hpp" />
+    <ClInclude Include="PCG\include\pcg_uint128.hpp" />
+    <ClInclude Include="RandomNumber.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="ResourceFolder.h" />
     <ClInclude Include="ResourceManager.h" />
